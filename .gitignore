@@ -1,0 +1,44 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.pdb
+appsettings.Development.json
+appsettings.Local.json
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Env & secrets
+.env
+*.pem
+*.key
+
+# Build artifacts
+coverage/
+TestResults/
+
+# OS
+Thumbs.db

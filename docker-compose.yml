@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: physioflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: physioflow
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: physioflow
+    ports:
+      - '5432:5432'
+    volumes:
+      - physioflow_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U physioflow']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: physioflow-pgadmin
+    restart: unless-stopped
+    profiles: ['tools']  # docker compose --profile tools up
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@physioflow.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+
+volumes:
+  physioflow_data:
