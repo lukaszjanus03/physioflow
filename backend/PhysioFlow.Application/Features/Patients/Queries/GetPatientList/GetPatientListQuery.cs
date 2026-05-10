@@ -12,7 +12,8 @@ public record GetPatientListQuery(
     int PageNumber = 1,
     int PageSize = 20,
     string? Search = null,
-    bool IncludeArchived = false
+    bool IncludeArchived = false,
+    bool OnlyArchived = false
 ) : IRequest<PaginatedList<PatientListItemDto>>;
 
 public class GetPatientListQueryHandler
@@ -40,7 +41,9 @@ public class GetPatientListQueryHandler
         var query = _db.Patients
             .Where(p => p.TherapistId == therapist.Id && !p.IsDeleted);
 
-        if (!request.IncludeArchived)
+        if (request.OnlyArchived)
+            query = query.Where(p => p.IsArchived);
+        else if (!request.IncludeArchived)
             query = query.Where(p => !p.IsArchived);
 
         if (!string.IsNullOrWhiteSpace(request.Search))

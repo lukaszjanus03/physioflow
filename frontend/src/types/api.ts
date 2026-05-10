@@ -1,5 +1,3 @@
-// Odzwierciedlają DTOs z PhysioFlow.Application/DTOs/Dtos.cs
-// Gdy backend się zmieni - synchronizuj ręcznie (można rozważyć NSwag/OpenAPI codegen w przyszłości).
 
 export interface PaginatedList<T> {
   items: T[];
@@ -55,6 +53,10 @@ export interface CreatePatientPayload {
   medicalHistory?: string;
   medications?: string;
   generalNotes?: string;
+}
+
+export interface UpdatePatientPayload extends CreatePatientPayload {
+  id: string;
 }
 
 export type AppointmentStatus = 'Scheduled' | 'Completed' | 'Cancelled' | 'NoShow';

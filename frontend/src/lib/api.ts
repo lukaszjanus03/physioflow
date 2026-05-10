@@ -5,6 +5,7 @@ import type {
   PatientDetail,
   PatientListItem,
   TokenResponse,
+  UpdatePatientPayload,
 } from '@/types/api';
 
 // --- Auth
@@ -20,7 +21,15 @@ export const authApi = {
 
 // --- Patients
 export const patientsApi = {
-  list: (params: { pageNumber?: number; pageSize?: number; search?: string; includeArchived?: boolean } = {}) =>
+  list: (
+    params: {
+      pageNumber?: number;
+      pageSize?: number;
+      search?: string;
+      includeArchived?: boolean;
+      onlyArchived?: boolean;
+    } = {},
+  ) =>
     apiClient
       .get<PaginatedList<PatientListItem>>('/api/patients', { params })
       .then((r) => r.data),
@@ -31,8 +40,14 @@ export const patientsApi = {
   create: (payload: CreatePatientPayload) =>
     apiClient.post<{ id: string }>('/api/patients', payload).then((r) => r.data),
 
+  update: (id: string, payload: UpdatePatientPayload) =>
+    apiClient.put<void>(`/api/patients/${id}`, payload).then((r) => r.data),
+
   archive: (id: string) =>
-    apiClient.delete(`/api/patients/${id}`).then((r) => r.data),
+    apiClient.delete<void>(`/api/patients/${id}`).then((r) => r.data),
+
+  unarchive: (id: string) =>
+    apiClient.post<void>(`/api/patients/${id}/unarchive`).then((r) => r.data),
 
   exportPdf: (id: string) =>
     apiClient

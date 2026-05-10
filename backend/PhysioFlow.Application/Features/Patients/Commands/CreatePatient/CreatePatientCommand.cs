@@ -61,6 +61,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
             var exists = await _db.Patients
                 .AnyAsync(p => p.TherapistId == therapist.Id
                             && p.Pesel == request.Pesel
+                            && !p.IsArchived
                             && !p.IsDeleted, ct);
             if (exists)
                 throw new ConflictException($"Pacjent z PESEL {request.Pesel} już istnieje.");
