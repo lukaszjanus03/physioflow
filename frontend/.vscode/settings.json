@@ -1,0 +1,7 @@
+{
+  "workbench.externalUriOpeners": {
+    "localhost:3000": "default",
+    "localhost:5000": "default",
+    "localhost:5001": "default"
+  }
+}

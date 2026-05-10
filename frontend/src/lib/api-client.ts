@@ -67,7 +67,7 @@ apiClient.interceptors.response.use(
     } catch (e) {
       notify(null);
       logout();
-      if (typeof window !== 'undefined') window.location.href = '/login';
+      if (typeof window !== 'undefined') window.location.href = '/';
       return Promise.reject(e);
     } finally {
       isRefreshing = false;

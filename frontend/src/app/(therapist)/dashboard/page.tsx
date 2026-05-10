@@ -15,10 +15,10 @@ const mockWeeklyAppointments = [
 ];
 
 const stats = [
-  { label: 'Aktywni pacjenci', value: '42', icon: Users, color: 'text-blue-500' },
-  { label: 'Wizyty w tym tygodniu', value: '60', icon: Calendar, color: 'text-green-500' },
-  { label: 'Ukończone plany', value: '8', icon: Activity, color: 'text-purple-500' },
-  { label: 'Śr. ból pacjentów', value: '4.2', icon: TrendingUp, color: 'text-orange-500' },
+  { label: 'Aktywni pacjenci', value: '45', icon: Users, color: 'text-teal-500' },
+  { label: 'Wizyty w tym tygodniu', value: '60', icon: Calendar, color: 'text-emerald-500' },
+  { label: 'Ukończone plany', value: '8', icon: Activity, color: 'text-cyan-500' },
+  { label: 'Śr. ból pacjentów', value: '4.2', icon: TrendingUp, color: 'text-rose-500' },
 ];
 
 export default function DashboardPage() {
