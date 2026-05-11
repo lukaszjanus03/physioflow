@@ -97,9 +97,6 @@ export default function HomePage() {
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">
-                  Praca inżynierska 2026
-                </span>
               </div>
 
               <h1 className="text-4xl font-bold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl">
@@ -307,7 +304,6 @@ export default function HomePage() {
           <div className="mx-auto max-w-4xl">
             <div className="mb-12 text-center">
               <h2 className="text-3xl font-bold md:text-4xl">Autorzy</h2>
-              <p className="mt-3 text-muted-foreground">Praca inżynierska 2026</p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               {[
@@ -403,7 +399,6 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-12 flex flex-col items-center justify-between gap-2 border-t pt-6 text-xs text-muted-foreground sm:flex-row">
-            <span>© PhysioFlow - praca inżynierska 2026</span>
             <span>Hubert Rola &amp; Łukasz Janus</span>
           </div>
         </div>
