@@ -4,9 +4,9 @@ using PhysioFlow.Domain.Enums;
 namespace PhysioFlow.Domain.Entities;
 
 /// <summary>
-/// Snapshot mapy ciała z konkretnej wizyty. Przechowuje listę PainPointów.
-/// Wariant alternatywny: trzymać to jako JSON w kolumnie (jsonb w Postgresie).
-/// Wybrałem relacyjnie bo łatwiej filtrować/raportować per-punkt.
+/// Snapshot mapy ciała - może być tworzony przez terapeutę (na wizycie) albo przez pacjenta (samodzielnie w portalu).
+/// Rozróżniamy przez CreatedByRole, żeby pokazać w historii kto zaznaczył który snapshot.
+/// Przechowuje listę PainPointów jako osobne encje - łatwiej filtrować/raportować per-punkt.
 /// </summary>
 public class BodyMap : BaseEntity
 {
@@ -15,6 +15,9 @@ public class BodyMap : BaseEntity
 
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
     public string? Notes { get; set; }
+
+    /// <summary>Kto utworzył ten snapshot - terapeuta (Therapist) czy sam pacjent (Patient).</summary>
+    public UserRole CreatedByRole { get; set; }
 
     public Patient Patient { get; set; } = null!;
     public Appointment? Appointment { get; set; }

@@ -44,6 +44,15 @@ public record BodyMapDto(
     string? Notes,
     IReadOnlyList<PainPointDto> PainPoints);
 
+public record BodyMapSummaryDto(
+    Guid Id,
+    Guid PatientId,
+    Guid? AppointmentId,
+    DateTime RecordedAt,
+    string? Notes,
+    string CreatedByRole,       // "Therapist" | "Patient"
+    int PainPointsCount);
+
 public record PainPointDto(
     Guid Id,
     string Side,          // "Front" | "Back"

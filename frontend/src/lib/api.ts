@@ -1,5 +1,8 @@
 import { apiClient } from './api-client';
 import type {
+  BodyMap,
+  BodyMapSummary,
+  CreateBodyMapPayload,
   CreatePatientPayload,
   PaginatedList,
   PatientDetail,
@@ -53,4 +56,21 @@ export const patientsApi = {
     apiClient
       .get(`/api/patients/${id}/export-pdf`, { responseType: 'blob' })
       .then((r) => r.data as Blob),
+};
+
+// --- Body Mapping
+export const bodyMapsApi = {
+  listByPatient: (patientId: string) =>
+    apiClient
+      .get<BodyMapSummary[]>(`/api/bodymapping/patient/${patientId}`)
+      .then((r) => r.data),
+
+  getById: (id: string) =>
+    apiClient.get<BodyMap>(`/api/bodymapping/${id}`).then((r) => r.data),
+
+  create: (payload: CreateBodyMapPayload) =>
+    apiClient.post<{ id: string }>('/api/bodymapping', payload).then((r) => r.data),
+
+  delete: (id: string) =>
+    apiClient.delete(`/api/bodymapping/${id}`).then((r) => r.data),
 };

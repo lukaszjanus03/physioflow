@@ -3,18 +3,24 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
-      // Cloudflare R2 public URLs (jeśli zrobimy publiczny bucket dla zdjęć ćwiczeń)
       { protocol: 'https', hostname: '*.r2.cloudflarestorage.com' },
-      { protocol: 'https', hostname: 'img.youtube.com' }, // thumbnaile YT
+      { protocol: 'https', hostname: 'img.youtube.com' },
     ],
   },
   async rewrites() {
     return [
-      // Proxy do backendu w dev - omija CORS
       ...(process.env.NODE_ENV === 'development'
         ? [{ source: '/api/:path*', destination: `${process.env.NEXT_PUBLIC_API_URL}/api/:path*` }]
         : []),
     ];
+  },
+  webpack: (config, { isServer }) => {
+    // Konva nie ma działać po stronie serwera (SSR) - mówimy webpackowi
+    // żeby zignorował 'canvas' (Node.js native module wymagany tylko dla SSR Konvy).
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'canvas'];
+    }
+    return config;
   },
 };
 

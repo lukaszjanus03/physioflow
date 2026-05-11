@@ -18,18 +18,6 @@ public class AppointmentsController : ApiControllerBase
 }
 
 [Authorize(Roles = "Therapist")]
-public class BodyMappingController : ApiControllerBase
-{
-    // TODO: GetPatientBodyMapsQuery
-    // TODO: CreateBodyMapCommand (z listą PainPoint w payloadzie)
-    // TODO: ComparBodyMapsQuery (dwa snapshoty do porównania)
-    // TODO: ExportBodyMapPngCommand
-
-    [HttpGet("patient/{patientId:guid}")]
-    public IActionResult GetByPatient(Guid patientId) => throw new NotImplementedException();
-}
-
-[Authorize(Roles = "Therapist")]
 public class MedicalRecordsController : ApiControllerBase
 {
     // TODO: GetMedicalRecordsQuery (chronologiczna historia)
