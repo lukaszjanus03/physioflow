@@ -20,7 +20,14 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // --- Controllers & Swagger
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+    {
+        // Pozwala wysyłać enumy jako stringi (np. "Front", "AcutePain")
+        // zamiast liczb (0, 1) - frontend wtedy używa zrozumiałych nazw.
+        opts.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -63,9 +70,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.FromMinutes(1)
         };
 
-        // SignalR wymaga tokena z query stringu (bo WebSocket nie ma nagłówków)
         opts.Events = new JwtBearerEvents
         {
+            // SignalR wymaga tokena z query stringu (bo WebSocket nie ma nagłówków)
             OnMessageReceived = ctx =>
             {
                 var accessToken = ctx.Request.Query["access_token"];
@@ -73,6 +80,47 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
                     ctx.Token = accessToken;
                 return Task.CompletedTask;
+            },
+            // Odrzucamy tokeny dla userów, którzy już nie istnieją w bazie
+            // (np. po wipe DB / migracji - frontend dostanie 401 i zrobi cleanup tokena)
+            OnTokenValidated = async ctx =>
+            {
+                var logger = ctx.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
+                try
+                {
+                    var userIdClaim = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    logger.LogDebug("OnTokenValidated: nameid claim = {Claim}", userIdClaim);
+
+                    if (!Guid.TryParse(userIdClaim, out var userId))
+                    {
+                        logger.LogWarning("OnTokenValidated: invalid/missing nameid claim, rejecting");
+                        ctx.Fail("Invalid user id claim");
+                        return;
+                    }
+
+                    var userManager = ctx.HttpContext.RequestServices
+                        .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<PhysioFlow.Infrastructure.Identity.ApplicationUser>>();
+                    var user = await userManager.FindByIdAsync(userId.ToString());
+                    if (user is null)
+                    {
+                        logger.LogWarning("OnTokenValidated: user {UserId} not found, rejecting", userId);
+                        ctx.Fail("User no longer exists");
+                        return;
+                    }
+                    if (!user.IsActive)
+                    {
+                        logger.LogWarning("OnTokenValidated: user {UserId} inactive, rejecting", userId);
+                        ctx.Fail("User inactive");
+                        return;
+                    }
+                    logger.LogDebug("OnTokenValidated: user {UserId} OK", userId);
+                }
+                catch (Exception ex)
+                {
+                    // Nie chcemy aby jakikolwiek błąd w lookupie wywalał całe auth.
+                    logger.LogError(ex, "OnTokenValidated: unexpected error, allowing request through");
+                }
             }
         };
     });
@@ -99,7 +147,7 @@ builder.Services.AddCors(opts =>
 var app = builder.Build();
 
 // --- Seed ról przy starcie aplikacji
-// (Jedyne co tu seedujemy - userzy i TherapistProfile tworzą się normalnie przez rejestrację)
+// (Userzy tworzą się przez rejestrację; tu robimy tylko role + backfill brakujących TherapistProfile.)
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider
@@ -109,6 +157,29 @@ using (var scope = app.Services.CreateScope())
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new PhysioFlow.Infrastructure.Identity.ApplicationRole { Name = role });
     }
+
+    // Backfill: każdy user w roli "Therapist" musi mieć TherapistProfile.
+    // Bez tego GetPatientListQuery (i podobne) rzucają NotFoundException("TherapistProfile").
+    var userManager = scope.ServiceProvider
+        .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<PhysioFlow.Infrastructure.Identity.ApplicationUser>>();
+    var db = scope.ServiceProvider
+        .GetRequiredService<PhysioFlow.Application.Common.Interfaces.IApplicationDbContext>();
+
+    var therapistUsers = await userManager.GetUsersInRoleAsync("Therapist");
+    var existingProfileUserIds = new HashSet<Guid>(
+        db.Therapists.Select(t => t.UserId).ToList());
+
+    foreach (var user in therapistUsers.Where(u => !existingProfileUserIds.Contains(u.Id)))
+    {
+        var localPart = (user.Email ?? user.UserName ?? "Therapist").Split('@')[0];
+        db.Therapists.Add(new PhysioFlow.Domain.Entities.TherapistProfile
+        {
+            UserId = user.Id,
+            FirstName = localPart,
+            LastName = "(uzupełnij)",
+        });
+    }
+    await db.SaveChangesAsync(default);
 }
 
 if (app.Environment.IsDevelopment())

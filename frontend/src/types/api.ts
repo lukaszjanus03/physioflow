@@ -94,6 +94,29 @@ export interface BodyMap {
   painPoints: PainPoint[];
 }
 
+export interface BodyMapSummary {
+  id: string;
+  patientId: string;
+  appointmentId: string | null;
+  recordedAt: string;
+  notes: string | null;
+  createdByRole: 'Therapist' | 'Patient';
+  painPointsCount: number;
+}
+
+export interface CreateBodyMapPayload {
+  patientId?: string;        // wymagane dla terapeuty, ignorowane dla pacjenta
+  appointmentId?: string;
+  notes?: string;
+  painPoints: Array<{
+    side: BodySide;
+    x: number;
+    y: number;
+    severity: PainSeverity;
+    note?: string;
+  }>;
+}
+
 export interface ChatMessage {
   senderId: string;
   recipientId?: string;

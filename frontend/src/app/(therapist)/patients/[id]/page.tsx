@@ -2,7 +2,20 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { Archive, ArrowLeft, Mail, MapPin, Pencil, Phone, User } from 'lucide-react';
+import {
+  Activity,
+  Archive,
+  ArrowLeft,
+  Calendar,
+  ClipboardList,
+  Dumbbell,
+  FileText,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  User,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -202,6 +215,57 @@ export default function PatientDetailPage() {
           </Card>
 
           <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Moduły pacjenta</CardTitle>
+              <CardDescription>Wybierz moduł, którym chcesz zarządzać</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <Link
+                href={`/patients/${data.id}/body-maps`}
+                className="rounded-lg border p-4 transition-colors hover:bg-accent/30"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950">
+                    <Activity className="h-5 w-5 text-red-500" />
+                  </div>
+                  <div>
+                    <div className="font-medium">Mapy bólu</div>
+                    <p className="text-xs text-muted-foreground">Interaktywne mapy z punktami bólu</p>
+                  </div>
+                </div>
+              </Link>
+
+              <ModulePlaceholder
+                icon={<Calendar className="h-5 w-5 text-blue-500" />}
+                bg="bg-blue-50 dark:bg-blue-950"
+                label="Wizyty"
+                description="Historia i nadchodzące spotkania"
+              />
+
+              <ModulePlaceholder
+                icon={<FileText className="h-5 w-5 text-green-500" />}
+                bg="bg-green-50 dark:bg-green-950"
+                label="EDM"
+                description="Dokumentacja medyczna i załączniki"
+              />
+
+              <ModulePlaceholder
+                icon={<Dumbbell className="h-5 w-5 text-purple-500" />}
+                bg="bg-purple-50 dark:bg-purple-950"
+                label="Plany terapii"
+                description="Ćwiczenia, serie, powtórzenia"
+              />
+
+              <ModulePlaceholder
+                icon={<ClipboardList className="h-5 w-5 text-orange-500" />}
+                bg="bg-orange-50 dark:bg-orange-950"
+                label="Notatki"
+                description="Dodatkowe obserwacje terapeuty"
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardContent className="flex flex-wrap justify-between gap-2 p-4 text-xs text-muted-foreground">
               <span>Dodano: {formatDateTime(data.createdAt)}</span>
               {data.updatedAt && <span>Aktualizacja: {formatDateTime(data.updatedAt)}</span>}
@@ -222,6 +286,34 @@ function DetailField({ label, value }: { label: string; value: string | null }) 
       ) : (
         <p className="italic text-muted-foreground">brak</p>
       )}
+    </div>
+  );
+}
+
+function ModulePlaceholder({
+  icon,
+  bg,
+  label,
+  description,
+}: {
+  icon: React.ReactNode;
+  bg: string;
+  label: string;
+  description: string;
+}) {
+  return (
+    <div className="cursor-not-allowed rounded-lg border p-4 opacity-50">
+      <div className="flex items-center gap-3">
+        <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${bg}`}>
+          {icon}
+        </div>
+        <div>
+          <div className="font-medium">
+            {label} <span className="text-xs text-muted-foreground">(wkrótce)</span>
+          </div>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
     </div>
   );
 }

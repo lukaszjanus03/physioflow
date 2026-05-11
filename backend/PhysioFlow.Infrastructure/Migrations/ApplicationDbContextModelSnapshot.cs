@@ -192,7 +192,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnName("patient_id");
 
                     b.Property<string>("Reason")
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("reason");
 
                     b.Property<bool>("ReminderSent")
@@ -203,8 +204,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("starts_at");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer")
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("status");
 
                     b.Property<Guid>("TherapistId")
@@ -222,11 +225,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_appointments");
 
-                    b.HasIndex("PatientId")
-                        .HasDatabaseName("ix_appointments_patient_id");
+                    b.HasIndex("PatientId", "StartsAt")
+                        .HasDatabaseName("ix_appointments_patient_id_starts_at");
 
-                    b.HasIndex("TherapistId")
-                        .HasDatabaseName("ix_appointments_therapist_id");
+                    b.HasIndex("TherapistId", "StartsAt")
+                        .HasDatabaseName("ix_appointments_therapist_id_starts_at");
 
                     b.ToTable("appointments", (string)null);
                 });
@@ -240,7 +243,8 @@ namespace PhysioFlow.Infrastructure.Migrations
 
                     b.Property<string>("ContentType")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("content_type");
 
                     b.Property<DateTime>("CreatedAt")
@@ -253,7 +257,8 @@ namespace PhysioFlow.Infrastructure.Migrations
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("file_name");
 
                     b.Property<Guid>("MedicalRecordId")
@@ -266,11 +271,14 @@ namespace PhysioFlow.Infrastructure.Migrations
 
                     b.Property<string>("StorageKey")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
                         .HasColumnName("storage_key");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer")
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("type");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -369,8 +377,15 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_id");
 
+                    b.Property<string>("CreatedByRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("created_by_role");
+
                     b.Property<string>("Notes")
-                        .HasColumnType("text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("notes");
 
                     b.Property<Guid>("PatientId")
@@ -395,8 +410,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasIndex("AppointmentId")
                         .HasDatabaseName("ix_body_maps_appointment_id");
 
-                    b.HasIndex("PatientId")
-                        .HasDatabaseName("ix_body_maps_patient_id");
+                    b.HasIndex("PatientId", "RecordedAt")
+                        .HasDatabaseName("ix_body_maps_patient_id_recorded_at");
 
                     b.ToTable("body_maps", (string)null);
                 });
@@ -585,7 +600,7 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnName("deleted_at");
 
                     b.Property<string>("InterviewForm")
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("interview_form");
 
                     b.Property<bool>("IsDeleted")
@@ -627,11 +642,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_medical_records_appointment_id");
 
-                    b.HasIndex("PatientId")
-                        .HasDatabaseName("ix_medical_records_patient_id");
-
                     b.HasIndex("TherapistId")
                         .HasDatabaseName("ix_medical_records_therapist_id");
+
+                    b.HasIndex("PatientId", "CreatedAt")
+                        .HasDatabaseName("ix_medical_records_patient_id_created_at");
 
                     b.ToTable("medical_records", (string)null);
                 });
@@ -656,15 +671,20 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnName("created_by_id");
 
                     b.Property<string>("Note")
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("note");
 
-                    b.Property<int>("Severity")
-                        .HasColumnType("integer")
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("severity");
 
-                    b.Property<int>("Side")
-                        .HasColumnType("integer")
+                    b.Property<string>("Side")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasColumnName("side");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -676,11 +696,13 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnName("updated_by_id");
 
                     b.Property<decimal>("X")
-                        .HasColumnType("numeric")
+                        .HasPrecision(6, 5)
+                        .HasColumnType("numeric(6,5)")
                         .HasColumnName("x");
 
                     b.Property<decimal>("Y")
-                        .HasColumnType("numeric")
+                        .HasPrecision(6, 5)
+                        .HasColumnType("numeric(6,5)")
                         .HasColumnName("y");
 
                     b.HasKey("Id")
@@ -1235,14 +1257,14 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
                         .WithMany("Appointments")
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_appointments_patients_patient_id");
 
                     b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
                         .WithMany("Appointments")
                         .HasForeignKey("TherapistId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_appointments_therapists_therapist_id");
 
@@ -1280,6 +1302,7 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasOne("PhysioFlow.Domain.Entities.Appointment", "Appointment")
                         .WithMany()
                         .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_body_maps_appointments_appointment_id");
 
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
@@ -1323,19 +1346,20 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasOne("PhysioFlow.Domain.Entities.Appointment", "Appointment")
                         .WithOne("MedicalRecord")
                         .HasForeignKey("PhysioFlow.Domain.Entities.MedicalRecord", "AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_medical_records_appointments_appointment_id");
 
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
                         .WithMany("MedicalRecords")
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_medical_records_patients_patient_id");
 
                     b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
                         .WithMany()
                         .HasForeignKey("TherapistId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_medical_records_therapists_therapist_id");
 
