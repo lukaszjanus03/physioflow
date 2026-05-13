@@ -1,4 +1,3 @@
-
 export interface PaginatedList<T> {
   items: T[];
   totalCount: number;
@@ -79,9 +78,10 @@ export type PainSeverity = 'AcutePain' | 'ChronicPain' | 'Tension';
 export interface PainPoint {
   id: string;
   side: BodySide;
-  x: number;        // 0-1 znormalizowane
-  y: number;        // 0-1
+  x: number;
+  y: number;
   severity: PainSeverity;
+  painScale?: number | null;
   note: string | null;
 }
 
@@ -105,7 +105,7 @@ export interface BodyMapSummary {
 }
 
 export interface CreateBodyMapPayload {
-  patientId?: string;        // wymagane dla terapeuty, ignorowane dla pacjenta
+  patientId?: string;
   appointmentId?: string;
   notes?: string;
   painPoints: Array<{
@@ -113,6 +113,19 @@ export interface CreateBodyMapPayload {
     x: number;
     y: number;
     severity: PainSeverity;
+    painScale?: number;
+    note?: string;
+  }>;
+}
+
+export interface UpdateBodyMapPayload {
+  notes?: string;
+  painPoints: Array<{
+    side: BodySide;
+    x: number;
+    y: number;
+    severity: PainSeverity;
+    painScale?: number;
     note?: string;
   }>;
 }

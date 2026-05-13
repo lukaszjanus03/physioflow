@@ -8,6 +8,7 @@ import type {
   PatientDetail,
   PatientListItem,
   TokenResponse,
+  UpdateBodyMapPayload,
   UpdatePatientPayload,
 } from '@/types/api';
 
@@ -70,6 +71,9 @@ export const bodyMapsApi = {
 
   create: (payload: CreateBodyMapPayload) =>
     apiClient.post<{ id: string }>('/api/bodymapping', payload).then((r) => r.data),
+
+  update: (id: string, payload: UpdateBodyMapPayload) =>
+    apiClient.put<void>(`/api/bodymapping/${id}`, payload).then((r) => r.data),
 
   delete: (id: string) =>
     apiClient.delete(`/api/bodymapping/${id}`).then((r) => r.data),
