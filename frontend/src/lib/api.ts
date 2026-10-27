@@ -1,5 +1,6 @@
 import { apiClient } from './api-client';
 import type {
+  AnatomicalRegionInfo,
   BodyMap,
   BodyMapSummary,
   CreateBodyMapPayload,
@@ -77,4 +78,13 @@ export const bodyMapsApi = {
 
   delete: (id: string) =>
     apiClient.delete(`/api/bodymapping/${id}`).then((r) => r.data),
+};
+
+export const musclesApi = {
+  getByRegion: (regionId: string) =>
+    apiClient
+      .get<AnatomicalRegionInfo>(
+        `/api/muscles/by-region/${encodeURIComponent(regionId)}`
+      )
+      .then((response) => response.data),
 };

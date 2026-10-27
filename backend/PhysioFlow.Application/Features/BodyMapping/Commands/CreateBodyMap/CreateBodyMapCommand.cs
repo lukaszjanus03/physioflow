@@ -26,7 +26,8 @@ public record PainPointInput(
     decimal X,                    // 0.0 - 1.0 znormalizowane
     decimal Y,
     PainPointSeverity Severity,
-    string? Note
+    string? Note,
+    int? PainScale = null
 );
 
 public class CreateBodyMapCommandValidator : AbstractValidator<CreateBodyMapCommand>
@@ -38,6 +39,11 @@ public class CreateBodyMapCommandValidator : AbstractValidator<CreateBodyMapComm
             pp.RuleFor(p => p.X).InclusiveBetween(0m, 1m).WithMessage("X musi być w zakresie 0.0 - 1.0");
             pp.RuleFor(p => p.Y).InclusiveBetween(0m, 1m).WithMessage("Y musi być w zakresie 0.0 - 1.0");
             pp.RuleFor(p => p.Note).MaximumLength(500);
+
+            pp.RuleFor(p => p.PainScale)
+            .Must(value => !value.HasValue ||
+                   (value.Value >= 1 && value.Value <= 10))
+            .WithMessage("Skala bólu musi być w zakresie od 1 do 10.");
         });
         RuleFor(x => x.Notes).MaximumLength(2000);
     }
@@ -106,6 +112,7 @@ public class CreateBodyMapCommandHandler : IRequestHandler<CreateBodyMapCommand,
                 Y = p.Y,
                 Severity = p.Severity,
                 Note = p.Note,
+                PainScale = p.PainScale,
             }).ToList(),
         };
 

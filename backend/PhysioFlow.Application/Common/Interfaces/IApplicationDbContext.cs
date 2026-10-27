@@ -11,6 +11,8 @@ public interface IApplicationDbContext
     DbSet<AvailabilitySlot> AvailabilitySlots { get; }
     DbSet<BodyMap> BodyMaps { get; }
     DbSet<PainPoint> PainPoints { get; }
+
+    DbSet<AnatomicalRegionInfo> AnatomicalRegionInfos { get; }
     DbSet<MedicalRecord> MedicalRecords { get; }
     DbSet<Attachment> Attachments { get; }
     DbSet<Exercise> Exercises { get; }

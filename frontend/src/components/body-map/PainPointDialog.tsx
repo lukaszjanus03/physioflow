@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,7 +13,12 @@ import {
 import { Label } from '@/components/ui/primitives';
 import { Textarea } from '@/components/ui/textarea';
 import type { PainSeverity } from '@/types/api';
-import { ALL_SEVERITIES, SEVERITY_COLORS, SEVERITY_DESCRIPTIONS, SEVERITY_LABELS } from './constants';
+import {
+  ALL_SEVERITIES,
+  SEVERITY_COLORS,
+  SEVERITY_DESCRIPTIONS,
+  SEVERITY_LABELS,
+} from './constants';
 
 interface PainPointDialogProps {
   open: boolean;
@@ -22,10 +27,29 @@ interface PainPointDialogProps {
   initialPainScale?: number | null;
   initialNote?: string | null;
   onDelete?: () => void;
-  onSave: (severity: PainSeverity, note: string | null, painScale: number) => void;
+  onSave: (
+    severity: PainSeverity,
+    note: string | null,
+    painScale: number
+  ) => void;
 }
 
-export function PainPointDialog({
+export function PainPointDialog(props: PainPointDialogProps) {
+  if (!props.open) return null;
+
+  return (
+    <PainPointDialogContent
+      key={JSON.stringify([
+        props.initialSeverity,
+        props.initialPainScale,
+        props.initialNote,
+      ])}
+      {...props}
+    />
+  );
+}
+
+function PainPointDialogContent({
   open,
   onOpenChange,
   initialSeverity = 'AcutePain',
@@ -38,23 +62,18 @@ export function PainPointDialog({
   const [painScale, setPainScale] = useState(initialPainScale ?? 5);
   const [note, setNote] = useState(initialNote ?? '');
 
-  useEffect(() => {
-    if (open) {
-      setSeverity(initialSeverity);
-      setPainScale(initialPainScale ?? 5);
-      setNote(initialNote ?? '');
-    }
-  }, [open, initialSeverity, initialPainScale, initialNote]);
-
   const isEdit = onDelete !== undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edytuj punkt bólu' : 'Nowy punkt bólu'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? 'Edytuj punkt bólu' : 'Nowy punkt bólu'}
+          </DialogTitle>
+
           <DialogDescription>
-            Wybierz charakter bólu, skalę 1-10 i dodaj ewentualne uwagi.
+            Wybierz charakter bólu, skalę 1–10 i dodaj ewentualne uwagi.
           </DialogDescription>
         </DialogHeader>
 
@@ -63,25 +82,32 @@ export function PainPointDialog({
             <Label>Charakter bólu</Label>
 
             <div className="grid grid-cols-1 gap-2">
-              {ALL_SEVERITIES.map((s) => (
+              {ALL_SEVERITIES.map((value) => (
                 <button
-                  key={s}
+                  key={value}
                   type="button"
-                  onClick={() => setSeverity(s)}
+                  onClick={() => setSeverity(value)}
+                  aria-pressed={severity === value}
                   className={`flex items-center gap-3 rounded-md border p-3 text-left transition-colors ${
-                    severity === s
+                    severity === value
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:bg-accent'
                   }`}
                 >
                   <div
-                    className="h-6 w-6 flex-shrink-0 rounded-full border-2 border-white shadow"
-                    style={{ backgroundColor: SEVERITY_COLORS[s] }}
+                    className="h-6 w-6 shrink-0 rounded-full border-2 border-white shadow"
+                    style={{
+                      backgroundColor: SEVERITY_COLORS[value],
+                    }}
                   />
 
                   <div className="flex-1">
-                    <div className="font-medium">{SEVERITY_LABELS[s]}</div>
-                    <div className="text-xs text-muted-foreground">{SEVERITY_DESCRIPTIONS[s]}</div>
+                    <div className="font-medium">
+                      {SEVERITY_LABELS[value]}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {SEVERITY_DESCRIPTIONS[value]}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -109,25 +135,31 @@ export function PainPointDialog({
               max={10}
               step={1}
               value={painScale}
-              onChange={(event) => setPainScale(Number(event.target.value))}
+              onChange={(event) =>
+                setPainScale(Number(event.target.value))
+              }
               className="w-full accent-primary"
             />
 
             <div className="grid grid-cols-10 gap-1">
-              {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setPainScale(value)}
-                  className={`rounded-md border py-1 text-xs font-medium transition ${
-                    painScale === value
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'bg-background hover:bg-accent'
-                  }`}
-                >
-                  {value}
-                </button>
-              ))}
+              {Array.from({ length: 10 }, (_, index) => index + 1).map(
+                (value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPainScale(value)}
+                    aria-label={`Skala bólu: ${value} na 10`}
+                    aria-pressed={painScale === value}
+                    className={`rounded-md border py-1 text-xs font-medium transition ${
+                      painScale === value
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'bg-background hover:bg-accent'
+                    }`}
+                  >
+                    {value}
+                  </button>
+                )
+              )}
             </div>
           </div>
 
@@ -138,7 +170,7 @@ export function PainPointDialog({
               id="note"
               placeholder="Np. Pojawia się przy skłonach w prawo"
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(event) => setNote(event.target.value)}
               maxLength={500}
             />
           </div>
@@ -146,16 +178,27 @@ export function PainPointDialog({
 
         <DialogFooter className="gap-2 sm:gap-2">
           {isEdit && (
-            <Button variant="destructive" onClick={onDelete} className="mr-auto">
+            <Button
+              variant="destructive"
+              onClick={onDelete}
+              className="mr-auto"
+            >
               Usuń punkt
             </Button>
           )}
 
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Anuluj
           </Button>
 
-          <Button onClick={() => onSave(severity, note.trim() || null, painScale)}>
+          <Button
+            onClick={() =>
+              onSave(severity, note.trim() || null, painScale)
+            }
+          >
             {isEdit ? 'Zapisz' : 'Dodaj'}
           </Button>
         </DialogFooter>

@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import {
@@ -42,7 +48,7 @@ interface BodyMapCanvasProps {
   onStageClick: (x: number, y: number) => void;
   onPointClick: (id: string) => void;
   onRegionClick?: (region: AnatomicalRegion, point: { x: number; y: number }) => void;
-  stageRef?: React.RefObject<Konva.Stage>;
+  stageRef?: React.RefObject<Konva.Stage | null>;
   onViewportApi?: (api: BodyMapCanvasApi) => void;
 }
 
@@ -118,7 +124,10 @@ export function BodyMapCanvas({
   );
 
   const viewportRef = useRef(viewport);
-  viewportRef.current = viewport;
+
+  useLayoutEffect(() => {
+    viewportRef.current = viewport;
+  }, [viewport]);
 
   useEffect(() => {
     if (!onViewportApi) return;

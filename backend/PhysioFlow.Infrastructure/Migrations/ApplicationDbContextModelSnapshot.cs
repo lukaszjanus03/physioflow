@@ -17,7 +17,7 @@ namespace PhysioFlow.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.10")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -150,6 +150,592 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasName("pk_asp_net_user_tokens");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.AnatomicalRegionInfo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.PrimitiveCollection<string[]>("CommonIssues")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("common_issues");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("description");
+
+                    b.PrimitiveCollection<string[]>("ExaminationTips")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("examination_tips");
+
+                    b.Property<string>("Function")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("function");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("RegionId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("region_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_anatomical_region_infos");
+
+                    b.HasIndex("RegionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_anatomical_region_infos_region_id");
+
+                    b.ToTable("anatomical_region_infos", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("ddf58b7e-9d0d-9469-d266-4fe8183bd7c6"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica szyi.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie tego obszaru uczestniczą w ruchach głowy i szyi.",
+                            Name = "Szyja",
+                            RegionId = "front-neck"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa98a8fc-7262-6e67-cb41-a47e8914f9f2"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica barku, obejmująca między innymi mięsień naramienny.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie barku uczestniczą w unoszeniu i ustawianiu ramienia.",
+                            Name = "Lewy bark",
+                            RegionId = "front-left-shoulder"
+                        },
+                        new
+                        {
+                            Id = new Guid("285ba7da-9891-9055-6742-7afca0c34daa"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica barku, obejmująca między innymi mięsień naramienny.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie barku uczestniczą w unoszeniu i ustawianiu ramienia.",
+                            Name = "Prawy bark",
+                            RegionId = "front-right-shoulder"
+                        },
+                        new
+                        {
+                            Id = new Guid("e0668862-3474-b187-91be-25f8d224f161"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia piersiowego większego.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień uczestniczy w przywodzeniu i rotacji wewnętrznej ramienia.",
+                            Name = "Lewy mięsień piersiowy",
+                            RegionId = "front-left-pec"
+                        },
+                        new
+                        {
+                            Id = new Guid("82367d9e-7af2-d05c-8322-c52ef7007b2b"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia piersiowego większego.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień uczestniczy w przywodzeniu i rotacji wewnętrznej ramienia.",
+                            Name = "Prawy mięsień piersiowy",
+                            RegionId = "front-right-pec"
+                        },
+                        new
+                        {
+                            Id = new Guid("b8cc19b3-c3e5-07dd-d907-c71dbb44c422"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Środkowa okolica przedniej ściany klatki piersiowej.",
+                            ExaminationTips = new string[0],
+                            Function = "Mostek jest elementem kostnym klatki piersiowej, nie mięśniem.",
+                            Name = "Mostek",
+                            RegionId = "front-sternum"
+                        },
+                        new
+                        {
+                            Id = new Guid("6a59e43e-7e3e-6938-ccae-763530eeb811"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Górna część przedniej ściany brzucha.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie brzucha uczestniczą w ruchach i stabilizacji tułowia.",
+                            Name = "Brzuch górny",
+                            RegionId = "front-upper-abdomen"
+                        },
+                        new
+                        {
+                            Id = new Guid("ad1d45cc-7fb6-be97-fced-ac00b09dd761"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dolna część przedniej ściany brzucha.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie brzucha współtworzą ścianę brzucha i stabilizują tułów.",
+                            Name = "Brzuch dolny",
+                            RegionId = "front-lower-abdomen"
+                        },
+                        new
+                        {
+                            Id = new Guid("ef7ac2cc-4fa8-2d5c-ff0e-baad48e67cac"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia dwugłowego ramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień zgina staw łokciowy i odwraca przedramię.",
+                            Name = "Lewy biceps",
+                            RegionId = "front-left-biceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("4488b376-8514-84b1-2d71-350a03a63acb"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia dwugłowego ramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień zgina staw łokciowy i odwraca przedramię.",
+                            Name = "Prawy biceps",
+                            RegionId = "front-right-biceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("d10ae043-f4b3-57ca-c7d0-1b7d374604d5"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica przedramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie przedramienia uczestniczą w ruchach nadgarstka i palców.",
+                            Name = "Lewe przedramię",
+                            RegionId = "front-left-forearm"
+                        },
+                        new
+                        {
+                            Id = new Guid("9ff90b66-b4de-ca0b-6bcc-547c8c75ef21"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica przedramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie przedramienia uczestniczą w ruchach nadgarstka i palców.",
+                            Name = "Prawe przedramię",
+                            RegionId = "front-right-forearm"
+                        },
+                        new
+                        {
+                            Id = new Guid("3353cbf1-ea9d-c95b-83b3-693dcc21b0e6"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dłoniowa okolica ręki.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie i ścięgna ręki umożliwiają chwyt i ruchy palców.",
+                            Name = "Lewa dłoń",
+                            RegionId = "front-left-hand"
+                        },
+                        new
+                        {
+                            Id = new Guid("54920e48-d092-9ce5-3e2c-891848db1c4d"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dłoniowa okolica ręki.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie i ścięgna ręki umożliwiają chwyt i ruchy palców.",
+                            Name = "Prawa dłoń",
+                            RegionId = "front-right-hand"
+                        },
+                        new
+                        {
+                            Id = new Guid("4b3bd46e-c336-565e-de6a-0f1aeda1b232"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica uda, obejmująca między innymi mięsień czworogłowy.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień czworogłowy prostuje staw kolanowy.",
+                            Name = "Lewe udo przednie",
+                            RegionId = "front-left-thigh"
+                        },
+                        new
+                        {
+                            Id = new Guid("f7f68b2d-280a-cc79-b71c-48894f9d255c"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica uda, obejmująca między innymi mięsień czworogłowy.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień czworogłowy prostuje staw kolanowy.",
+                            Name = "Prawe udo przednie",
+                            RegionId = "front-right-thigh"
+                        },
+                        new
+                        {
+                            Id = new Guid("5d066f1c-c914-ded3-b91f-9d669dc539b5"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica stawu kolanowego.",
+                            ExaminationTips = new string[0],
+                            Function = "Staw kolanowy umożliwia zginanie i prostowanie kończyny.",
+                            Name = "Lewe kolano",
+                            RegionId = "front-left-knee"
+                        },
+                        new
+                        {
+                            Id = new Guid("be56a4f5-c8bb-fde8-7d40-47127e2a258b"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica stawu kolanowego.",
+                            ExaminationTips = new string[0],
+                            Function = "Staw kolanowy umożliwia zginanie i prostowanie kończyny.",
+                            Name = "Prawe kolano",
+                            RegionId = "front-right-knee"
+                        },
+                        new
+                        {
+                            Id = new Guid("c3181313-b467-a8d2-87d3-7f38dd5eda2d"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica podudzia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie przedniej grupy podudzia uczestniczą w zgięciu grzbietowym stopy.",
+                            Name = "Lewa goleń",
+                            RegionId = "front-left-shin"
+                        },
+                        new
+                        {
+                            Id = new Guid("7f4c75ab-31d2-cc03-7659-5f984a4c1ba8"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Przednia okolica podudzia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie przedniej grupy podudzia uczestniczą w zgięciu grzbietowym stopy.",
+                            Name = "Prawa goleń",
+                            RegionId = "front-right-shin"
+                        },
+                        new
+                        {
+                            Id = new Guid("e5fcf2eb-0502-e11b-7775-b2f7fa928c38"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Stopa widoczna od przodu.",
+                            ExaminationTips = new string[0],
+                            Function = "Stopa stanowi podporę i uczestniczy w chodzie.",
+                            Name = "Lewa stopa",
+                            RegionId = "front-left-foot"
+                        },
+                        new
+                        {
+                            Id = new Guid("4c9132fa-4a1b-c599-ea15-af60dccad36b"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Stopa widoczna od przodu.",
+                            ExaminationTips = new string[0],
+                            Function = "Stopa stanowi podporę i uczestniczy w chodzie.",
+                            Name = "Prawa stopa",
+                            RegionId = "front-right-foot"
+                        },
+                        new
+                        {
+                            Id = new Guid("182af294-b3e6-ba00-afac-f4bbe2aa1c5a"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica szyi.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie karku uczestniczą w utrzymywaniu i poruszaniu głową.",
+                            Name = "Kark",
+                            RegionId = "back-neck"
+                        },
+                        new
+                        {
+                            Id = new Guid("6db6f451-88e9-0666-469d-3758e581845f"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia czworobocznego.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień uczestniczy w ustawianiu i stabilizacji łopatki.",
+                            Name = "Lewy czworoboczny",
+                            RegionId = "back-left-trapezius"
+                        },
+                        new
+                        {
+                            Id = new Guid("65f32065-5c9f-7bc8-701b-5b64fafd09f3"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia czworobocznego.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień uczestniczy w ustawianiu i stabilizacji łopatki.",
+                            Name = "Prawy czworoboczny",
+                            RegionId = "back-right-trapezius"
+                        },
+                        new
+                        {
+                            Id = new Guid("bd3b28c7-311a-7055-8b6b-bd71fc0d698a"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica barku.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie tego obszaru uczestniczą w ruchach i stabilizacji ramienia.",
+                            Name = "Lewy bark tylny",
+                            RegionId = "back-left-rear-shoulder"
+                        },
+                        new
+                        {
+                            Id = new Guid("ce016d2e-3f73-5ba7-6c16-ae40467e234b"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica barku.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie tego obszaru uczestniczą w ruchach i stabilizacji ramienia.",
+                            Name = "Prawy bark tylny",
+                            RegionId = "back-right-rear-shoulder"
+                        },
+                        new
+                        {
+                            Id = new Guid("79614cf0-33d7-81ff-1109-86394a3a624f"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica łopatki i otaczających ją mięśni.",
+                            ExaminationTips = new string[0],
+                            Function = "Łopatka stanowi ruchomą podstawę dla pracy kończyny górnej.",
+                            Name = "Lewa łopatka",
+                            RegionId = "back-left-scapula"
+                        },
+                        new
+                        {
+                            Id = new Guid("6caf53fc-957b-15ec-aa5e-113b646ba273"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica łopatki i otaczających ją mięśni.",
+                            ExaminationTips = new string[0],
+                            Function = "Łopatka stanowi ruchomą podstawę dla pracy kończyny górnej.",
+                            Name = "Prawa łopatka",
+                            RegionId = "back-right-scapula"
+                        },
+                        new
+                        {
+                            Id = new Guid("f29a1084-1cc9-a860-e1f4-47ac149a8ded"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica piersiowego odcinka kręgosłupa.",
+                            ExaminationTips = new string[0],
+                            Function = "Stanowi część osiowego podparcia tułowia i łączy się z żebrami.",
+                            Name = "Odcinek piersiowy",
+                            RegionId = "back-thoracic-spine"
+                        },
+                        new
+                        {
+                            Id = new Guid("cc22b0d7-bbf2-2d6b-9dd7-cf7909040423"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica lędźwiowego odcinka kręgosłupa.",
+                            ExaminationTips = new string[0],
+                            Function = "Uczestniczy w podparciu i ruchach tułowia.",
+                            Name = "Odcinek lędźwiowy",
+                            RegionId = "back-lumbar-spine"
+                        },
+                        new
+                        {
+                            Id = new Guid("c0a06f8f-3d1e-026b-f3a9-ae159a920f45"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia trójgłowego ramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień prostuje staw łokciowy.",
+                            Name = "Lewy triceps",
+                            RegionId = "back-left-triceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("ce9436e7-a923-a4cb-a951-a7d313d7ca76"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśnia trójgłowego ramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięsień prostuje staw łokciowy.",
+                            Name = "Prawy triceps",
+                            RegionId = "back-right-triceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("dad54716-9df5-5a9d-a094-45214e8a7d93"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica przedramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie tej okolicy uczestniczą w prostowaniu nadgarstka i palców.",
+                            Name = "Lewe przedramię tylne",
+                            RegionId = "back-left-forearm"
+                        },
+                        new
+                        {
+                            Id = new Guid("49c37b1a-0fb9-cc44-3ecf-618ae0ebf8c6"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica przedramienia.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie tej okolicy uczestniczą w prostowaniu nadgarstka i palców.",
+                            Name = "Prawe przedramię tylne",
+                            RegionId = "back-right-forearm"
+                        },
+                        new
+                        {
+                            Id = new Guid("68b6a87e-98a2-8580-710d-80b5ef7b8794"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Grzbietowa okolica ręki.",
+                            ExaminationTips = new string[0],
+                            Function = "Ścięgna prostowników uczestniczą w prostowaniu palców.",
+                            Name = "Lewa dłoń",
+                            RegionId = "back-left-hand"
+                        },
+                        new
+                        {
+                            Id = new Guid("7992a53a-2b47-8719-aab4-a1b25bfb9097"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Grzbietowa okolica ręki.",
+                            ExaminationTips = new string[0],
+                            Function = "Ścięgna prostowników uczestniczą w prostowaniu palców.",
+                            Name = "Prawa dłoń",
+                            RegionId = "back-right-hand"
+                        },
+                        new
+                        {
+                            Id = new Guid("20c29070-ed06-dadd-6a42-8511124252fb"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśni pośladkowych.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie pośladkowe uczestniczą w ruchach biodra i stabilizacji miednicy.",
+                            Name = "Lewy pośladek",
+                            RegionId = "back-left-glute"
+                        },
+                        new
+                        {
+                            Id = new Guid("82524e7a-606a-4285-40f1-7f7ffa67f461"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Okolica mięśni pośladkowych.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie pośladkowe uczestniczą w ruchach biodra i stabilizacji miednicy.",
+                            Name = "Prawy pośladek",
+                            RegionId = "back-right-glute"
+                        },
+                        new
+                        {
+                            Id = new Guid("7b4cedcd-362b-40c2-4e65-7a17c7d468d0"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica uda, obejmująca grupę mięśni kulszowo-goleniowych.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie tej grupy uczestniczą w zginaniu kolana i prostowaniu biodra.",
+                            Name = "Lewe udo tylne",
+                            RegionId = "back-left-hamstring"
+                        },
+                        new
+                        {
+                            Id = new Guid("ad6bccaa-1dd1-9491-29a3-1eb713f7dc4d"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica uda, obejmująca grupę mięśni kulszowo-goleniowych.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie tej grupy uczestniczą w zginaniu kolana i prostowaniu biodra.",
+                            Name = "Prawe udo tylne",
+                            RegionId = "back-right-hamstring"
+                        },
+                        new
+                        {
+                            Id = new Guid("d4586043-892f-7bf9-1c97-130fb693215f"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica stawu kolanowego.",
+                            ExaminationTips = new string[0],
+                            Function = "Jest obszarem przebiegu ścięgien mięśni poruszających kolanem.",
+                            Name = "Lewe kolano tylne",
+                            RegionId = "back-left-knee"
+                        },
+                        new
+                        {
+                            Id = new Guid("b57b54ff-9fc3-c078-cb5f-6d2f50f1e644"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica stawu kolanowego.",
+                            ExaminationTips = new string[0],
+                            Function = "Jest obszarem przebiegu ścięgien mięśni poruszających kolanem.",
+                            Name = "Prawe kolano tylne",
+                            RegionId = "back-right-knee"
+                        },
+                        new
+                        {
+                            Id = new Guid("fa964173-996f-2df4-c44d-60bbd1a4a8f1"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica podudzia, obejmująca mięśnie brzuchaty łydki i płaszczkowaty.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie łydki uczestniczą w zgięciu podeszwowym stopy.",
+                            Name = "Lewa łydka",
+                            RegionId = "back-left-calf"
+                        },
+                        new
+                        {
+                            Id = new Guid("96c5d9b0-47c7-3966-ff2f-09aef6b451f7"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tylna okolica podudzia, obejmująca mięśnie brzuchaty łydki i płaszczkowaty.",
+                            ExaminationTips = new string[0],
+                            Function = "Mięśnie łydki uczestniczą w zgięciu podeszwowym stopy.",
+                            Name = "Prawa łydka",
+                            RegionId = "back-right-calf"
+                        },
+                        new
+                        {
+                            Id = new Guid("fadf2ec1-5c2b-ae80-172d-b4be41b1526c"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Stopa widoczna od tyłu, w tym okolica pięty.",
+                            ExaminationTips = new string[0],
+                            Function = "Stopa stanowi podporę i uczestniczy w przenoszeniu obciążeń.",
+                            Name = "Lewa stopa",
+                            RegionId = "back-left-foot"
+                        },
+                        new
+                        {
+                            Id = new Guid("9669ea70-7fc7-5f16-7a9a-701ac574a2bb"),
+                            CommonIssues = new string[0],
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Stopa widoczna od tyłu, w tym okolica pięty.",
+                            ExaminationTips = new string[0],
+                            Function = "Stopa stanowi podporę i uczestniczy w przenoszeniu obciążeń.",
+                            Name = "Prawa stopa",
+                            RegionId = "back-right-foot"
+                        });
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Appointment", b =>
@@ -674,6 +1260,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("note");
+
+                    b.Property<int?>("PainScale")
+                        .HasColumnType("integer")
+                        .HasColumnName("pain_scale");
 
                     b.Property<string>("Severity")
                         .IsRequired()
