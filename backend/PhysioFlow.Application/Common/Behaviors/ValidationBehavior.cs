@@ -8,7 +8,7 @@ namespace PhysioFlow.Application.Common.Behaviors;
 /// Rzuca ValidationException jak coś jest nie tak (łapane w middleware w Api).
 /// </summary>
 public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    where TRequest : notnull
 {
     private readonly IEnumerable<IValidator<TRequest>> _validators;
 

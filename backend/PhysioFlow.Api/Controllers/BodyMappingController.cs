@@ -5,6 +5,7 @@ using PhysioFlow.Application.Features.BodyMapping.Commands.CreateBodyMap;
 using PhysioFlow.Application.Features.BodyMapping.Commands.DeleteBodyMap;
 using PhysioFlow.Application.Features.BodyMapping.Queries.GetBodyMapById;
 using PhysioFlow.Application.Features.BodyMapping.Queries.GetPatientBodyMaps;
+using PhysioFlow.Application.Features.BodyMapping.Commands.UpdateBodyMap;
 
 namespace PhysioFlow.Api.Controllers;
 
@@ -23,6 +24,27 @@ public class BodyMappingController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetPatientBodyMapsQuery(patientId), ct);
         return Ok(result);
+    }
+
+    [Authorize(Roles = "Therapist")]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] UpdateBodyMapRequest request,
+        CancellationToken ct)
+    {
+        await Mediator.Send(
+            new UpdateBodyMapCommand(
+                id,
+                request.Notes,
+                request.PainPoints),
+            ct);
+
+        return NoContent();
     }
 
     /// <summary>Pełen snapshot z wszystkimi PainPointami.</summary>
@@ -57,3 +79,7 @@ public class BodyMappingController : ApiControllerBase
         return NoContent();
     }
 }
+
+public record UpdateBodyMapRequest(
+    string? Notes,
+    IReadOnlyList<PainPointInput> PainPoints);

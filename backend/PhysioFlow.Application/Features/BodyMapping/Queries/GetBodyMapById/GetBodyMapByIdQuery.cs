@@ -64,7 +64,8 @@ public class GetBodyMapByIdQueryHandler : IRequestHandler<GetBodyMapByIdQuery, B
                     p.X,
                     p.Y,
                     p.Severity.ToString(),
-                    p.Note))
+                    p.Note,
+                    p.PainScale))
                 .ToList());
     }
 }

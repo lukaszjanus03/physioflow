@@ -143,3 +143,13 @@ export interface ApiError {
   detail?: string;
   errors?: Record<string, string[]>;
 }
+
+
+export interface AnatomicalRegionInfo {
+  regionId: string;
+  name: string;
+  description: string;
+  function: string;
+  commonIssues: string[];
+  examinationTips: string[];
+}

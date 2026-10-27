@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using PhysioFlow.Infrastructure.Persistence;
+using PhysioFlow.Infrastructure.Persistence.Seeds;
 
 namespace PhysioFlow.Tests.Integration;
 
@@ -34,7 +35,24 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 });
         });
 
-        return base.CreateHost(builder);
+        var host = base.CreateHost(builder);
+
+        using (var scope = host.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider
+            .GetRequiredService<ApplicationDbContext>();
+
+            // Przygotowanie danych referencyjnych wyłącznie dla testów.
+            if (!db.AnatomicalRegionInfos.Any())
+            {
+                db.AnatomicalRegionInfos.AddRange(
+                AnatomicalRegionInfoSeed.Create());
+
+                db.SaveChangesAsync().GetAwaiter().GetResult();
+            }
+        }
+
+        return host;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

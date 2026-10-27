@@ -32,6 +32,9 @@ public class PainPoint : BaseEntity
     public decimal X { get; set; }                // 0.0 - 1.0 (znormalizowane)
     public decimal Y { get; set; }                // 0.0 - 1.0
     public PainPointSeverity Severity { get; set; }
+
+    public int? PainScale { get; set; }
+    
     public string? Note { get; set; }
 
     public BodyMap BodyMap { get; set; } = null!;

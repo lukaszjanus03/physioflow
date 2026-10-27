@@ -25,6 +25,9 @@ public class ApplicationDbContext
     public DbSet<AvailabilitySlot> AvailabilitySlots => Set<AvailabilitySlot>();
     public DbSet<BodyMap> BodyMaps => Set<BodyMap>();
     public DbSet<PainPoint> PainPoints => Set<PainPoint>();
+
+    public DbSet<AnatomicalRegionInfo> AnatomicalRegionInfos =>
+    Set<AnatomicalRegionInfo>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Exercise> Exercises => Set<Exercise>();

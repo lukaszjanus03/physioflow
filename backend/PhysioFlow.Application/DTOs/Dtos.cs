@@ -55,8 +55,9 @@ public record BodyMapSummaryDto(
 
 public record PainPointDto(
     Guid Id,
-    string Side,          // "Front" | "Back"
+    string Side,
     decimal X,
     decimal Y,
-    string Severity,      // "AcutePain" | "ChronicPain" | "Tension"
-    string? Note);
+    string Severity,
+    string? Note,
+    int? PainScale);
