@@ -13,7 +13,7 @@ public record LoginRequest(string Email, string Password);
 public record RefreshTokenRequest(string RefreshToken);
 public record TokenResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt);
 
-[AllowAnonymous]
+[Authorize]
 public class AuthController : ApiControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -35,6 +35,7 @@ public class AuthController : ApiControllerBase
 
     /// <summary>Rejestracja nowego terapeuty. Pacjent dostaje konto przez zaproszenie.</summary>
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
         var user = new ApplicationUser { UserName = req.Email, Email = req.Email };
@@ -63,6 +64,7 @@ public class AuthController : ApiControllerBase
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
         var user = await _userManager.FindByEmailAsync(req.Email);
@@ -85,6 +87,7 @@ public class AuthController : ApiControllerBase
     }
 
     [HttpPost("refresh")]
+    [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest req)
     {
         var user = _userManager.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
