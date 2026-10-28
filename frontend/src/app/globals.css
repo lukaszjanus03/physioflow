@@ -53,3 +53,23 @@
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
 }
+
+
+body :is(h1, h2, h3, .font-heading) {
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0.035em;
+}
+
+body h3,
+body :is(h2, h3):is(
+  .text-xs,
+  .text-sm,
+  .text-base,
+  .text-lg,
+  .text-xl
+) {
+  font-size: 1.375rem;
+  line-height: 1.2;
+}

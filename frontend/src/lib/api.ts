@@ -53,11 +53,6 @@ export const patientsApi = {
 
   unarchive: (id: string) =>
     apiClient.post<void>(`/api/patients/${id}/unarchive`).then((r) => r.data),
-
-  exportPdf: (id: string) =>
-    apiClient
-      .get(`/api/patients/${id}/export-pdf`, { responseType: 'blob' })
-      .then((r) => r.data as Blob),
 };
 
 // --- Body Mapping
