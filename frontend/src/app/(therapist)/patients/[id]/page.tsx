@@ -108,31 +108,28 @@ export default function PatientDetailPage() {
   });
 
   const exportPdfMutation = useMutation({
-    mutationFn: () => patientsApi.exportPdf(id!),
-    onSuccess: (blob) => {
-      if (!data) return;
+  mutationFn: async () => {
+    if (!data) {
+      throw new Error('Brak danych pacjenta.');
+    }
 
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+    const patient = data;
 
-      link.href = url;
-      link.download = `pacjent-${data.firstName}-${data.lastName}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+    const { downloadPatientCardPdf } = await import(
+      '@/components/patients/PatientCardPdf'
+    );
 
-      window.URL.revokeObjectURL(url);
-      toast.success('Eksport PDF rozpoczęty');
-    },
-    onError: (mutationError: AxiosError<{ detail?: string; title?: string }>) => {
-      const message =
-        mutationError.response?.data?.detail
-        ?? mutationError.response?.data?.title
-        ?? 'Nie udało się wyeksportować PDF';
-
-      toast.error(message);
-    },
-  });
+    await downloadPatientCardPdf(patient);
+  },
+  onSuccess: () => {
+    toast.success('Przygotowano plik PDF do pobrania');
+  },
+  onError: () => {
+    toast.error(
+      'Nie udało się wygenerować PDF. Sprawdź, czy pliki czcionek są dostępne, i spróbuj ponownie.'
+    );
+  },
+});
 
   const isMutating = archiveMutation.isPending || unarchiveMutation.isPending;
 
@@ -152,9 +149,10 @@ export default function PatientDetailPage() {
   };
 
   const handleExportPdf = () => {
-    if (!id || exportPdfMutation.isPending) return;
-    exportPdfMutation.mutate();
-  };
+  if (!data || exportPdfMutation.isPending) return;
+
+  exportPdfMutation.mutate();
+};
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">

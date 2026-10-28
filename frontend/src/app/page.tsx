@@ -6,14 +6,12 @@ import {
   CalendarCheck,
   ChevronDown,
   ClipboardList,
-  Code2,
   Database,
   Github,
   HeartPulse,
   Languages,
   Layers,
   LineChart,
-  Lock,
   ShieldCheck,
   Sparkles,
   Stethoscope,
@@ -25,6 +23,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth-store';
+import Image from 'next/image';
+import landingPreview from '../../public/preview-laptop.png';
+import FeaturePreview from '@/components/landing/FeaturePreview';
 
 export default function HomePage() {
   const router = useRouter();
@@ -71,10 +72,30 @@ export default function HomePage() {
           </Link>
 
           <div className="hidden items-center gap-1 text-sm md:flex">
-            <a href="#features" className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:text-foreground">Funkcje</a>
-            <a href="#how" className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:text-foreground">Jak to działa</a>
-            <a href="#tech" className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:text-foreground">Technologia</a>
-            <a href="#faq" className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:text-foreground">FAQ</a>
+            <a
+              href="#features"
+              className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
+            >
+              Funkcje
+            </a>
+            <a
+              href="#how"
+              className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
+            >
+              Jak to działa
+            </a>
+            <a
+              href="#tech"
+              className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
+            >
+              Technologia
+            </a>
+            <a
+              href="#faq"
+              className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
+            >
+              FAQ
+            </a>
           </div>
 
           <div className="flex items-center gap-2">
@@ -92,7 +113,7 @@ export default function HomePage() {
       </header>
 
       <main>
-        <section className="relative px-6 pb-24 pt-20">
+        <section className="relative px-6 pb-24 pt-20 lg:flex lg:min-h-[calc(90svh-68px)] lg:items-center">
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium">
@@ -108,7 +129,8 @@ export default function HomePage() {
               </h1>
 
               <p className="max-w-lg text-lg text-muted-foreground">
-                Karty pacjentów, kalendarz wizyt, plany ćwiczeń, mapa bólu i komunikacja z pacjentem - wszystko w jednym miejscu, dostępne z przeglądarki.
+                Karty pacjentów, kalendarz wizyt, plany ćwiczeń, mapa bólu i komunikacja z pacjentem -
+                wszystko w jednym miejscu, dostępne z przeglądarki.
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -122,12 +144,6 @@ export default function HomePage() {
                   <Link href="/login">Zaloguj się</Link>
                 </Button>
               </div>
-
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Zgodne z RODO</span>
-                <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> JWT + role</span>
-                <span className="flex items-center gap-1.5"><Code2 className="h-3.5 w-3.5" /> Open source</span>
-              </div>
             </div>
 
             <div className="relative">
@@ -136,10 +152,12 @@ export default function HomePage() {
                 className="absolute -inset-8 -z-10 rounded-[40px] bg-gradient-to-br from-primary/25 via-emerald-500/20 to-cyan-500/25 opacity-70 blur-3xl"
               />
               <div className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10 ring-1 ring-zinc-900/5">
-                <img
-                  src="/preview-laptop.jpg"
-                  alt="PhysioFlow — panel terapeuty na biurku w gabinecie fizjoterapii"
+                <Image
+                  src={landingPreview}
+                  alt="Panel pacjentów PhysioFlow na laptopie w gabinecie fizjoterapii"
                   className="block h-auto w-full"
+                  sizes="(min-width: 1024px) 560px, 100vw"
+                  preload
                 />
               </div>
             </div>
@@ -150,16 +168,38 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="mb-12 text-center">
               <h2 className="text-3xl font-bold md:text-4xl">Jak to działa</h2>
-              <p className="mt-3 text-muted-foreground">Od rejestracji terapeuty do działającego workflow w 4 krokach</p>
             </div>
             <div className="grid gap-6 md:grid-cols-4">
               {[
-                { num: '01', icon: <Stethoscope className="h-5 w-5" />, title: 'Załóż konto', desc: 'Zarejestruj się jako fizjoterapeuta. Zajmie minutę.' },
-                { num: '02', icon: <Users className="h-5 w-5" />, title: 'Dodaj pacjentów', desc: 'Wprowadź dane osobowe, historię medyczną, leki i notatki.' },
-                { num: '03', icon: <CalendarCheck className="h-5 w-5" />, title: 'Zaplanuj wizyty', desc: 'Kalendarz z drag-and-drop, automatyczne przypomnienia.' },
-                { num: '04', icon: <LineChart className="h-5 w-5" />, title: 'Śledź postępy', desc: 'Mapa bólu, dziennik pacjenta, plany ćwiczeń. Wszystko w jednym.' },
+                {
+                  num: '01',
+                  icon: <Stethoscope className="h-5 w-5" />,
+                  title: 'Załóż konto',
+                  desc: 'Stwórz swoją przestrzeń do zarządzania gabinetem i pracy z pacjentami.',
+                },
+                {
+                  num: '02',
+                  icon: <Users className="h-5 w-5" />,
+                  title: 'Dodaj pacjentów',
+                  desc: 'Zbierz dane kontaktowe, historię medyczną i najważniejsze informacje w jednej karcie.',
+                },
+                {
+                  num: '03',
+                  icon: <CalendarCheck className="h-5 w-5" />,
+                  title: 'Zaplanuj wizyty',
+                  desc: 'Uporządkuj harmonogram, określ swoją dostępność i miej nadchodzące wizyty pod kontrolą.',
+                },
+                {
+                  num: '04',
+                  icon: <LineChart className="h-5 w-5" />,
+                  title: 'Śledź postępy',
+                  desc: 'Korzystaj z map bólu, przygotowuj plany ćwiczeń i obserwuj postępy pacjentów.',
+                },
               ].map((step) => (
-                <div key={step.num} className="rounded-xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10">
+                <div
+                  key={step.num}
+                  className="rounded-xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10"
+                >
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-emerald-500 text-white shadow-lg shadow-primary/30">
                     {step.icon}
                   </div>
@@ -176,20 +216,56 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="mb-12 text-center">
               <h2 className="text-3xl font-bold md:text-4xl">Wszystko czego potrzebujesz</h2>
-              <p className="mt-3 text-muted-foreground">Sześć modułów pokrywających typowy workflow gabinetu</p>
             </div>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {[
-                { icon: <ClipboardList />, title: 'Karty pacjentów', desc: 'PESEL, dane medyczne, historia, leki — w jednej karcie z walidacją.', color: 'from-teal-500 to-cyan-500' },
-                { icon: <CalendarCheck />, title: 'Kalendarz wizyt', desc: 'Tygodniowy widok, drag-and-drop, dostępność godzinowa.', color: 'from-emerald-500 to-teal-500' },
-                { icon: <Activity />, title: 'Mapa bólu', desc: 'Zaznacz punkty na sylwetce ciała i śledź ich zmianę w czasie.', color: 'from-rose-400 to-orange-500' },
-                { icon: <LineChart />, title: 'Plany terapeutyczne', desc: 'Biblioteka ćwiczeń i indywidualne plany dla każdego pacjenta.', color: 'from-green-500 to-emerald-500' },
-                { icon: <HeartPulse />, title: 'Portal pacjenta', desc: 'Pacjent ćwiczy w domu, prowadzi dziennik bólu i komunikuje się z Tobą.', color: 'from-cyan-500 to-sky-500' },
-                { icon: <ShieldCheck />, title: 'Bezpieczeństwo', desc: 'JWT, ASP.NET Identity, role, szyfrowanie i zgodność z RODO.', color: 'from-teal-600 to-emerald-600' },
+                {
+                  icon: <ClipboardList />,
+                  title: 'Karty pacjentów',
+                  desc: 'Dane kontaktowe, historia medyczna, leki i notatki. Najważniejsze informacje zawsze pod ręką.',
+                  color: 'from-teal-500 to-cyan-500',
+                },
+                {
+                  icon: <CalendarCheck />,
+                  title: 'Kalendarz wizyt',
+                  desc: 'Przejrzysty harmonogram, zarządzanie dostępnością i przypomnienia, które pomagają organizować dzień.',
+                  color: 'from-emerald-500 to-teal-500',
+                },
+                {
+                  icon: <Activity />,
+                  title: 'Mapa bólu',
+                  desc: 'Zaznaczaj miejsca dolegliwości, określaj ich nasilenie i dokumentuj zmiany w trakcie terapii.',
+                  color: 'from-rose-400 to-orange-500',
+                },
+                {
+                  icon: <LineChart />,
+                  title: 'Plany ćwiczeń',
+                  desc: 'Dobieraj ćwiczenia do potrzeb pacjenta i twórz indywidualne plany do realizacji w gabinecie i w domu.',
+                  color: 'from-green-500 to-emerald-500',
+                },
+                {
+                  icon: <HeartPulse />,
+                  title: 'Portal pacjenta',
+                  desc: 'Jedno miejsce na zalecenia, ćwiczenia i kontakt z terapeutą. Wsparcie również pomiędzy wizytami.',
+                  color: 'from-cyan-500 to-sky-500',
+                },
+                {
+                  icon: <ShieldCheck />,
+                  title: 'Kontrola dostępu',
+                  desc: 'Indywidualne konta i uprawnienia użytkowników pomagają ograniczać dostęp do dokumentacji pacjentów.',
+                  color: 'from-teal-600 to-emerald-600',
+                },
               ].map((f) => (
-                <div key={f.title} className="group relative overflow-hidden rounded-xl border bg-card p-6 transition-all hover:-translate-y-1 hover:shadow-lg">
-                  <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${f.color} opacity-0 transition-opacity group-hover:opacity-100`} />
-                  <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${f.color} text-white shadow-md`}>
+                <div
+                  key={f.title}
+                  className="group relative overflow-hidden rounded-xl border bg-card p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <div
+                    className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${f.color} opacity-0 transition-opacity group-hover:opacity-100`}
+                  />
+                  <div
+                    className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${f.color} text-white shadow-md`}
+                  >
                     {f.icon}
                   </div>
                   <h3 className="mb-2 font-semibold">{f.title}</h3>
@@ -199,57 +275,71 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
+        <FeaturePreview />
         <section id="tech" className="border-y bg-card/30 px-6 py-24 backdrop-blur-sm">
           <div className="mx-auto max-w-6xl">
             <div className="mb-12 text-center">
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
-                <Code2 className="h-3 w-3" />
-                Pod maską
-              </div>
               <h2 className="text-3xl font-bold md:text-4xl">Nowoczesny stack technologiczny</h2>
-              <p className="mt-3 text-muted-foreground">Wybór oparty o produkcyjne best-practices, nie modę</p>
             </div>
+
             <div className="grid gap-6 md:grid-cols-3">
-              <div className="rounded-xl border bg-card p-6">
-                <div className="mb-4 flex items-center gap-2 font-semibold">
-                  <Layers className="h-4 w-4 text-primary" />
-                  Frontend
+              {[
+                {
+                  title: 'Frontend',
+                  icon: <Layers className="h-4 w-4 text-primary" />,
+                  items: [
+                    'Next.js 16 + React 19',
+                    'TypeScript + App Router',
+                    'Tailwind CSS + Radix UI',
+                    'TanStack Query + Zustand',
+                    'React Hook Form + Zod',
+                    'Konva + React PDF',
+                  ],
+                },
+                {
+                  title: 'Backend',
+                  icon: <Zap className="h-4 w-4 text-primary" />,
+                  items: [
+                    'ASP.NET Core 10 Web API',
+                    'Entity Framework Core 10',
+                    'Clean Architecture + CQRS',
+                    'MediatR + FluentValidation',
+                    'ASP.NET Core Identity + JWT',
+                    'SignalR',
+                  ],
+                },
+                {
+                  title: 'Infrastruktura',
+                  icon: <Database className="h-4 w-4 text-primary" />,
+                  items: [
+                    'PostgreSQL 16',
+                    'Docker + Docker Compose',
+                    'GitHub Actions: testy i build',
+                    'Node.js 24 w CI',
+                    'Integracja z Cloudflare R2',
+                    'Integracja z Resend',
+                  ],
+                },
+              ].map((group) => (
+                <div key={group.title} className="rounded-xl border bg-card p-6">
+                  <div className="mb-4 flex items-center gap-2 font-semibold">
+                    {group.icon}
+                    {group.title}
+                  </div>
+
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex items-start gap-2">
+                        <span
+                          aria-hidden="true"
+                          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                        />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Next.js 15 (App Router)</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> TypeScript + React 19</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Tailwind CSS + shadcn/ui</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> TanStack Query + Zustand</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> React Hook Form + Zod</li>
-                </ul>
-              </div>
-              <div className="rounded-xl border bg-card p-6">
-                <div className="mb-4 flex items-center gap-2 font-semibold">
-                  <Zap className="h-4 w-4 text-primary" />
-                  Backend
-                </div>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> .NET 8 Web API</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Entity Framework Core</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> CQRS z MediatR</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> ASP.NET Identity + JWT</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> SignalR (real-time)</li>
-                </ul>
-              </div>
-              <div className="rounded-xl border bg-card p-6">
-                <div className="mb-4 flex items-center gap-2 font-semibold">
-                  <Database className="h-4 w-4 text-primary" />
-                  Infrastruktura
-                </div>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> PostgreSQL 16</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Docker + Docker Compose</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Cloudflare R2 (storage)</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Resend (e-mail)</li>
-                  <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> GitHub Actions (CI/CD)</li>
-                </ul>
-              </div>
+              ))}
             </div>
           </div>
         </section>
@@ -258,29 +348,32 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl">
             <div className="mb-12 text-center">
               <h2 className="text-3xl font-bold md:text-4xl">Pytania i odpowiedzi</h2>
-              <p className="mt-3 text-muted-foreground">Najczęściej zadawane pytania o aplikację</p>
             </div>
             <div className="space-y-3">
               {[
                 {
-                  q: 'Czy aplikacja jest zgodna z RODO?',
-                  a: 'Tak. Dane pacjentów są szyfrowane w tranzycie (HTTPS), a dostęp ograniczony do zalogowanego terapeuty (JWT + role). W warstwie aplikacyjnej każdy pacjent jest powiązany z konkretnym terapeutą — terapeuci nie widzą wzajemnie swoich pacjentów.',
+                  q: 'Dla kogo jest PhysioFlow?',
+                  a: 'PhysioFlow powstaje z myślą o fizjoterapeutach, którzy chcą zarządzać kartami pacjentów i dokumentować przebieg terapii w jednym miejscu.',
                 },
                 {
-                  q: 'Czy kod aplikacji jest dostępny publicznie?',
-                  a: 'Tak — projekt powstał jako praca inżynierska i jest open source. Repo na GitHubie zawiera frontend, backend, dokumentację techniczną oraz ADR (Architecture Decision Records).',
+                  q: 'Jakie funkcje są już dostępne?',
+                  a: 'Obecnie aplikacja umożliwia dodawanie i edycję pacjentów, archiwizację kart, zapisywanie informacji medycznych oraz tworzenie i edycję map bólu ze skalą 1–10. Dostępny jest również eksport karty pacjenta do PDF.',
                 },
                 {
-                  q: 'Czy mogę uruchomić aplikację u siebie (self-hosted)?',
-                  a: 'Tak. Wystarczy Docker, Node.js 20 i .NET 8 SDK. Pełen tutorial znajdziesz w README repozytorium — startujemy w trzech komendach.',
+                  q: 'Co zawiera eksport PDF?',
+                  a: 'PDF zawiera dane podstawowe i kontaktowe pacjenta, historię medyczną, aktualne leki oraz notatki ogólne. Nie obejmuje map bólu ani pozostałych modułów pacjenta.',
                 },
                 {
-                  q: 'Czy można eksportować dane pacjenta?',
-                  a: 'Tak — przewidujemy eksport karty pacjenta do PDF (z @react-pdf/renderer). Dodatkowo, ponieważ baza to PostgreSQL, można w każdej chwili zrobić zrzut danych przez pg_dump.',
+                  q: 'Jak zabezpieczony jest dostęp do danych?',
+                  a: 'Aplikacja wykorzystuje logowanie, tokeny JWT oraz role użytkowników. Dostęp terapeuty do kart pacjentów jest weryfikowany po stronie backendu. Przed wykorzystaniem systemu z rzeczywistymi danymi medycznymi konieczna jest dodatkowa ocena bezpieczeństwa i zgodności z wymaganiami prawnymi.',
+                },
+                {
+                  q: 'Czy mogę uruchomić projekt lokalnie?',
+                  a: 'Tak. Do uruchomienia potrzebne są odpowiednia wersja Node.js, SDK .NET 10 oraz PostgreSQL, który można uruchomić przez Docker Compose. Konieczne jest również skonfigurowanie środowiska i zastosowanie migracji bazy danych.',
                 },
                 {
                   q: 'Jakie są dalsze plany rozwoju?',
-                  a: 'Mapa bólu z react-konva, plany terapeutyczne z biblioteką ćwiczeń, czat z pacjentem przez SignalR, automatyczne przypomnienia o wizytach przez e-mail (Resend). Roadmapa jest w docs/roadmap.md.',
+                  a: 'Planowany jest dalszy rozwój portalu pacjenta, kalendarza wizyt, planów ćwiczeń oraz komunikacji między terapeutą a pacjentem. Poszczególne funkcje będą udostępniane w kolejnych etapach projektu.',
                 },
               ].map((item) => (
                 <details
@@ -291,9 +384,7 @@ export default function HomePage() {
                     {item.q}
                     <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="border-t p-5 pt-4 text-sm text-muted-foreground">
-                    {item.a}
-                  </div>
+                  <div className="border-t p-5 pt-4 text-sm text-muted-foreground">{item.a}</div>
                 </details>
               ))}
             </div>
@@ -310,7 +401,10 @@ export default function HomePage() {
                 { initials: 'HR', name: 'Hubert Rola', role: 'Frontend & UX' },
                 { initials: 'ŁJ', name: 'Łukasz Janus', role: 'Backend & Infrastructure' },
               ].map((p) => (
-                <div key={p.name} className="rounded-xl border bg-card p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg">
+                <div
+                  key={p.name}
+                  className="rounded-xl border bg-card p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg"
+                >
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-emerald-500 text-xl font-bold text-white shadow-lg shadow-primary/30">
                     {p.initials}
                   </div>
@@ -369,17 +463,41 @@ export default function HomePage() {
             <div>
               <div className="mb-3 text-xs font-semibold uppercase tracking-wider">Produkt</div>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-foreground">Funkcje</a></li>
-                <li><a href="#how" className="hover:text-foreground">Jak to działa</a></li>
-                <li><a href="#tech" className="hover:text-foreground">Technologia</a></li>
-                <li><a href="#faq" className="hover:text-foreground">FAQ</a></li>
+                <li>
+                  <a href="#features" className="hover:text-foreground">
+                    Funkcje
+                  </a>
+                </li>
+                <li>
+                  <a href="#how" className="hover:text-foreground">
+                    Jak to działa
+                  </a>
+                </li>
+                <li>
+                  <a href="#tech" className="hover:text-foreground">
+                    Technologia
+                  </a>
+                </li>
+                <li>
+                  <a href="#faq" className="hover:text-foreground">
+                    FAQ
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
               <div className="mb-3 text-xs font-semibold uppercase tracking-wider">Konto</div>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/login" className="hover:text-foreground">Zaloguj się</Link></li>
-                <li><Link href="/register" className="hover:text-foreground">Załóż konto</Link></li>
+                <li>
+                  <Link href="/login" className="hover:text-foreground">
+                    Zaloguj się
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/register" className="hover:text-foreground">
+                    Załóż konto
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
@@ -387,7 +505,12 @@ export default function HomePage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <Github className="h-3.5 w-3.5" />
-                  <a href="https://github.com/lukaszjanus03/physioflow" target="_blank" rel="noreferrer" className="hover:text-foreground">
+                  <a
+                    href="https://github.com/lukaszjanus03/physioflow"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-foreground"
+                  >
                     GitHub
                   </a>
                 </li>
