@@ -91,6 +91,10 @@ public static class DependencyInjection
             services.AddTransient<IResend, ResendClient>();
             services.AddScoped<IEmailService, ResendEmailService>();
         }
+        else
+        {
+            services.AddScoped<IEmailService, UnconfiguredEmailService>();
+        }
 
         return services;
     }

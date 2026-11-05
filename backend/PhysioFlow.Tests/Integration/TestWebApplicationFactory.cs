@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Infrastructure.Persistence;
 using PhysioFlow.Infrastructure.Persistence.Seeds;
 
@@ -13,7 +14,14 @@ namespace PhysioFlow.Tests.Integration;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    public const string FrontendBaseUrl = "https://app.physioflow.test";
+
     private readonly string _databaseName = Guid.NewGuid().ToString();
+
+    public FakeEmailService Email { get; } = new();
+
+    // TestServer nie ustawia IP klienta, więc wszystkie testy trafiają do jednej partycji limitera.
+    protected virtual int PatientRegistrationPermitLimit => 10_000;
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
@@ -32,6 +40,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     ["Jwt:Issuer"] = "PhysioFlow.Api.Tests",
                     ["Jwt:Audience"] = "PhysioFlow.Client.Tests",
                     ["Jwt:AccessTokenExpiryMinutes"] = "60",
+
+                    ["Frontend:BaseUrl"] = FrontendBaseUrl + "/",
+
+                    ["RateLimiting:PatientRegistration:PermitLimit"] =
+                        PatientRegistrationPermitLimit.ToString(),
                 });
         });
 
@@ -71,6 +84,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseInMemoryDatabase(_databaseName));
+
+            services.RemoveAll<IEmailService>();
+            services.AddSingleton<IEmailService>(Email);
         });
     }
 }

@@ -17,9 +17,13 @@ public interface IStorageService
     Task<string> GetPresignedUrlAsync(string storageKey, TimeSpan expiry, CancellationToken ct = default);
 }
 
+/// <summary>
+/// Implementacje rzucają <see cref="Exceptions.EmailDeliveryException"/>, gdy wiadomość nie została przyjęta do wysyłki.
+/// </summary>
 public interface IEmailService
 {
     Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default);
+    Task SendEmailConfirmationAsync(string to, string firstName, string confirmationLink, CancellationToken ct = default);
     Task SendAppointmentReminderAsync(string to, string patientName, DateTime appointmentTime, CancellationToken ct = default);
     Task SendPatientInviteAsync(string to, string inviteLink, string therapistName, CancellationToken ct = default);
 }

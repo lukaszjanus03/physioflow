@@ -1,9 +1,13 @@
 using System.Text;
+using System.Threading.RateLimiting;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PhysioFlow.Api.Hubs;
 using PhysioFlow.Api.Middleware;
+using PhysioFlow.Api.Options;
 using PhysioFlow.Application;
 using PhysioFlow.Infrastructure;
 using Serilog;
@@ -127,6 +131,44 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// --- API-level validators & options
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection(FrontendOptions.SectionName));
+builder.Services.Configure<PatientRegistrationRateLimitOptions>(
+    builder.Configuration.GetSection(PatientRegistrationRateLimitOptions.SectionName));
+
+// --- Rate limiting
+// Partycja po IP klienta. Za reverse proxy trzeba dodać UseForwardedHeaders, inaczej wszyscy dzielą IP proxy.
+builder.Services.AddRateLimiter(opts =>
+{
+    opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    opts.OnRejected = async (ctx, ct) =>
+    {
+        ctx.HttpContext.Response.ContentType = "application/problem+json";
+        await ctx.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            title = "Too many requests",
+            status = StatusCodes.Status429TooManyRequests,
+            detail = "Zbyt wiele prób. Spróbuj ponownie później."
+        }, ct);
+    };
+
+    opts.AddPolicy(PatientRegistrationRateLimitOptions.PolicyName, http =>
+    {
+        // Opcje czytane przy pierwszym żądaniu z danego IP, więc testy mogą je nadpisać konfiguracją hosta.
+        var limits = http.RequestServices
+            .GetRequiredService<IOptions<PatientRegistrationRateLimitOptions>>().Value;
+        return RateLimitPartition.GetFixedWindowLimiter(
+            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = limits.PermitLimit,
+                Window = TimeSpan.FromMinutes(limits.WindowMinutes),
+                QueueLimit = 0,
+            });
+    });
+});
+
 // --- SignalR
 builder.Services.AddSignalR();
 
@@ -193,6 +235,7 @@ app.UseCors("Frontend");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/hubs/chat");
