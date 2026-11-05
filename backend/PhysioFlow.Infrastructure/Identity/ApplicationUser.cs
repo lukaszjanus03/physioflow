@@ -8,6 +8,9 @@ namespace PhysioFlow.Infrastructure.Identity;
 /// </summary>
 public class ApplicationUser : IdentityUser<Guid>
 {
+    // Nullable, bo konta utworzone przed samodzielną rejestracją pacjenta nie mają tych danych.
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
     public string? RefreshToken { get; set; }

@@ -52,6 +52,12 @@ public class ExceptionHandlingMiddleware
                 status = 409,
                 detail = ex.Message
             }),
+            EmailDeliveryException => (HttpStatusCode.ServiceUnavailable, new
+            {
+                title = "Email delivery failed",
+                status = 503,
+                detail = ex.Message
+            }),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, new
             {
                 title = "Unauthorized",
