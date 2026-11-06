@@ -33,7 +33,7 @@ public class AuthController : ApiControllerBase
         _db = db;
     }
 
-    /// <summary>Rejestracja nowego terapeuty. Pacjent dostaje konto przez zaproszenie.</summary>
+    /// <summary>Rejestracja nowego terapeuty. Pacjent zakłada konto przez /api/patient-accounts/register.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
@@ -76,6 +76,9 @@ public class AuthController : ApiControllerBase
             return Unauthorized(new { error = "Nieprawidłowy email lub hasło" });
 
         var roles = await _userManager.GetRolesAsync(user);
+        if (PatientAccountRules.RequiresEmailConfirmation(user, roles))
+            return EmailConfirmationRequired();
+
         var accessToken = _jwt.GenerateAccessToken(user, roles);
         var refreshToken = _jwt.GenerateRefreshToken();
 
@@ -95,6 +98,14 @@ public class AuthController : ApiControllerBase
             return Unauthorized(new { error = "Nieprawidłowy refresh token" });
 
         var roles = await _userManager.GetRolesAsync(user);
+        if (PatientAccountRules.RequiresEmailConfirmation(user, roles))
+        {
+            user.RefreshToken = null;
+            user.RefreshTokenExpiresAt = null;
+            await _userManager.UpdateAsync(user);
+            return EmailConfirmationRequired();
+        }
+
         var accessToken = _jwt.GenerateAccessToken(user, roles);
         var newRefresh = _jwt.GenerateRefreshToken();
 
@@ -122,4 +133,10 @@ public class AuthController : ApiControllerBase
         }
         return NoContent();
     }
+
+    private ObjectResult EmailConfirmationRequired() => ProblemWithCode(
+        StatusCodes.Status403Forbidden,
+        "Email confirmation required",
+        PatientAccountErrorCodes.EmailConfirmationRequired,
+        "Potwierdź adres e-mail, aby się zalogować. Link znajdziesz w wiadomości wysłanej po rejestracji.");
 }

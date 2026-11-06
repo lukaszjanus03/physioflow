@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using PhysioFlow.Api.Hubs;
 using PhysioFlow.Api.Middleware;
 using PhysioFlow.Api.Options;
+using PhysioFlow.Api.Services;
 using PhysioFlow.Application;
 using PhysioFlow.Infrastructure;
 using Serilog;
@@ -118,6 +119,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         ctx.Fail("User inactive");
                         return;
                     }
+                    // Tokeny wydane przed wprowadzeniem blokady nie mogą jej omijać.
+                    var roles = ctx.Principal!.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
+                    if (PhysioFlow.Infrastructure.Identity.PatientAccountRules.RequiresEmailConfirmation(user, roles))
+                    {
+                        logger.LogWarning("OnTokenValidated: patient {UserId} has unconfirmed email, rejecting", userId);
+                        ctx.Fail("Email not confirmed");
+                        return;
+                    }
                     logger.LogDebug("OnTokenValidated: user {UserId} OK", userId);
                 }
                 catch (Exception ex)
@@ -134,8 +143,13 @@ builder.Services.AddAuthorization();
 // --- API-level validators & options
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection(FrontendOptions.SectionName));
-builder.Services.Configure<PatientRegistrationRateLimitOptions>(
-    builder.Configuration.GetSection(PatientRegistrationRateLimitOptions.SectionName));
+builder.Services.Configure<ConfirmationEmailOptions>(
+    builder.Configuration.GetSection(ConfirmationEmailOptions.SectionName));
+foreach (var (policy, section) in RateLimitPolicies.ConfigSections)
+    builder.Services.Configure<FixedWindowRateLimitOptions>(policy, builder.Configuration.GetSection(section));
+
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<PatientEmailConfirmationService>();
 
 // --- Rate limiting
 // Partycja po IP klienta. Za reverse proxy trzeba dodać UseForwardedHeaders, inaczej wszyscy dzielą IP proxy.
@@ -153,20 +167,23 @@ builder.Services.AddRateLimiter(opts =>
         }, ct);
     };
 
-    opts.AddPolicy(PatientRegistrationRateLimitOptions.PolicyName, http =>
+    foreach (var policy in RateLimitPolicies.ConfigSections.Keys)
     {
-        // Opcje czytane przy pierwszym żądaniu z danego IP, więc testy mogą je nadpisać konfiguracją hosta.
-        var limits = http.RequestServices
-            .GetRequiredService<IOptions<PatientRegistrationRateLimitOptions>>().Value;
-        return RateLimitPartition.GetFixedWindowLimiter(
-            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = limits.PermitLimit,
-                Window = TimeSpan.FromMinutes(limits.WindowMinutes),
-                QueueLimit = 0,
-            });
-    });
+        opts.AddPolicy(policy, http =>
+        {
+            // Opcje czytane przy pierwszym żądaniu z danego IP, więc testy mogą je nadpisać konfiguracją hosta.
+            var limits = http.RequestServices
+                .GetRequiredService<IOptionsMonitor<FixedWindowRateLimitOptions>>().Get(policy);
+            return RateLimitPartition.GetFixedWindowLimiter(
+                http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = limits.PermitLimit,
+                    Window = TimeSpan.FromMinutes(limits.WindowMinutes),
+                    QueueLimit = 0,
+                });
+        });
+    }
 });
 
 // --- SignalR

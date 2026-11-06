@@ -22,6 +22,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     // TestServer nie ustawia IP klienta, więc wszystkie testy trafiają do jednej partycji limitera.
     protected virtual int PatientRegistrationPermitLimit => 10_000;
+    protected virtual int ConfirmationResendPermitLimit => 10_000;
+    protected virtual int ConfirmationEmailCooldownSeconds => 0;
+
+    protected virtual void ConfigureTestServices(IServiceCollection services) { }
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
@@ -45,6 +49,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
                     ["RateLimiting:PatientRegistration:PermitLimit"] =
                         PatientRegistrationPermitLimit.ToString(),
+                    ["RateLimiting:EmailConfirmation:PermitLimit"] = "10000",
+                    ["RateLimiting:ConfirmationResend:PermitLimit"] =
+                        ConfirmationResendPermitLimit.ToString(),
+
+                    ["ConfirmationEmail:CooldownSeconds"] =
+                        ConfirmationEmailCooldownSeconds.ToString(),
                 });
         });
 
@@ -87,6 +97,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IEmailService>();
             services.AddSingleton<IEmailService>(Email);
+
+            ConfigureTestServices(services);
         });
     }
 }
