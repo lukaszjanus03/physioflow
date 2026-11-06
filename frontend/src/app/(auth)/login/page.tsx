@@ -228,7 +228,7 @@ export default function LoginPage() {
             href="/register"
             className="font-medium text-primary hover:underline"
           >
-            Załóż konto terapeuty
+            Wybierz rodzaj konta
           </Link>
         </div>
       </CardContent>
