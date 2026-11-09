@@ -86,9 +86,11 @@ public class CreateBodyMapCommandHandler : IRequestHandler<CreateBodyMapCommand,
         }
         else if (_currentUser.IsInRole("Patient"))
         {
-            // Pacjent tworzy własny snapshot - szukamy Patient powiązanego z jego ApplicationUser
-            var patient = await _db.Patients.FirstOrDefaultAsync(p => p.UserId == userId, ct)
-                ?? throw new NotFoundException(nameof(Patient), userId);
+            // Pacjent tworzy własny snapshot - szukamy Patient powiązanego z jego ApplicationUser.
+            // Samo powiązanie konta z kartą nie wystarcza; terapeuta musi udostępnić dokumentację.
+            var patient = await _db.Patients
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.DocumentationSharedWithAccount, ct)
+                ?? throw new ForbiddenAccessException();
 
             patientId = patient.Id;
             createdByRole = UserRole.Patient;

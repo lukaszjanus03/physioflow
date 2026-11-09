@@ -43,7 +43,7 @@ public class GetBodyMapByIdQueryHandler : IRequestHandler<GetBodyMapByIdQuery, B
         }
         else if (_currentUser.IsInRole("Patient"))
         {
-            if (bodyMap.Patient.UserId != userId)
+            if (bodyMap.Patient.UserId != userId || !bodyMap.Patient.DocumentationSharedWithAccount)
                 throw new ForbiddenAccessException();
         }
         else

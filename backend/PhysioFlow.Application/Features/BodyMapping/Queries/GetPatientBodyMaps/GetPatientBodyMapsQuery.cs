@@ -44,7 +44,7 @@ public class GetPatientBodyMapsQueryHandler
         else if (_currentUser.IsInRole("Patient"))
         {
             var ownsSelf = await _db.Patients
-                .AnyAsync(p => p.Id == request.PatientId && p.UserId == userId, ct);
+                .AnyAsync(p => p.Id == request.PatientId && p.UserId == userId && p.DocumentationSharedWithAccount, ct);
             if (!ownsSelf) throw new ForbiddenAccessException();
         }
         else

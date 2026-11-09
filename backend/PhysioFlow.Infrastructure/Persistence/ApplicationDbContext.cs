@@ -36,6 +36,7 @@ public class ApplicationDbContext
     public DbSet<TherapyPlanExercise> TherapyPlanExercises => Set<TherapyPlanExercise>();
     public DbSet<PatientDiaryEntry> PatientDiaryEntries => Set<PatientDiaryEntry>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<CooperationRequest> CooperationRequests => Set<CooperationRequest>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

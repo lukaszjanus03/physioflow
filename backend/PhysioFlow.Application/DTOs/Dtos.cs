@@ -1,3 +1,5 @@
+using PhysioFlow.Domain.Enums;
+
 namespace PhysioFlow.Application.DTOs;
 
 public record PatientListItemDto(
@@ -44,6 +46,44 @@ public record TherapistCatalogEntryDto(
     string City,
     string PracticeName,
     string? Bio);
+
+/// <summary>Publiczne dane terapeuty widoczne dla pacjenta w prośbach i współpracach.</summary>
+public record CooperationTherapistDto(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string? City,
+    string? PracticeName);
+
+public record PatientCooperationRequestDto(
+    Guid Id,
+    CooperationRequestStatus Status,
+    string? Message,
+    DateTime CreatedAt,
+    DateTime? DecidedAt,
+    CooperationTherapistDto Therapist);
+
+/// <summary>Aktywna współpraca widziana przez pacjenta. Bez danych karty pacjenta.</summary>
+public record PatientCooperationDto(
+    Guid RequestId,
+    DateTime Since,
+    CooperationTherapistDto Therapist);
+
+/// <summary>Dane konta pacjenta podane przy wysyłce prośby; służą terapeucie do weryfikacji tożsamości.</summary>
+public record RequestingPatientDto(
+    string? FirstName,
+    string? LastName,
+    string Email);
+
+public record TherapistCooperationRequestDto(
+    Guid Id,
+    CooperationRequestStatus Status,
+    string? Message,
+    DateTime CreatedAt,
+    DateTime? DecidedAt,
+    RequestingPatientDto Patient,
+    CardLinkMode? CardLinkMode,
+    Guid? LinkedPatientId);
 
 public record AppointmentDto(
     Guid Id,

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using PhysioFlow.Domain.Entities;
 
 namespace PhysioFlow.Application.Common.Interfaces;
@@ -21,9 +22,20 @@ public interface IApplicationDbContext
     DbSet<TherapyPlanExercise> TherapyPlanExercises { get; }
     DbSet<PatientDiaryEntry> PatientDiaryEntries { get; }
     DbSet<ChatMessage> ChatMessages { get; }
+    DbSet<CooperationRequest> CooperationRequests { get; }
+
+    DatabaseFacade Database { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
+
+/// <summary>Odczyt kont użytkowników (ASP.NET Identity) bez zależności od Infrastructure.</summary>
+public interface IUserAccountService
+{
+    Task<UserAccountInfo?> FindAsync(Guid userId, CancellationToken ct);
+}
+
+public record UserAccountInfo(Guid Id, string? FirstName, string? LastName, string Email);
 
 /// <summary>
 /// Zwraca informacje o aktualnie zalogowanym userze.

@@ -42,7 +42,7 @@ public class DeleteBodyMapCommandHandler : IRequestHandler<DeleteBodyMapCommand>
         else if (_currentUser.IsInRole("Patient"))
         {
             // Pacjent może usunąć TYLKO swój własny snapshot (nie ten zrobiony przez terapeutę)
-            if (bodyMap.Patient.UserId != userId)
+            if (bodyMap.Patient.UserId != userId || !bodyMap.Patient.DocumentationSharedWithAccount)
                 throw new ForbiddenAccessException();
             if (bodyMap.CreatedByRole != Domain.Enums.UserRole.Patient)
                 throw new ForbiddenAccessException("Pacjent nie może usunąć snapshotu zrobionego przez terapeutę.");
