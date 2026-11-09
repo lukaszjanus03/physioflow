@@ -96,6 +96,7 @@ public static class DependencyInjection
         {
             services.AddScoped<IEmailService, UnconfiguredEmailService>();
         }
+        services.AddScoped<ICooperationNotifier, CooperationNotifier>();
 
         return services;
     }

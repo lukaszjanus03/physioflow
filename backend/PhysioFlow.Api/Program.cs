@@ -243,6 +243,13 @@ using (var scope = app.Services.CreateScope())
     await db.SaveChangesAsync(default);
 }
 
+if (string.IsNullOrEmpty(app.Configuration["Resend:ApiKey"]))
+    app.Logger.LogWarning("Resend:ApiKey is not configured - emails (confirmation, notifications) will not be sent.");
+else if (app.Configuration["Resend:FromAddress"]?.Contains("@resend.dev", StringComparison.OrdinalIgnoreCase) == true)
+    app.Logger.LogWarning(
+        "Resend:FromAddress uses the resend.dev test domain - Resend delivers only to the account owner's address. " +
+        "Verify your own domain in Resend before deployment.");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

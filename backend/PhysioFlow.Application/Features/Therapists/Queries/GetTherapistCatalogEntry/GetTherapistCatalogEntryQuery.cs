@@ -13,15 +13,21 @@ public class GetTherapistCatalogEntryQueryHandler
     : IRequestHandler<GetTherapistCatalogEntryQuery, TherapistCatalogEntryDto>
 {
     private readonly IApplicationDbContext _db;
+    private readonly IUserAccountService _accounts;
 
-    public GetTherapistCatalogEntryQueryHandler(IApplicationDbContext db) => _db = db;
+    public GetTherapistCatalogEntryQueryHandler(IApplicationDbContext db, IUserAccountService accounts)
+    {
+        _db = db;
+        _accounts = accounts;
+    }
 
-    // Nieopublikowany profil daje ten sam 404 co nieistniejący, żeby nie zdradzać jego istnienia.
+    // Nieopublikowany albo nieaktywny profil daje ten sam 404 co nieistniejący, żeby nie zdradzać jego istnienia.
     public async Task<TherapistCatalogEntryDto> Handle(GetTherapistCatalogEntryQuery request, CancellationToken ct)
     {
         return await _db.Therapists
             .AsNoTracking()
-            .Where(t => t.Id == request.Id && t.IsPublished && t.City != null && t.PracticeName != null)
+            .Where(t => t.Id == request.Id && t.IsPublished && t.City != null && t.PracticeName != null
+                        && _accounts.ActiveUserIds().Contains(t.UserId))
             .Select(t => new TherapistCatalogEntryDto(
                 t.Id,
                 t.FirstName,

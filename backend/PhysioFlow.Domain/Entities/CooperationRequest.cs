@@ -26,6 +26,10 @@ public class CooperationRequest : BaseEntity
     public CardLinkMode? CardLinkMode { get; set; }
     public Guid? PatientId { get; set; }
 
+    // PatientId zostaje po zakończeniu współpracy jako ślad, z którą kartą było powiązane konto.
+    public DateTime? EndedAt { get; set; }
+    public CooperationParty? EndedBy { get; set; }
+
     public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
 
     public TherapistProfile Therapist { get; set; } = null!;

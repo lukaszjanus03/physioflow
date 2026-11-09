@@ -4,6 +4,7 @@ using PhysioFlow.Application.Common.Exceptions;
 using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Domain.Entities;
+using PhysioFlow.Domain.Enums;
 
 namespace PhysioFlow.Application.Features.Cooperation;
 
@@ -27,6 +28,7 @@ public static class CooperationErrorCodes
     public const string RequestAlreadyPending = "request_already_pending";
     public const string CooperationAlreadyActive = "cooperation_already_active";
     public const string RequestNotPending = "request_not_pending";
+    public const string CooperationNotActive = "cooperation_not_active";
     public const string ResubmissionCooldown = "resubmission_cooldown";
     public const string DailyRequestLimit = "daily_request_limit";
     public const string CardArchived = "card_archived";
@@ -45,7 +47,9 @@ internal static class CooperationMapping
             r.CreatedAt,
             r.DecidedAt,
             new CooperationTherapistDto(
-                r.Therapist.Id, r.Therapist.FirstName, r.Therapist.LastName, r.Therapist.City, r.Therapist.PracticeName));
+                r.Therapist.Id, r.Therapist.FirstName, r.Therapist.LastName, r.Therapist.City, r.Therapist.PracticeName),
+            r.EndedAt,
+            r.EndedBy);
 
     public static readonly Expression<Func<CooperationRequest, TherapistCooperationRequestDto>> ToTherapistDto = r =>
         new TherapistCooperationRequestDto(
@@ -56,13 +60,60 @@ internal static class CooperationMapping
             r.DecidedAt,
             new RequestingPatientDto(r.PatientFirstName, r.PatientLastName, r.PatientEmail),
             r.CardLinkMode,
-            r.PatientId);
+            r.PatientId,
+            r.EndedAt,
+            r.EndedBy);
 
     private static readonly Func<CooperationRequest, PatientCooperationRequestDto> ToPatientDtoCompiled = ToPatientDto.Compile();
     private static readonly Func<CooperationRequest, TherapistCooperationRequestDto> ToTherapistDtoCompiled = ToTherapistDto.Compile();
 
     public static PatientCooperationRequestDto ToPatient(this CooperationRequest r) => ToPatientDtoCompiled(r);
     public static TherapistCooperationRequestDto ToTherapist(this CooperationRequest r) => ToTherapistDtoCompiled(r);
+}
+
+internal static class CooperationEnding
+{
+    /// <summary>
+    /// Kończy aktywną współpracę i odłącza konto od karty. Karta z dokumentacją zostaje u terapeuty,
+    /// a udostępnianie dokumentacji kontu jest wyłączane.
+    /// </summary>
+    public static async Task EndAsync(
+        IApplicationDbContext db, CooperationRequest entity, CooperationParty endedBy, DateTime now, CancellationToken ct)
+    {
+        if (entity.Status != CooperationRequestStatus.Accepted)
+            throw NotActive();
+
+        entity.Status = CooperationRequestStatus.Ended;
+        entity.EndedAt = now;
+        entity.EndedBy = endedBy;
+        entity.ConcurrencyStamp = Guid.NewGuid();
+
+        // Bez filtra soft delete: konto trzeba odłączyć także od usuniętej karty.
+        var card = entity.PatientId is { } cardId
+            ? await db.Patients.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == cardId && p.UserId == entity.PatientUserId, ct)
+            : null;
+        if (card is not null)
+        {
+            card.UserId = null;
+            card.DocumentationSharedWithAccount = false;
+            card.ConcurrencyStamp = Guid.NewGuid();
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException ex) when (ex.Entries.Any(e => e.Entity is CooperationRequest))
+        {
+            throw NotActive();
+        }
+    }
+
+    public static string TherapistName(TherapistProfile therapist) => $"{therapist.FirstName} {therapist.LastName}".Trim();
+
+    private static ConflictException NotActive() => new(CooperationErrorCodes.CooperationNotActive,
+        "Ta współpraca nie jest aktywna.");
 }
 
 internal static class CurrentUserExtensions

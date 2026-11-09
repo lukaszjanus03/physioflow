@@ -1081,6 +1081,15 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("decided_at");
 
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<string>("EndedBy")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("ended_by");
+
                     b.Property<DateTime?>("IdentityVerifiedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("identity_verified_at");

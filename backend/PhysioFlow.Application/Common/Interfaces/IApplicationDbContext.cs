@@ -33,6 +33,9 @@ public interface IApplicationDbContext
 public interface IUserAccountService
 {
     Task<UserAccountInfo?> FindAsync(Guid userId, CancellationToken ct);
+
+    /// <summary>Id aktywnych kont, do składania z zapytaniami EF (katalog, wysyłka prośby).</summary>
+    IQueryable<Guid> ActiveUserIds();
 }
 
 public record UserAccountInfo(Guid Id, string? FirstName, string? LastName, string Email);

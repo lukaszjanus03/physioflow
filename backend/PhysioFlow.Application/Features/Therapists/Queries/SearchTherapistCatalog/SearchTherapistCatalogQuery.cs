@@ -42,15 +42,21 @@ public class SearchTherapistCatalogQueryHandler
     : IRequestHandler<SearchTherapistCatalogQuery, PaginatedList<TherapistCatalogEntryDto>>
 {
     private readonly IApplicationDbContext _db;
+    private readonly IUserAccountService _accounts;
 
-    public SearchTherapistCatalogQueryHandler(IApplicationDbContext db) => _db = db;
+    public SearchTherapistCatalogQueryHandler(IApplicationDbContext db, IUserAccountService accounts)
+    {
+        _db = db;
+        _accounts = accounts;
+    }
 
     public async Task<PaginatedList<TherapistCatalogEntryDto>> Handle(
         SearchTherapistCatalogQuery request, CancellationToken ct)
     {
         var query = _db.Therapists
             .AsNoTracking()
-            .Where(t => t.IsPublished && t.City != null && t.PracticeName != null);
+            .Where(t => t.IsPublished && t.City != null && t.PracticeName != null
+                        && _accounts.ActiveUserIds().Contains(t.UserId));
 
         // Każde słowo musi pasować do któregoś pola, więc "anna kraków" zawęża wyniki zamiast je poszerzać.
         var terms = (request.Search ?? string.Empty)

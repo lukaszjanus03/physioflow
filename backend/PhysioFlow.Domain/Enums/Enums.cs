@@ -62,11 +62,18 @@ public enum CooperationRequestStatus
     Pending = 1,
     Accepted = 2,
     Rejected = 3,
-    Withdrawn = 4
+    Withdrawn = 4,
+    Ended = 5
 }
 
 public enum CardLinkMode
 {
     LinkExisting = 1,
     CreateNew = 2
+}
+
+public enum CooperationParty
+{
+    Patient = 1,
+    Therapist = 2
 }

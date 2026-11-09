@@ -410,6 +410,12 @@ function PatientOverview({ patient }: { patient: PatientDetail }) {
                 >
                   {patient.isArchived ? 'Archiwalny' : 'Aktywny'}
                 </span>
+
+                {patient.isLinkedToAccount && (
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    Konto pacjenta
+                  </span>
+                )}
               </div>
 
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">

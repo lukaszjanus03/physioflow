@@ -80,17 +80,20 @@ public class AcceptCooperationRequestCommandHandler
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
+    private readonly ICooperationNotifier _notifier;
     private readonly ILogger<AcceptCooperationRequestCommandHandler> _logger;
 
     public AcceptCooperationRequestCommandHandler(
         IApplicationDbContext db,
         ICurrentUserService currentUser,
         IDateTimeProvider clock,
+        ICooperationNotifier notifier,
         ILogger<AcceptCooperationRequestCommandHandler> logger)
     {
         _db = db;
         _currentUser = currentUser;
         _clock = clock;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -100,7 +103,7 @@ public class AcceptCooperationRequestCommandHandler
 
         // Strategia z ponawianiem (Npgsql) wymaga, żeby transakcja była w całości wewnątrz ExecuteAsync.
         var strategy = _db.Database.CreateExecutionStrategy();
-        return await strategy.ExecuteAsync(async () =>
+        var accepted = await strategy.ExecuteAsync(async () =>
         {
             await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
@@ -180,8 +183,12 @@ public class AcceptCooperationRequestCommandHandler
                 "identity verified; card {PatientId} linked to account {AccountId} ({CardLinkMode})",
                 entity.Id, therapist.Id, card.Id, entity.PatientUserId, entity.CardLinkMode);
 
-            return entity.ToTherapist();
+            return entity;
         });
+
+        await _notifier.RequestAcceptedAsync(accepted.Id, accepted.PatientUserId, CooperationEnding.TherapistName(therapist), ct);
+
+        return accepted.ToTherapist();
     }
 
     private async Task SaveAsync(CancellationToken ct)

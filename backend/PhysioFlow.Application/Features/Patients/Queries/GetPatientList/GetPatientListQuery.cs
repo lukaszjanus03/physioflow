@@ -69,7 +69,8 @@ public class GetPatientListQueryHandler
                 p.Email,
                 p.PhoneNumber,
                 p.IsArchived,
-                p.CreatedAt))
+                p.CreatedAt,
+                p.UserId != null))
             .ToListAsync(ct);
 
         return new PaginatedList<PatientListItemDto>(items, total, request.PageNumber, request.PageSize);

@@ -9,7 +9,8 @@ public record PatientListItemDto(
     string? Email,
     string? PhoneNumber,
     bool IsArchived,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool IsLinkedToAccount);
 
 public record PatientDetailDto(
     Guid Id,
@@ -25,7 +26,8 @@ public record PatientDetailDto(
     string? GeneralNotes,
     bool IsArchived,
     DateTime CreatedAt,
-    DateTime? UpdatedAt);
+    DateTime? UpdatedAt,
+    bool IsLinkedToAccount);
 
 /// <summary>Własny profil zawodowy terapeuty, także przed publikacją.</summary>
 public record TherapistOwnProfileDto(
@@ -61,7 +63,9 @@ public record PatientCooperationRequestDto(
     string? Message,
     DateTime CreatedAt,
     DateTime? DecidedAt,
-    CooperationTherapistDto Therapist);
+    CooperationTherapistDto Therapist,
+    DateTime? EndedAt,
+    CooperationParty? EndedBy);
 
 /// <summary>Aktywna współpraca widziana przez pacjenta. Bez danych karty pacjenta.</summary>
 public record PatientCooperationDto(
@@ -83,7 +87,9 @@ public record TherapistCooperationRequestDto(
     DateTime? DecidedAt,
     RequestingPatientDto Patient,
     CardLinkMode? CardLinkMode,
-    Guid? LinkedPatientId);
+    Guid? LinkedPatientId,
+    DateTime? EndedAt,
+    CooperationParty? EndedBy);
 
 public record AppointmentDto(
     Guid Id,

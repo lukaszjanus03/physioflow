@@ -22,6 +22,7 @@ export interface PatientListItem {
   phoneNumber: string | null;
   isArchived: boolean;
   createdAt: string;
+  isLinkedToAccount: boolean;
 }
 
 export interface PatientDetail {
@@ -39,6 +40,7 @@ export interface PatientDetail {
   isArchived: boolean;
   createdAt: string;
   updatedAt: string | null;
+  isLinkedToAccount: boolean;
 }
 
 export interface CreatePatientPayload {
