@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   Calendar,
@@ -8,20 +9,27 @@ import {
   Loader2,
   LogOut,
   Settings,
+  UserPlus,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { authApi } from '@/lib/api';
+import { portalApi } from '@/lib/portal-api';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/patients', label: 'Pacjenci', icon: Users },
+  {
+    href: '/cooperation-requests',
+    label: 'Prośby pacjentów',
+    icon: UserPlus,
+  },
   { href: '/calendar', label: 'Kalendarz', icon: Calendar },
   { href: '/exercises', label: 'Ćwiczenia', icon: Dumbbell },
   { href: '/settings', label: 'Ustawienia', icon: Settings },
@@ -29,38 +37,52 @@ const navItems = [
 
 const LOGOUT_MIN_DURATION_MS = 2000;
 
-export default function TherapistLayout({ children }: { children: React.ReactNode }) {
+export default function TherapistLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { isAuthenticated, roles, email, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const initials = useMemo(() => {
-    if (!email) return 'PF';
-    return email.slice(0, 2).toUpperCase();
-  }, [email]);
+  const initials = useMemo(
+    () => (email ? email.slice(0, 2).toUpperCase() : 'PF'),
+    [email],
+  );
+
+  const allowed = isAuthenticated && roles.includes('Therapist');
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace('/');
-    else if (!roles.includes('Therapist')) router.replace('/');
-  }, [isAuthenticated, roles, router]);
+    if (!allowed && !isLoggingOut) router.replace('/');
+  }, [allowed, isLoggingOut, router]);
 
-  const handleLogout = async () => {
+  async function handleLogout() {
+    if (isLoggingOut) return;
+
     setIsLoggingOut(true);
 
-    const minDelay = new Promise((resolve) => setTimeout(resolve, LOGOUT_MIN_DURATION_MS));
-    const apiCall = authApi.logout().catch(() => {
-      // Local logout should still happen even if the API request fails.
-    });
+    const minDelay = new Promise((resolve) =>
+      setTimeout(resolve, LOGOUT_MIN_DURATION_MS),
+    );
 
-    await Promise.all([apiCall, minDelay]);
+    await Promise.all([
+      portalApi.logout().catch(() => {
+        // Awaria API nie blokuje zakonczenia lokalnej sesji.
+      }),
+      minDelay,
+    ]);
 
-    toast.success('Do zobaczenia!');
+    await queryClient.cancelQueries();
+    queryClient.clear();
     logout();
+    toast.success('Do zobaczenia!');
     router.replace('/');
-  };
+  }
 
-  if (!isAuthenticated) return null;
+  if (!allowed) return null;
 
   return (
     <div className="min-h-screen bg-muted/30 text-foreground">
@@ -68,7 +90,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
         <div className="border-b px-5 py-5">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-              <Activity className="h-5 w-5" />
+              <Activity aria-hidden="true" className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <p className="text-lg font-bold leading-tight">PhysioFlow</p>
@@ -77,15 +99,18 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav aria-label="Panel terapeuty" className="flex-1 space-y-1 px-3 py-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active =
+              pathname === item.href ||
+              pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className={cn(
                   'group flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
                   active
@@ -93,12 +118,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >
-                <Icon
-                  className={cn(
-                    'h-4 w-4 shrink-0',
-                    active ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-accent-foreground',
-                  )}
-                />
+                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
                 <span className="truncate">{item.label}</span>
               </Link>
             );
@@ -117,46 +137,51 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
           </div>
 
           <Button
+            type="button"
             variant="ghost"
-            size="sm"
-            className="h-10 w-full justify-start text-muted-foreground hover:text-foreground"
-            onClick={handleLogout}
+            className="h-10 w-full justify-start text-muted-foreground"
+            onClick={() => void handleLogout()}
             disabled={isLoggingOut}
           >
             {isLoggingOut ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Wylogowywanie...
-              </>
+              <Loader2 aria-hidden="true" className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <>
-                <LogOut className="mr-2 h-4 w-4" />
-                Wyloguj
-              </>
+              <LogOut aria-hidden="true" className="mr-2 h-4 w-4" />
             )}
+            {isLoggingOut ? 'Wylogowywanie…' : 'Wyloguj'}
           </Button>
         </div>
       </aside>
 
-      <main className="min-h-screen pb-20 md:ml-[260px] md:pb-0">{children}</main>
+      <main className="min-h-screen pb-24 md:ml-[260px] md:pb-0">
+        {children}
+      </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-2 py-2 shadow-lg backdrop-blur md:hidden">
-        <div className="grid grid-cols-5 gap-1">
+      <nav
+        aria-label="Mobilny panel terapeuty"
+        className="fixed inset-x-0 bottom-0 z-40 overflow-x-auto border-t bg-card/95 p-2 shadow-lg backdrop-blur md:hidden"
+      >
+        <div className="grid min-w-[420px] grid-cols-6 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active =
+              pathname === item.href ||
+              pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-12 flex-col items-center justify-center rounded-md px-1 text-[11px] font-medium transition-colors',
-                  active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent',
+                  'flex min-h-14 flex-col items-center justify-center rounded-md px-1 text-center text-[11px] font-medium transition-colors',
+                  active
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent',
                 )}
               >
-                <Icon className="mb-1 h-4 w-4" />
-                <span className="max-w-full truncate">{item.label}</span>
+                <Icon aria-hidden="true" className="mb-1 h-4 w-4" />
+                <span>{item.label}</span>
               </Link>
             );
           })}
@@ -164,11 +189,19 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
       </nav>
 
       {isLoggingOut && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div
+          role="status"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+        >
           <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-8 shadow-lg">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-medium">Wylogowywanie...</p>
-            <p className="text-xs text-muted-foreground">Za chwilę nastąpi przekierowanie</p>
+            <Loader2
+              aria-hidden="true"
+              className="h-8 w-8 animate-spin text-primary"
+            />
+            <p className="text-sm font-medium">Wylogowywanie…</p>
+            <p className="text-xs text-muted-foreground">
+              Za chwilę nastąpi przekierowanie
+            </p>
           </div>
         </div>
       )}
