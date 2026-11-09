@@ -4,20 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace PhysioFlow.Api.Controllers;
 
 [Authorize(Roles = "Therapist")]
-public class AppointmentsController : ApiControllerBase
-{
-    // TODO: GetAppointmentsQuery (range)
-    // TODO: CreateAppointmentCommand (z blokadą double-booking)
-    // TODO: UpdateAppointmentCommand
-    // TODO: CancelAppointmentCommand (+ email via Resend)
-    // TODO: GetAvailabilityQuery (dla portalu pacjenta)
-
-    [HttpGet]
-    public IActionResult GetRange([FromQuery] DateTime from, [FromQuery] DateTime to)
-        => throw new NotImplementedException();
-}
-
-[Authorize(Roles = "Therapist")]
 public class MedicalRecordsController : ApiControllerBase
 {
     // TODO: GetMedicalRecordsQuery (chronologiczna historia)

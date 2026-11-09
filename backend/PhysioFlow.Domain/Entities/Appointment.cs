@@ -17,6 +17,11 @@ public class Appointment : SoftDeletableEntity
     public string? Notes { get; set; }         // notatka administracyjna (nie EDM)
     public bool ReminderSent { get; set; }
 
+    // Bufor obowiązujący przy tej wizycie; zmiana ustawień kalendarza go nie przesuwa.
+    public int BufferMinutes { get; set; }
+
+    public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
+
     public TherapistProfile Therapist { get; set; } = null!;
     public Patient Patient { get; set; } = null!;
     public MedicalRecord? MedicalRecord { get; set; }

@@ -745,6 +745,15 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int>("BufferMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("buffer_minutes");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -770,7 +779,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnName("is_deleted");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("notes");
 
                     b.Property<Guid>("PatientId")
@@ -940,6 +950,12 @@ namespace PhysioFlow.Infrastructure.Migrations
 
                     b.HasIndex("TherapistId")
                         .HasDatabaseName("ix_availability_slots_therapist_id");
+
+                    b.HasIndex("TherapistId", "DayOfWeek")
+                        .HasDatabaseName("ix_availability_slots_therapist_id_day_of_week");
+
+                    b.HasIndex("TherapistId", "SpecificDate")
+                        .HasDatabaseName("ix_availability_slots_therapist_id_specific_date");
 
                     b.ToTable("availability_slots", (string)null);
                 });
@@ -1574,6 +1590,58 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("patient_diary_entries", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapistCalendarSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AllowedDurations")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("allowed_durations");
+
+                    b.Property<int>("BufferMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("buffer_minutes");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<Guid>("TherapistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapist_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_therapist_calendar_settings");
+
+                    b.HasIndex("TherapistId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_therapist_calendar_settings_therapist_id");
+
+                    b.ToTable("therapist_calendar_settings", (string)null);
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapistProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2165,6 +2233,18 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapistCalendarSettings", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
+                        .WithOne("CalendarSettings")
+                        .HasForeignKey("PhysioFlow.Domain.Entities.TherapistCalendarSettings", "TherapistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_therapist_calendar_settings_therapists_therapist_id");
+
+                    b.Navigation("Therapist");
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlan", b =>
                 {
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
@@ -2247,6 +2327,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Appointments");
 
                     b.Navigation("AvailabilitySlots");
+
+                    b.Navigation("CalendarSettings");
 
                     b.Navigation("Exercises");
 

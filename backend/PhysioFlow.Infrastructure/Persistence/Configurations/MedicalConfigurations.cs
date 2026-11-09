@@ -18,6 +18,9 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         b.HasOne(x => x.Patient).WithMany(p => p.Appointments)
             .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
 
+        b.Property(x => x.Notes).HasMaxLength(TherapistCalendarSettings.NotesMaxLength);
+        b.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
+
         b.HasIndex(x => new { x.TherapistId, x.StartsAt });
         b.HasIndex(x => new { x.PatientId, x.StartsAt });
     }
@@ -31,6 +34,22 @@ public class AvailabilitySlotConfiguration : IEntityTypeConfiguration<Availabili
         b.HasOne(x => x.Therapist).WithMany(t => t.AvailabilitySlots)
             .HasForeignKey(x => x.TherapistId).OnDelete(DeleteBehavior.Cascade);
         b.HasIndex(x => x.TherapistId);
+        b.HasIndex(x => new { x.TherapistId, x.DayOfWeek });
+        b.HasIndex(x => new { x.TherapistId, x.SpecificDate });
+    }
+}
+
+public class TherapistCalendarSettingsConfiguration : IEntityTypeConfiguration<TherapistCalendarSettings>
+{
+    public void Configure(EntityTypeBuilder<TherapistCalendarSettings> b)
+    {
+        b.ToTable("therapist_calendar_settings");
+        b.HasIndex(x => x.TherapistId).IsUnique();
+        b.Property(x => x.AllowedDurations).HasMaxLength(20).IsRequired();
+        b.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
+        b.HasOne(x => x.Therapist).WithOne(t => t.CalendarSettings)
+            .HasForeignKey<TherapistCalendarSettings>(x => x.TherapistId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

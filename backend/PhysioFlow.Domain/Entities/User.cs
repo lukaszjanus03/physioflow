@@ -46,6 +46,7 @@ public class TherapistProfile : SoftDeletableEntity
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
     public ICollection<Exercise> Exercises { get; set; } = new List<Exercise>();
     public ICollection<AvailabilitySlot> AvailabilitySlots { get; set; } = new List<AvailabilitySlot>();
+    public TherapistCalendarSettings? CalendarSettings { get; set; }
 }
 
 public class Patient : SoftDeletableEntity

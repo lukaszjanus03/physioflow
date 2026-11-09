@@ -91,6 +91,25 @@ public record TherapistCooperationRequestDto(
     DateTime? EndedAt,
     CooperationParty? EndedBy);
 
+public record TimeIntervalDto(TimeOnly Start, TimeOnly End);
+
+public record WeeklyHoursDto(DayOfWeek DayOfWeek, IReadOnlyList<TimeIntervalDto> Intervals);
+
+public record CalendarExceptionDto(
+    DateOnly Date,
+    bool IsDayOff,
+    IReadOnlyList<TimeIntervalDto>? Intervals);
+
+public record TherapistCalendarSettingsDto(
+    int BufferMinutes,
+    IReadOnlyList<int> AllowedDurations,
+    IReadOnlyList<WeeklyHoursDto> WeeklyHours,
+    IReadOnlyList<CalendarExceptionDto> Exceptions);
+
+public record AvailableSlotDto(DateTime StartsAt, DateTime EndsAt);
+
+public record AvailableSlotsDto(DateOnly Date, int DurationMinutes, IReadOnlyList<AvailableSlotDto> Slots);
+
 public record AppointmentDto(
     Guid Id,
     Guid PatientId,
@@ -98,7 +117,7 @@ public record AppointmentDto(
     DateTime StartsAt,
     DateTime EndsAt,
     int DurationMinutes,
-    string Status,
+    AppointmentStatus Status,
     string? Reason,
     string? Notes);
 
