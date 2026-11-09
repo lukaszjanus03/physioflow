@@ -235,7 +235,7 @@ using (var scope = app.Services.CreateScope())
         {
             UserId = user.Id,
             FirstName = localPart,
-            LastName = "(uzupełnij)",
+            LastName = PhysioFlow.Domain.Entities.TherapistProfile.PlaceholderLastName,
         });
     }
     await db.SaveChangesAsync(default);
