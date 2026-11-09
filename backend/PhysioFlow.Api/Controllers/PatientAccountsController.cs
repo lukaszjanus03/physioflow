@@ -23,6 +23,9 @@ public record ConfirmPatientEmailResponse(bool EmailConfirmed);
 public record ResendConfirmationRequest(string? Email);
 public record ResendConfirmationResponse(string Message);
 
+/// <summary>Dane konta zalogowanego pacjenta. Id to identyfikator konta, nie karty pacjenta.</summary>
+public record PatientAccountDto(Guid Id, string? FirstName, string? LastName, string Email, bool EmailConfirmed);
+
 public static class PatientAccountErrorCodes
 {
     public const string InvalidOrExpiredLink = "invalid_or_expired_link";
@@ -238,6 +241,29 @@ public class PatientAccountsController : ApiControllerBase
         }
 
         return Accepted(new ResendConfirmationResponse(ResendMessage));
+    }
+
+    /// <summary>Dane konta zalogowanego pacjenta. Konto ustalane z sesji; działa także bez powiązanej karty i terapeuty.</summary>
+    [HttpGet("me")]
+    [Authorize(Roles = PatientAccountRules.PatientRole)]
+    [ProducesResponseType(typeof(PatientAccountDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMe()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null || !user.IsActive)
+            return Unauthorized();
+
+        // Walidacja JWT już odrzuca takie sesje; to zabezpieczenie na wypadek błędu w tamtym sprawdzeniu.
+        if (!user.EmailConfirmed)
+        {
+            return ProblemWithCode(StatusCodes.Status403Forbidden, "Email confirmation required",
+                PatientAccountErrorCodes.EmailConfirmationRequired,
+                "Potwierdź adres e-mail, aby korzystać z portalu pacjenta.");
+        }
+
+        return Ok(new PatientAccountDto(user.Id, user.FirstName, user.LastName, user.Email!, user.EmailConfirmed));
     }
 
     private ObjectResult InvalidLink() => ProblemWithCode(StatusCodes.Status400BadRequest, "Invalid confirmation link",

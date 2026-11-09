@@ -9,12 +9,37 @@ namespace PhysioFlow.Domain.Entities;
 /// </summary>
 public class TherapistProfile : SoftDeletableEntity
 {
+    public const int NameMaxLength = 100;
+    public const int CityMaxLength = 100;
+    public const int PracticeNameMaxLength = 150;
+    public const int BioMaxLength = 500;
+
+    // Nazwisko wpisywane przy automatycznym tworzeniu brakujących profili; nie nadaje się do katalogu.
+    public const string PlaceholderLastName = "(uzupełnij)";
+
     public Guid UserId { get; set; }        // FK do AspNetUsers
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public string? LicenseNumber { get; set; }
     public string? Specialization { get; set; }
     public string? PhoneNumber { get; set; }
+
+    // Dane katalogu terapeutów
+    public string? City { get; set; }
+    public string? PracticeName { get; set; }
+    public string? Bio { get; set; }
+    public bool IsPublished { get; set; }
+
+    /// <summary>Pola wymagane do publikacji w katalogu, których brakuje (nazwy jak w API).</summary>
+    public IReadOnlyList<string> MissingCatalogFields()
+    {
+        var missing = new List<string>();
+        if (string.IsNullOrWhiteSpace(FirstName)) missing.Add("firstName");
+        if (string.IsNullOrWhiteSpace(LastName) || LastName == PlaceholderLastName) missing.Add("lastName");
+        if (string.IsNullOrWhiteSpace(City)) missing.Add("city");
+        if (string.IsNullOrWhiteSpace(PracticeName)) missing.Add("practiceName");
+        return missing;
+    }
 
     // Nawigacje
     public ICollection<Patient> Patients { get; set; } = new List<Patient>();

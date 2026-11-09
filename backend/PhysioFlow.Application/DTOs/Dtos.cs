@@ -25,6 +25,26 @@ public record PatientDetailDto(
     DateTime CreatedAt,
     DateTime? UpdatedAt);
 
+/// <summary>Własny profil zawodowy terapeuty, także przed publikacją.</summary>
+public record TherapistOwnProfileDto(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string? City,
+    string? PracticeName,
+    string? Bio,
+    bool IsPublished,
+    IReadOnlyList<string> MissingFieldsForPublication);
+
+/// <summary>Publiczne dane opublikowanego profilu w katalogu. Bez e-maila konta i danych pacjentów.</summary>
+public record TherapistCatalogEntryDto(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string City,
+    string PracticeName,
+    string? Bio);
+
 public record AppointmentDto(
     Guid Id,
     Guid PatientId,
