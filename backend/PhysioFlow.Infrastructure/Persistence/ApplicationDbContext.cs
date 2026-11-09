@@ -23,6 +23,7 @@ public class ApplicationDbContext
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AvailabilitySlot> AvailabilitySlots => Set<AvailabilitySlot>();
+    public DbSet<TherapistCalendarSettings> CalendarSettings => Set<TherapistCalendarSettings>();
     public DbSet<BodyMap> BodyMaps => Set<BodyMap>();
     public DbSet<PainPoint> PainPoints => Set<PainPoint>();
 
@@ -63,6 +64,8 @@ public class ApplicationDbContext
         builder.Entity<Attachment>()
             .HasQueryFilter(a => !a.MedicalRecord.IsDeleted);
         builder.Entity<AvailabilitySlot>()
+            .HasQueryFilter(s => !s.Therapist.IsDeleted);
+        builder.Entity<TherapistCalendarSettings>()
             .HasQueryFilter(s => !s.Therapist.IsDeleted);
         builder.Entity<BodyMap>()
             .HasQueryFilter(m => !m.Patient.IsDeleted);

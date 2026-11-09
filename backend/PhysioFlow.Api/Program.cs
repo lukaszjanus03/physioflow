@@ -32,6 +32,8 @@ builder.Services.AddControllers()
         // zamiast liczb (0, 1) - frontend wtedy używa zrozumiałych nazw.
         opts.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter());
+        opts.JsonSerializerOptions.Converters.Add(new PhysioFlow.Api.Json.TimeOnlyJsonConverter());
+        opts.JsonSerializerOptions.Converters.Add(new PhysioFlow.Api.Json.NullableTimeOnlyJsonConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
