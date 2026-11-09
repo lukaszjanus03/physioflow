@@ -12,9 +12,21 @@ public class ForbiddenAccessException : Exception
     public ForbiddenAccessException(string message) : base(message) { }
 }
 
+/// <summary>Message trafia do odpowiedzi i logów, więc nie może zawierać danych osobowych ani medycznych.</summary>
 public class ConflictException : Exception
 {
     public ConflictException(string message) : base(message) { }
+    public ConflictException(string code, string message) : base(message) => Code = code;
+
+    /// <summary>Kod błędu dla frontendu (pole "code" w problem+json).</summary>
+    public string? Code { get; }
+}
+
+public class TooManyRequestsException : Exception
+{
+    public TooManyRequestsException(string code, string message) : base(message) => Code = code;
+
+    public string Code { get; }
 }
 
 /// <summary>

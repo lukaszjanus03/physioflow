@@ -61,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IUserAccountService, UserAccountService>();
 
         // --- Cloudflare R2 (S3-compatible)
         var r2AccountId = config["R2:AccountId"];

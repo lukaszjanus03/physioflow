@@ -1052,6 +1052,106 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("chat_messages", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.CooperationRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CardLinkMode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("card_link_mode");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<DateTime?>("IdentityVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("identity_verified_at");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("message");
+
+                    b.Property<string>("PatientEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("patient_email");
+
+                    b.Property<string>("PatientFirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("patient_first_name");
+
+                    b.Property<Guid?>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_id");
+
+                    b.Property<string>("PatientLastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("patient_last_name");
+
+                    b.Property<Guid>("PatientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TherapistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapist_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cooperation_requests");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("ix_cooperation_requests_patient_id");
+
+                    b.HasIndex("PatientUserId", "CreatedAt")
+                        .HasDatabaseName("ix_cooperation_requests_patient_user_id_created_at");
+
+                    b.HasIndex("PatientUserId", "TherapistId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_cooperation_requests_open_pair")
+                        .HasFilter("status IN ('Pending', 'Accepted')");
+
+                    b.HasIndex("TherapistId", "Status")
+                        .HasDatabaseName("ix_cooperation_requests_therapist_id_status");
+
+                    b.ToTable("cooperation_requests", (string)null);
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Exercise", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1315,6 +1415,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("address");
 
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1330,6 +1435,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
+
+                    b.Property<bool>("DocumentationSharedWithAccount")
+                        .HasColumnType("boolean")
+                        .HasColumnName("documentation_shared_with_account");
 
                     b.Property<string>("Email")
                         .HasColumnType("text")
@@ -1392,8 +1501,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_patients");
 
-                    b.HasIndex("TherapistId")
-                        .HasDatabaseName("ix_patients_therapist_id");
+                    b.HasIndex("TherapistId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_patients_therapist_account")
+                        .HasFilter("user_id IS NOT NULL AND is_deleted = false");
 
                     b.ToTable("patients", (string)null);
                 });
@@ -1934,6 +2045,26 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.CooperationRequest", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_cooperation_requests_patients_patient_id");
+
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
+                        .WithMany()
+                        .HasForeignKey("TherapistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_cooperation_requests_therapists_therapist_id");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("Therapist");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Exercise", b =>

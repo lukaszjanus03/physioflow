@@ -145,6 +145,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection(FrontendOptions.SectionName));
 builder.Services.Configure<ConfirmationEmailOptions>(
     builder.Configuration.GetSection(ConfirmationEmailOptions.SectionName));
+builder.Services.Configure<PhysioFlow.Application.Features.Cooperation.CooperationRequestOptions>(
+    builder.Configuration.GetSection(PhysioFlow.Application.Features.Cooperation.CooperationRequestOptions.SectionName));
 foreach (var (policy, section) in RateLimitPolicies.ConfigSections)
     builder.Services.Configure<FixedWindowRateLimitOptions>(policy, builder.Configuration.GetSection(section));
 

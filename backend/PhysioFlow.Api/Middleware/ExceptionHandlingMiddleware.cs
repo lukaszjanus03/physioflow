@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using PhysioFlow.Application.Common.Exceptions;
 
 namespace PhysioFlow.Api.Middleware;
@@ -46,12 +48,27 @@ public class ExceptionHandlingMiddleware
                 status = 403,
                 detail = ex.Message
             }),
-            ConflictException => (HttpStatusCode.Conflict, new
+            ConflictException c => (HttpStatusCode.Conflict, new
             {
                 title = "Conflict",
                 status = 409,
+                code = c.Code,
                 detail = ex.Message
             }),
+            DbUpdateConcurrencyException => (HttpStatusCode.Conflict, new
+            {
+                title = "Conflict",
+                status = 409,
+                code = "concurrent_modification",
+                detail = "Dane zostały zmienione w międzyczasie. Odśwież widok i spróbuj ponownie."
+            }),
+            TooManyRequestsException t => (HttpStatusCode.TooManyRequests, new
+            {
+                title = "Too many requests",
+                status = 429,
+                code = t.Code,
+                detail = ex.Message
+            } as object),
             EmailDeliveryException => (HttpStatusCode.ServiceUnavailable, new
             {
                 title = "Email delivery failed",
@@ -79,6 +96,10 @@ public class ExceptionHandlingMiddleware
         context.Response.StatusCode = (int)status;
         context.Response.ContentType = "application/problem+json";
         await context.Response.WriteAsync(JsonSerializer.Serialize(body,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            }));
     }
 }

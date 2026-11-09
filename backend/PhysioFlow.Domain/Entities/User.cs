@@ -66,6 +66,12 @@ public class Patient : SoftDeletableEntity
     public string? GeneralNotes { get; set; }     // notatki ogólne
     public bool IsArchived { get; set; }
 
+    // Powiązanie z kontem (UserId) nie udostępnia dokumentacji; portal pacjenta wymaga tej zgody osobno.
+    public bool DocumentationSharedWithAccount { get; set; }
+
+    // Chroni przed równoczesnym powiązaniem jednej karty z dwoma kontami.
+    public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
+
     // Nawigacje
     public TherapistProfile Therapist { get; set; } = null!;
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();

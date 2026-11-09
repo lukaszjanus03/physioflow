@@ -56,3 +56,17 @@ public enum AttachmentType
     Video = 4,
     Other = 5
 }
+
+public enum CooperationRequestStatus
+{
+    Pending = 1,
+    Accepted = 2,
+    Rejected = 3,
+    Withdrawn = 4
+}
+
+public enum CardLinkMode
+{
+    LinkExisting = 1,
+    CreateNew = 2
+}

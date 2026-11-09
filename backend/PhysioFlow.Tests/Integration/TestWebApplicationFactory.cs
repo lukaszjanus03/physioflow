@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +51,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     ["RateLimiting:PatientRegistration:PermitLimit"] =
                         PatientRegistrationPermitLimit.ToString(),
                     ["RateLimiting:EmailConfirmation:PermitLimit"] = "10000",
+                    ["RateLimiting:CooperationRequest:PermitLimit"] = "10000",
                     ["RateLimiting:ConfirmationResend:PermitLimit"] =
                         ConfirmationResendPermitLimit.ToString(),
 
@@ -92,8 +94,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.RemoveAll<ApplicationDbContext>();
 
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase(_databaseName));
+            // InMemory nie obsługuje transakcji; atomowość akceptacji prośby sprawdza PostgreSQL.
+            services.AddDbContext<ApplicationDbContext>(options => options
+                .UseInMemoryDatabase(_databaseName)
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
 
             services.RemoveAll<IEmailService>();
             services.AddSingleton<IEmailService>(Email);
