@@ -63,7 +63,7 @@ public class ResendEmailService : IEmailService
             throw new EmailDeliveryException(DeliveryFailedMessage);
         }
 
-        _logger.LogInformation("Email sent to {To} | subject: {Subject}", to, subject);
+        _logger.LogInformation("Email sent | id: {EmailId} | subject: {Subject}", response.Content, subject);
     }
 
     public Task SendEmailConfirmationAsync(

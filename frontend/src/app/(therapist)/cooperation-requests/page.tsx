@@ -9,6 +9,7 @@ import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/primitives';
 import {
+  COOPERATION_ENDED_BY_LABELS,
   COOPERATION_STATUS_LABELS,
   getCooperationError,
 } from '@/lib/cooperation-api';
@@ -27,6 +28,7 @@ const statusStyles: Record<CooperationStatus, string> = {
   Accepted: 'bg-emerald-50 text-emerald-800',
   Rejected: 'bg-red-50 text-red-800',
   Withdrawn: 'bg-slate-100 text-slate-700',
+  Ended: 'bg-slate-100 text-slate-700',
 };
 
 function formatDate(value: string) {
@@ -271,7 +273,9 @@ function RequestDialog({
   onChanged: () => Promise<void>;
   onSuccess: (message: string) => void;
 }) {
-  const [mode, setMode] = useState<'details' | 'accept' | 'reject'>('details');
+  const [mode, setMode] = useState<'details' | 'accept' | 'reject' | 'end'>(
+    'details',
+  );
   const [busy, setBusy] = useState(false);
 
   const query = useQuery({
@@ -340,17 +344,45 @@ function RequestDialog({
                     Rozpatrzono / wycofano: {formatDate(query.data.decidedAt)}
                   </p>
                 )}
+                {query.data.endedAt && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Współpracę zakończono: {formatDate(query.data.endedAt)}
+                    {query.data.endedBy &&
+                      ` (${COOPERATION_ENDED_BY_LABELS[query.data.endedBy]})`}
+                  </p>
+                )}
                 <p className="mt-4 whitespace-pre-wrap break-words text-sm">
                   {query.data.message || 'Pacjent nie dołączył wiadomości.'}
                 </p>
               </div>
 
-              {query.data.status === 'Accepted' && query.data.linkedPatientId && (
-                <Button asChild variant="outline">
-                  <Link href={`/patients/${query.data.linkedPatientId}`}>
-                    Otwórz powiązaną kartę
-                  </Link>
-                </Button>
+              {query.data.status === 'Accepted' && mode === 'details' && (
+                <div className="flex flex-wrap gap-3">
+                  {query.data.linkedPatientId && (
+                    <Button asChild variant="outline">
+                      <Link href={`/patients/${query.data.linkedPatientId}`}>
+                        Otwórz powiązaną kartę
+                      </Link>
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setMode('end')}
+                  >
+                    Zakończ współpracę
+                  </Button>
+                </div>
+              )}
+
+              {query.data.status === 'Accepted' && mode === 'end' && (
+                <EndForm
+                  requestId={requestId}
+                  onBusyChange={setBusy}
+                  onChanged={onChanged}
+                  onSuccess={onSuccess}
+                  onBack={() => setMode('details')}
+                />
               )}
 
               {query.data.status === 'Pending' && mode === 'details' && (
@@ -672,9 +704,8 @@ function CardPicker({
   return (
     <div className="space-y-4">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Wyświetlamy Twoje aktywne karty. Lista nie informuje o istniejących
-        powiązaniach kont — sprawdzi je backend podczas zapisu.
-        Karta nie jest wybierana automatycznie.
+        Wyświetlamy Twoje aktywne karty. Karty powiązane już z innym kontem
+        nie mogą zostać wybrane. Karta nie jest wybierana automatycznie.
       </p>
 
       <div className="space-y-2">
@@ -756,12 +787,17 @@ function CardPicker({
             {query.data.items.map((card) => (
               <label
                 key={card.id}
-                className="flex cursor-pointer items-start gap-3 rounded-lg border p-3"
+                className={`flex items-start gap-3 rounded-lg border p-3 ${
+                  card.isLinkedToAccount
+                    ? 'cursor-not-allowed opacity-60'
+                    : 'cursor-pointer'
+                }`}
               >
                 <input
                   type="radio"
                   name="existing-card"
                   checked={selected?.id === card.id}
+                  disabled={card.isLinkedToAccount}
                   onChange={() => onSelect(card)}
                   className="mt-1 accent-teal-600"
                 />
@@ -769,6 +805,11 @@ function CardPicker({
                   <span className="block font-medium">
                     {card.firstName} {card.lastName}
                   </span>
+                  {card.isLinkedToAccount && (
+                    <span className="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                      Powiązana z kontem pacjenta
+                    </span>
+                  )}
                   <span className="mt-1 block break-words text-xs text-muted-foreground">
                     {card.email || 'Brak e-maila'} · {card.phoneNumber || 'Brak telefonu'}
                   </span>
@@ -854,6 +895,66 @@ function RejectForm({
           onClick={() => mutation.mutate()}
         >
           {mutation.isPending ? 'Zapisywanie…' : 'Potwierdź odrzucenie'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={mutation.isPending}
+          onClick={onBack}
+        >
+          Wróć
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function EndForm({
+  requestId,
+  onBusyChange,
+  onChanged,
+  onSuccess,
+  onBack,
+}: {
+  requestId: string;
+  onBusyChange: (busy: boolean) => void;
+  onChanged: () => Promise<void>;
+  onSuccess: (message: string) => void;
+  onBack: () => void;
+}) {
+  const mutation = useMutation({
+    mutationFn: () => therapistCooperationApi.end(requestId),
+    retry: false,
+    onMutate: () => onBusyChange(true),
+    onSuccess: () => onSuccess('Współpraca została zakończona, a konto odłączone od karty.'),
+    onSettled: async () => {
+      onBusyChange(false);
+      await onChanged();
+    },
+  });
+
+  return (
+    <section className="space-y-4 rounded-xl border p-4">
+      <h2 className="text-2xl">Zakończyć współpracę?</h2>
+      <p className="text-sm text-muted-foreground">
+        Konto pacjenta zostanie odłączone od karty, a udostępnianie
+        dokumentacji wyłączone. Karta i cała dokumentacja zostają u Ciebie.
+        Pacjent dostanie powiadomienie i może później wysłać nową prośbę.
+      </p>
+
+      {mutation.isError && (
+        <p role="alert" className="text-sm text-destructive">
+          {getCooperationError(mutation.error)}
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        <Button
+          type="button"
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? 'Zapisywanie…' : 'Potwierdź zakończenie'}
         </Button>
         <Button
           type="button"

@@ -150,6 +150,22 @@ public class CooperationRequestsTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Request_to_inactive_therapist_should_return_404()
+    {
+        var (_, therapistId) = await _factory.CreatePublishedTherapistAsync();
+        await _factory.WithDbAsync(async db =>
+        {
+            var userId = await db.Therapists.Where(t => t.Id == therapistId).Select(t => t.UserId).SingleAsync();
+            var user = await db.Users.SingleAsync(u => u.Id == userId);
+            user.IsActive = false;
+            return await db.SaveChangesAsync();
+        });
+        var (patient, _) = await _factory.CreateConfirmedPatientClientAsync();
+
+        (await patient.SendRequestAsync(therapistId)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Duplicate_pending_request_should_return_409()
     {
         var (_, therapistId) = await _factory.CreatePublishedTherapistAsync();

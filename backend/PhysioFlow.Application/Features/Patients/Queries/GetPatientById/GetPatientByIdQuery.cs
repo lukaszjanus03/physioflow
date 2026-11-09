@@ -46,7 +46,8 @@ public class GetPatientByIdQueryHandler : IRequestHandler<GetPatientByIdQuery, P
                 p.GeneralNotes,
                 p.IsArchived,
                 p.CreatedAt,
-                p.UpdatedAt))
+                p.UpdatedAt,
+                p.UserId != null))
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException(nameof(Patient), request.Id);
 

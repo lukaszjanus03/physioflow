@@ -273,6 +273,12 @@ function PatientRow({ patient }: { patient: PatientListItem }) {
             >
               {patient.isArchived ? 'Archiwalny' : 'Aktywny'}
             </span>
+
+            {patient.isLinkedToAccount && (
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                Konto pacjenta
+              </span>
+            )}
           </div>
 
           <div className="mt-2 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center">

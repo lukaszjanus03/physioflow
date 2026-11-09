@@ -7,7 +7,10 @@ export type CooperationStatus =
   | 'Pending'
   | 'Accepted'
   | 'Rejected'
-  | 'Withdrawn';
+  | 'Withdrawn'
+  | 'Ended';
+
+export type CooperationParty = 'Patient' | 'Therapist';
 
 export type CooperationTherapist = {
   id: string;
@@ -24,6 +27,8 @@ export type PatientCooperationRequest = {
   createdAt: string;
   decidedAt: string | null;
   therapist: CooperationTherapist;
+  endedAt: string | null;
+  endedBy: CooperationParty | null;
 };
 
 export type PatientCooperation = {
@@ -42,6 +47,12 @@ export const COOPERATION_STATUS_LABELS: Record<CooperationStatus, string> = {
   Accepted: 'Zaakceptowana',
   Rejected: 'Odrzucona',
   Withdrawn: 'Wycofana',
+  Ended: 'Zakończona',
+};
+
+export const COOPERATION_ENDED_BY_LABELS: Record<CooperationParty, string> = {
+  Patient: 'przez pacjenta',
+  Therapist: 'przez terapeutę',
 };
 
 export const cooperationKeys = {
@@ -134,6 +145,15 @@ export const cooperationApi = {
     apiClient
       .post<PatientCooperationRequest>(
         `${baseUrl}/cooperation-requests/${encodeURIComponent(requestId)}/withdraw`,
+        undefined,
+        { timeout: 15_000 },
+      )
+      .then((response) => response.data),
+
+  end: (requestId: string) =>
+    apiClient
+      .post<PatientCooperationRequest>(
+        `${baseUrl}/cooperations/${encodeURIComponent(requestId)}/end`,
         undefined,
         { timeout: 15_000 },
       )

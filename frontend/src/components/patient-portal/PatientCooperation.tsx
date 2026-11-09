@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label, Textarea } from '@/components/ui/primitives';
 import {
+  COOPERATION_ENDED_BY_LABELS,
   COOPERATION_STATUS_LABELS,
   cooperationApi,
   cooperationKeys,
@@ -15,6 +16,7 @@ import {
 } from '@/lib/cooperation-api';
 import type {
   CooperationStatus,
+  PatientCooperation,
   PatientCooperationRequest,
 } from '@/lib/cooperation-api';
 
@@ -23,6 +25,7 @@ const statusStyles: Record<CooperationStatus, string> = {
   Accepted: 'bg-emerald-50 text-emerald-800',
   Rejected: 'bg-red-50 text-red-800',
   Withdrawn: 'bg-slate-100 text-slate-700',
+  Ended: 'bg-slate-100 text-slate-700',
 };
 
 function formatDate(value: string) {
@@ -350,6 +353,14 @@ export function MyCooperationRequests({ accountId }: { accountId: string }) {
                 </p>
               )}
 
+              {request.endedAt && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Współpracę zakończono: {formatDate(request.endedAt)}
+                  {request.endedBy &&
+                    ` (${COOPERATION_ENDED_BY_LABELS[request.endedBy]})`}
+                </p>
+              )}
+
               {request.message && (
                 <div className="mt-4 rounded-lg bg-muted/30 p-4">
                   <p className="text-xs text-muted-foreground">
@@ -410,11 +421,24 @@ export function MyCooperationRequests({ accountId }: { accountId: string }) {
 }
 
 export function MyTherapists({ accountId }: { accountId: string }) {
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: cooperationKeys.therapists(accountId),
     queryFn: ({ signal }) => cooperationApi.therapists(signal),
     staleTime: 0,
     refetchOnWindowFocus: true,
+  });
+  const [selected, setSelected] = useState<PatientCooperation | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: (requestId: string) => cooperationApi.end(requestId),
+    retry: false,
+    onSuccess: () => setSelected(null),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: cooperationKeys.all(accountId),
+      });
+    },
   });
 
   return (
@@ -445,7 +469,7 @@ export function MyTherapists({ accountId }: { accountId: string }) {
         </p>
       ) : query.data.length === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center">
-          <h2 className="text-2xl">Nie masz jeszcze aktywnej współpracy</h2>
+          <h2 className="text-2xl">Nie masz aktywnej współpracy</h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Znajdź terapeutę i wyślij prośbę. Pojawi się tutaj po jej akceptacji.
           </p>
@@ -478,10 +502,49 @@ export function MyTherapists({ accountId }: { accountId: string }) {
               <p className="mt-4 text-xs text-muted-foreground">
                 Współpraca od: {formatDate(cooperation.since)}
               </p>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-4"
+                disabled={mutation.isPending}
+                onClick={() => {
+                  mutation.reset();
+                  setSelected(cooperation);
+                }}
+              >
+                Zakończ współpracę
+              </Button>
             </article>
           ))}
         </div>
       )}
+
+      {mutation.isSuccess && (
+        <p role="status" className="text-sm text-primary">
+          Współpraca została zakończona.
+        </p>
+      )}
+
+      <Confirmation
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null);
+        }}
+        title="Zakończyć współpracę?"
+        description={`Twoje konto zostanie odłączone od karty pacjenta u terapeuty ${selected?.therapist.firstName ?? ''} ${selected?.therapist.lastName ?? ''}. Terapeuta zachowa swoją dokumentację. Współpracę możesz później wznowić, wysyłając nową prośbę.`}
+        pending={mutation.isPending}
+        confirmLabel="Zakończ współpracę"
+        onConfirm={() => {
+          if (selected) mutation.mutate(selected.requestId);
+        }}
+      >
+        {mutation.isError && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {getCooperationError(mutation.error)}
+          </p>
+        )}
+      </Confirmation>
 
       <aside className="rounded-xl border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
         Powiązanie z terapeutą nie udostępnia automatycznie dokumentacji

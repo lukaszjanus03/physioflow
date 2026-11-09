@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-import type { CooperationStatus } from '@/lib/cooperation-api';
+import type { CooperationParty, CooperationStatus } from '@/lib/cooperation-api';
 import type { PaginatedList, PatientListItem } from '@/types/api';
 
 export type CardAction = 'LinkExisting' | 'CreateNew';
@@ -17,6 +17,8 @@ export type TherapistCooperationRequest = {
   };
   cardLinkMode: CardAction | null;
   linkedPatientId: string | null;
+  endedAt: string | null;
+  endedBy: CooperationParty | null;
 };
 
 export type AcceptCooperationPayload = {
@@ -74,6 +76,15 @@ export const therapistCooperationApi = {
     apiClient
       .post<TherapistCooperationRequest>(
         `${baseUrl}/${encodeURIComponent(id)}/reject`,
+        undefined,
+        { timeout: 15_000 },
+      )
+      .then((response) => response.data),
+
+  end: (id: string) =>
+    apiClient
+      .post<TherapistCooperationRequest>(
+        `${baseUrl}/${encodeURIComponent(id)}/end`,
         undefined,
         { timeout: 15_000 },
       )

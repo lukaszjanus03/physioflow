@@ -202,6 +202,26 @@ public class TherapistCatalogTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Inactive_therapist_should_not_be_listed_nor_available_in_details()
+    {
+        var tag = UniqueTag();
+        var therapist = await _factory.CreateTherapistClientAsync();
+        var profile = await PublishAsync(therapist, "Ewa", "Nieaktywna", city: $"Radom{tag}", practiceName: "Gabinet Ewa");
+        await _factory.WithDbAsync(async db =>
+        {
+            var userId = await db.Therapists.Where(t => t.Id == profile.Id).Select(t => t.UserId).SingleAsync();
+            var user = await db.Users.SingleAsync(u => u.Id == userId);
+            user.IsActive = false;
+            return await db.SaveChangesAsync();
+        });
+        var (patient, _) = await _factory.CreateConfirmedPatientClientAsync();
+
+        (await SearchAsync(patient, tag)).Items.Should().BeEmpty();
+        (await patient.GetAsync($"{CatalogUrl}/{profile.Id}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await AllPublishedIdsAsync(patient)).Should().NotContain(profile.Id);
+    }
+
+    [Fact]
     public async Task Unpublished_profile_should_not_be_listed_nor_available_in_details()
     {
         var tag = UniqueTag();
@@ -380,6 +400,7 @@ public class TherapistCatalogTests : IClassFixture<TestWebApplicationFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        return await db.Therapists.CountAsync(t => t.IsPublished);
+        return await db.Therapists.CountAsync(t => t.IsPublished
+            && db.Users.Any(u => u.Id == t.UserId && u.IsActive));
     }
 }

@@ -5,6 +5,7 @@ using PhysioFlow.Api.Options;
 using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Cooperation.Commands.AcceptCooperationRequest;
+using PhysioFlow.Application.Features.Cooperation.Commands.EndCooperation;
 using PhysioFlow.Application.Features.Cooperation.Commands.RejectCooperationRequest;
 using PhysioFlow.Application.Features.Cooperation.Commands.SendCooperationRequest;
 using PhysioFlow.Application.Features.Cooperation.Commands.WithdrawCooperationRequest;
@@ -57,6 +58,14 @@ public class PatientCooperationController : ApiControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<PatientCooperationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyCooperations(CancellationToken ct) =>
         Ok(await Mediator.Send(new GetMyCooperationsQuery(), ct));
+
+    /// <summary>Kończy współpracę (id zaakceptowanej prośby) i odłącza konto od karty pacjenta u terapeuty.</summary>
+    [HttpPost("cooperations/{id:guid}/end")]
+    [ProducesResponseType(typeof(PatientCooperationRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> EndCooperation(Guid id, CancellationToken ct) =>
+        Ok(await Mediator.Send(new EndCooperationByPatientCommand(id), ct));
 }
 
 /// <summary>Prośby o współpracę skierowane do zalogowanego terapeuty.</summary>
@@ -99,4 +108,12 @@ public class TherapistCooperationRequestsController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Reject(Guid id, CancellationToken ct) =>
         Ok(await Mediator.Send(new RejectCooperationRequestCommand(id), ct));
+
+    /// <summary>Kończy aktywną współpracę. Karta z dokumentacją zostaje, ale traci powiązanie z kontem pacjenta.</summary>
+    [HttpPost("{id:guid}/end")]
+    [ProducesResponseType(typeof(TherapistCooperationRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> End(Guid id, CancellationToken ct) =>
+        Ok(await Mediator.Send(new EndCooperationByTherapistCommand(id), ct));
 }

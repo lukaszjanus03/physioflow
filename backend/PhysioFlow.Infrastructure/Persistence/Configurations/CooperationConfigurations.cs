@@ -13,6 +13,7 @@ public class CooperationRequestConfiguration : IEntityTypeConfiguration<Cooperat
 
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
         b.Property(x => x.CardLinkMode).HasConversion<string>().HasMaxLength(20);
+        b.Property(x => x.EndedBy).HasConversion<string>().HasMaxLength(20);
         b.Property(x => x.Message).HasMaxLength(CooperationRequest.MessageMaxLength);
         b.Property(x => x.PatientFirstName).HasMaxLength(ApplicationUserConfiguration.NameMaxLength);
         b.Property(x => x.PatientLastName).HasMaxLength(ApplicationUserConfiguration.NameMaxLength);

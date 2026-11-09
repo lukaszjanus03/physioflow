@@ -17,17 +17,20 @@ public class RejectCooperationRequestCommandHandler
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
+    private readonly ICooperationNotifier _notifier;
     private readonly ILogger<RejectCooperationRequestCommandHandler> _logger;
 
     public RejectCooperationRequestCommandHandler(
         IApplicationDbContext db,
         ICurrentUserService currentUser,
         IDateTimeProvider clock,
+        ICooperationNotifier notifier,
         ILogger<RejectCooperationRequestCommandHandler> logger)
     {
         _db = db;
         _currentUser = currentUser;
         _clock = clock;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -57,6 +60,8 @@ public class RejectCooperationRequestCommandHandler
 
         _logger.LogInformation(
             "Cooperation request {RequestId} status Pending -> Rejected by therapist {TherapistId}", entity.Id, therapist.Id);
+
+        await _notifier.RequestRejectedAsync(entity.Id, entity.PatientUserId, CooperationEnding.TherapistName(therapist), ct);
 
         return entity.ToTherapist();
     }

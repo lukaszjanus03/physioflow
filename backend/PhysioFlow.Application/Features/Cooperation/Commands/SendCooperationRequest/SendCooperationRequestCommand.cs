@@ -37,6 +37,7 @@ public class SendCooperationRequestCommandHandler
     private readonly IUserAccountService _accounts;
     private readonly IDateTimeProvider _clock;
     private readonly CooperationRequestOptions _options;
+    private readonly ICooperationNotifier _notifier;
     private readonly ILogger<SendCooperationRequestCommandHandler> _logger;
 
     public SendCooperationRequestCommandHandler(
@@ -45,6 +46,7 @@ public class SendCooperationRequestCommandHandler
         IUserAccountService accounts,
         IDateTimeProvider clock,
         IOptions<CooperationRequestOptions> options,
+        ICooperationNotifier notifier,
         ILogger<SendCooperationRequestCommandHandler> logger)
     {
         _db = db;
@@ -52,6 +54,7 @@ public class SendCooperationRequestCommandHandler
         _accounts = accounts;
         _clock = clock;
         _options = options.Value;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -61,7 +64,8 @@ public class SendCooperationRequestCommandHandler
         var now = _clock.UtcNow;
 
         var therapist = await _db.Therapists
-            .FirstOrDefaultAsync(t => t.Id == request.TherapistId && t.IsPublished, ct)
+            .FirstOrDefaultAsync(t => t.Id == request.TherapistId && t.IsPublished
+                                      && _accounts.ActiveUserIds().Contains(t.UserId), ct)
             ?? throw new NotFoundException(nameof(TherapistProfile), request.TherapistId!);
 
         var pairRequests = _db.CooperationRequests
@@ -127,6 +131,8 @@ public class SendCooperationRequestCommandHandler
         _logger.LogInformation(
             "Cooperation request {RequestId} sent by account {AccountId} to therapist {TherapistId}",
             entity.Id, accountId, therapist.Id);
+
+        await _notifier.RequestReceivedAsync(entity.Id, therapist.UserId, entity.PatientFirstName, entity.PatientLastName, ct);
 
         return entity.ToPatient();
     }

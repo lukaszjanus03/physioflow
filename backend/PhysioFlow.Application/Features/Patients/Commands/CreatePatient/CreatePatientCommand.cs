@@ -64,7 +64,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
                             && !p.IsArchived
                             && !p.IsDeleted, ct);
             if (exists)
-                throw new ConflictException($"Pacjent z PESEL {request.Pesel} już istnieje.");
+                throw new ConflictException("pesel_conflict", "Masz już aktywną kartę pacjenta z tym numerem PESEL.");
         }
 
         var patient = new Patient

@@ -6,18 +6,26 @@ namespace PhysioFlow.Tests.Integration;
 
 public record SentConfirmationEmail(string To, string FirstName, string ConfirmationLink);
 
+public record SentEmail(string To, string Subject, string HtmlBody);
+
 /// <summary>Zastępuje Resend w testach. Przechwytuje wiadomości i pozwala zasymulować awarię dostawcy.</summary>
 public class FakeEmailService : IEmailService
 {
     public ConcurrentQueue<SentConfirmationEmail> SentConfirmations { get; } = new();
+
+    public ConcurrentQueue<SentEmail> Sent { get; } = new();
 
     public bool SimulateProviderFailure { get; set; }
 
     public Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
     {
         ThrowIfFailing();
+        Sent.Enqueue(new SentEmail(to, subject, htmlBody));
         return Task.CompletedTask;
     }
+
+    public IReadOnlyList<SentEmail> SentTo(string to) =>
+        Sent.Where(e => string.Equals(e.To, to, StringComparison.OrdinalIgnoreCase)).ToList();
 
     public Task SendEmailConfirmationAsync(
         string to, string firstName, string confirmationLink, CancellationToken ct = default)

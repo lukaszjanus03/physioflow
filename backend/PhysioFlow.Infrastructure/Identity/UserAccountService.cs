@@ -14,4 +14,7 @@ public class UserAccountService : IUserAccountService
         var user = await _userManager.FindByIdAsync(userId.ToString());
         return user is null ? null : new UserAccountInfo(user.Id, user.FirstName, user.LastName, user.Email!);
     }
+
+    public IQueryable<Guid> ActiveUserIds() =>
+        _userManager.Users.Where(u => u.IsActive).Select(u => u.Id);
 }
