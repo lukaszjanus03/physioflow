@@ -1,24 +1,240 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { HeartPulse, LogOut, Search, UserRound } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+
+import TherapistCatalog from '@/components/patient-portal/TherapistCatalog';
+import { Button } from '@/components/ui/button';
+import { getApiMessage, portalApi } from '@/lib/portal-api';
 import { useAuthStore } from '@/stores/auth-store';
+
+function subscribeToClientReady() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 export default function PatientPortalPage() {
   const router = useRouter();
-  const { isAuthenticated, roles } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { isAuthenticated, roles, userId, logout } = useAuthStore();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const clientReady = useSyncExternalStore(
+    subscribeToClientReady,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+
+  const allowed =
+    isAuthenticated && roles.includes('Patient') && Boolean(userId);
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace('/login');
-    else if (!roles.includes('Patient')) router.replace('/');
-  }, [isAuthenticated, roles, router]);
+    if (!clientReady || allowed || isLoggingOut) return;
+
+    router.replace(isAuthenticated ? '/' : '/login');
+  }, [clientReady, allowed, isAuthenticated, isLoggingOut, router]);
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+
+    try {
+      await portalApi.logout();
+    } catch {
+      // Awaria API nie blokuje zakonczenia lokalnej sesji.
+    } finally {
+      void queryClient.cancelQueries();
+      queryClient.clear();
+      logout();
+      router.replace('/');
+    }
+  }
+
+  if (isLoggingOut) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p role="status" className="text-sm text-muted-foreground">
+          Wylogowywanie…
+        </p>
+      </main>
+    );
+  }
+
+  if (!clientReady || !allowed || !userId) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p role="status" className="text-sm text-muted-foreground">
+          Sprawdzanie sesji…
+        </p>
+      </main>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold">Portal pacjenta</h1>
-      <p className="text-muted-foreground">
-        TODO: nadchodzące wizyty, aktualny plan ćwiczeń, dzienniczek, czat z terapeutą
-      </p>
+    <PatientPortal
+      key={userId}
+      accountId={userId}
+      onLogout={handleLogout}
+    />
+  );
+}
+
+function PatientPortal({
+  accountId,
+  onLogout,
+}: {
+  accountId: string;
+  onLogout: () => Promise<void>;
+}) {
+  const [view, setView] = useState<'account' | 'catalog'>('account');
+
+  const query = useQuery({
+    queryKey: ['patient-account', accountId],
+    queryFn: ({ signal }) => portalApi.me(signal),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
+          <Link href="/portal" className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <HeartPulse aria-hidden="true" className="h-5 w-5" />
+            </span>
+
+            <span>
+              <span className="block font-semibold">PhysioFlow</span>
+              <span className="text-xs text-muted-foreground">
+                Portal pacjenta
+              </span>
+            </span>
+          </Link>
+
+          <Button type="button" variant="outline" onClick={() => void onLogout()}>
+            <LogOut aria-hidden="true" className="mr-2 h-4 w-4" />
+            Wyloguj się
+          </Button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+        {query.isPending ? (
+          <p role="status">Wczytywanie konta…</p>
+        ) : query.isError ? (
+          <section className="rounded-xl border bg-card p-6">
+            <h1 className="text-3xl">Nie udało się wczytać konta</h1>
+
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {getApiMessage(query.error)}
+            </p>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5"
+              disabled={query.isFetching}
+              onClick={() => void query.refetch()}
+            >
+              Spróbuj ponownie
+            </Button>
+          </section>
+        ) : (
+          <>
+            <nav
+              aria-label="Portal pacjenta"
+              className="flex flex-wrap gap-2 rounded-xl border bg-card p-2"
+            >
+              <Button
+                type="button"
+                variant={view === 'account' ? 'default' : 'ghost'}
+                aria-pressed={view === 'account'}
+                onClick={() => setView('account')}
+              >
+                <UserRound aria-hidden="true" className="mr-2 h-4 w-4" />
+                Moje konto
+              </Button>
+
+              <Button
+                type="button"
+                variant={view === 'catalog' ? 'default' : 'ghost'}
+                aria-pressed={view === 'catalog'}
+                onClick={() => setView('catalog')}
+              >
+                <Search aria-hidden="true" className="mr-2 h-4 w-4" />
+                Znajdź terapeutę
+              </Button>
+            </nav>
+
+            {view === 'catalog' ? (
+              <TherapistCatalog accountId={accountId} />
+            ) : (
+              <>
+                <section className="rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:p-8">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+                    Twoja przestrzeń
+                  </span>
+
+                  <h1 className="mt-3 text-4xl sm:text-5xl">
+                    Witaj
+                    {query.data.firstName ? `, ${query.data.firstName}` : ''}
+                  </h1>
+
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    Zarządzaj swoim kontem i poznaj terapeutów korzystających
+                    z PhysioFlow.
+                  </p>
+                </section>
+
+                <section className="rounded-xl border bg-card p-6">
+                  <h2 className="text-3xl">Moje konto</h2>
+
+                  <dl className="mt-6 grid gap-5 sm:grid-cols-2">
+                    {[
+                      ['Imię', query.data.firstName || 'Nie podano'],
+                      ['Nazwisko', query.data.lastName || 'Nie podano'],
+                      ['E-mail', query.data.email],
+                      [
+                        'Potwierdzenie e-maila',
+                        query.data.emailConfirmed
+                          ? 'Potwierdzony'
+                          : 'Niepotwierdzony',
+                      ],
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-xl border p-4">
+                        <dt className="text-xs text-muted-foreground">
+                          {label}
+                        </dt>
+
+                        <dd className="mt-2 break-words text-sm font-medium">
+                          {value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+
+                <aside className="rounded-xl border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
+                  Konto jest niezależne od dokumentacji prowadzonej przez
+                  terapeutę. Samo założenie konta nie udostępnia kart medycznych.
+                </aside>
+              </>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }
