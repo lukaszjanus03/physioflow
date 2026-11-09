@@ -1,11 +1,15 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { HeartPulse, LogOut, Search, UserRound } from 'lucide-react';
+import { HeartPulse, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 
+import {
+  MyCooperationRequests,
+  MyTherapists,
+} from '@/components/patient-portal/PatientCooperation';
 import TherapistCatalog from '@/components/patient-portal/TherapistCatalog';
 import { Button } from '@/components/ui/button';
 import { getApiMessage, portalApi } from '@/lib/portal-api';
@@ -22,6 +26,15 @@ function getClientSnapshot() {
 function getServerSnapshot() {
   return false;
 }
+
+type PortalView = 'account' | 'catalog' | 'requests' | 'therapists';
+
+const navigation: { id: PortalView; label: string }[] = [
+  { id: 'account', label: 'Moje konto' },
+  { id: 'catalog', label: 'Znajdź terapeutę' },
+  { id: 'requests', label: 'Moje prośby' },
+  { id: 'therapists', label: 'Moi terapeuci' },
+];
 
 export default function PatientPortalPage() {
   const router = useRouter();
@@ -54,28 +67,18 @@ export default function PatientPortalPage() {
     } catch {
       // Awaria API nie blokuje zakonczenia lokalnej sesji.
     } finally {
-      void queryClient.cancelQueries();
+      await queryClient.cancelQueries();
       queryClient.clear();
       logout();
       router.replace('/');
     }
   }
 
-  if (isLoggingOut) {
+  if (isLoggingOut || !clientReady || !allowed || !userId) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p role="status" className="text-sm text-muted-foreground">
-          Wylogowywanie…
-        </p>
-      </main>
-    );
-  }
-
-  if (!clientReady || !allowed || !userId) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p role="status" className="text-sm text-muted-foreground">
-          Sprawdzanie sesji…
+          {isLoggingOut ? 'Wylogowywanie…' : 'Sprawdzanie sesji…'}
         </p>
       </main>
     );
@@ -97,7 +100,7 @@ function PatientPortal({
   accountId: string;
   onLogout: () => Promise<void>;
 }) {
-  const [view, setView] = useState<'account' | 'catalog'>('account');
+  const [view, setView] = useState<PortalView>('account');
 
   const query = useQuery({
     queryKey: ['patient-account', accountId],
@@ -123,7 +126,11 @@ function PatientPortal({
             </span>
           </Link>
 
-          <Button type="button" variant="outline" onClick={() => void onLogout()}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void onLogout()}
+          >
             <LogOut aria-hidden="true" className="mr-2 h-4 w-4" />
             Wyloguj się
           </Button>
@@ -157,30 +164,32 @@ function PatientPortal({
               aria-label="Portal pacjenta"
               className="flex flex-wrap gap-2 rounded-xl border bg-card p-2"
             >
-              <Button
-                type="button"
-                variant={view === 'account' ? 'default' : 'ghost'}
-                aria-pressed={view === 'account'}
-                onClick={() => setView('account')}
-              >
-                <UserRound aria-hidden="true" className="mr-2 h-4 w-4" />
-                Moje konto
-              </Button>
-
-              <Button
-                type="button"
-                variant={view === 'catalog' ? 'default' : 'ghost'}
-                aria-pressed={view === 'catalog'}
-                onClick={() => setView('catalog')}
-              >
-                <Search aria-hidden="true" className="mr-2 h-4 w-4" />
-                Znajdź terapeutę
-              </Button>
+              {navigation.map((item) => (
+                <Button
+                  key={item.id}
+                  type="button"
+                  variant={view === item.id ? 'default' : 'ghost'}
+                  aria-pressed={view === item.id}
+                  onClick={() => setView(item.id)}
+                >
+                  {item.label}
+                </Button>
+              ))}
             </nav>
 
-            {view === 'catalog' ? (
+            {view === 'catalog' && (
               <TherapistCatalog accountId={accountId} />
-            ) : (
+            )}
+
+            {view === 'requests' && (
+              <MyCooperationRequests accountId={accountId} />
+            )}
+
+            {view === 'therapists' && (
+              <MyTherapists accountId={accountId} />
+            )}
+
+            {view === 'account' && (
               <>
                 <section className="rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:p-8">
                   <span className="text-xs font-semibold uppercase tracking-widest text-primary">
@@ -193,9 +202,17 @@ function PatientPortal({
                   </h1>
 
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Zarządzaj swoim kontem i poznaj terapeutów korzystających
-                    z PhysioFlow.
+                    Poznaj terapeutów, wysyłaj prośby o współpracę i sprawdzaj
+                    ich status.
                   </p>
+
+                  <Button
+                    type="button"
+                    className="mt-5"
+                    onClick={() => setView('catalog')}
+                  >
+                    Znajdź terapeutę
+                  </Button>
                 </section>
 
                 <section className="rounded-xl border bg-card p-6">
@@ -217,7 +234,6 @@ function PatientPortal({
                         <dt className="text-xs text-muted-foreground">
                           {label}
                         </dt>
-
                         <dd className="mt-2 break-words text-sm font-medium">
                           {value}
                         </dd>
@@ -228,7 +244,8 @@ function PatientPortal({
 
                 <aside className="rounded-xl border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
                   Konto jest niezależne od dokumentacji prowadzonej przez
-                  terapeutę. Samo założenie konta nie udostępnia kart medycznych.
+                  terapeutę. Założenie konta i rozpoczęcie współpracy nie
+                  udostępniają automatycznie kart medycznych.
                 </aside>
               </>
             )}

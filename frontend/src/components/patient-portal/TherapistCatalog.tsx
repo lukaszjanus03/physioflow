@@ -1,9 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, MapPin, Search, UserRound } from 'lucide-react';
+import { ArrowLeft, MapPin, Search } from 'lucide-react';
 import { useState } from 'react';
 
+import { SendCooperationRequest } from '@/components/patient-portal/PatientCooperation';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/primitives';
 import { getApiMessage, getApiStatus, portalApi } from '@/lib/portal-api';
@@ -29,6 +30,7 @@ export default function TherapistCatalog({ accountId }: Props) {
   if (selectedId) {
     return (
       <TherapistDetails
+        key={selectedId}
         accountId={accountId}
         therapistId={selectedId}
         onBack={() => setSelectedId(null)}
@@ -41,7 +43,8 @@ export default function TherapistCatalog({ accountId }: Props) {
       <div>
         <h1 className="text-4xl">Znajdź terapeutę</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Przeglądaj opublikowane profile i poznaj gabinety korzystające z PhysioFlow.
+          Poznaj terapeutów korzystających z PhysioFlow i wyślij prośbę
+          o rozpoczęcie współpracy.
         </p>
       </div>
 
@@ -49,7 +52,6 @@ export default function TherapistCatalog({ accountId }: Props) {
         className="rounded-xl border bg-card p-5"
         onSubmit={(event) => {
           event.preventDefault();
-          setPage(1);
 
           const nextSearch = draft.trim();
 
@@ -58,6 +60,7 @@ export default function TherapistCatalog({ accountId }: Props) {
           }
 
           setSearch(nextSearch);
+          setPage(1);
         }}
       >
         <Label htmlFor="catalog-search">
@@ -96,12 +99,12 @@ export default function TherapistCatalog({ accountId }: Props) {
       </form>
 
       {query.isPending ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          Wczytywanie katalogu…
-        </p>
+        <p role="status">Wczytywanie katalogu…</p>
       ) : query.isError ? (
         <div role="alert" className="rounded-xl border bg-card p-6">
-          <p className="text-sm text-destructive">{getApiMessage(query.error)}</p>
+          <p className="text-sm text-destructive">
+            {getApiMessage(query.error)}
+          </p>
           <Button
             type="button"
             variant="outline"
@@ -115,17 +118,18 @@ export default function TherapistCatalog({ accountId }: Props) {
       ) : (
         <>
           <p role="status" className="text-sm text-muted-foreground">
-            {query.isFetching ? 'Odświeżanie…' : `Znalezione profile: ${query.data.totalCount}`}
+            {query.isFetching
+              ? 'Odświeżanie…'
+              : `Znalezione profile: ${query.data.totalCount}`}
           </p>
 
           {query.data.items.length === 0 ? (
             <div className="rounded-xl border border-dashed p-8 text-center">
-              <UserRound aria-hidden="true" className="mx-auto mb-4 h-8 w-8 text-primary" />
               <h2 className="text-2xl">Brak profili do wyświetlenia</h2>
               <p className="mt-3 text-sm text-muted-foreground">
                 {search
                   ? 'Zmień wyszukiwaną frazę lub wyczyść filtr.'
-                  : 'Terapeuci pojawią się tutaj po opublikowaniu swoich profili.'}
+                  : 'Profile pojawią się po opublikowaniu ich przez terapeutów.'}
               </p>
             </div>
           ) : (
@@ -231,6 +235,7 @@ function TherapistDetails({
       ) : query.isError ? (
         <div role="alert" className="rounded-xl border bg-card p-6">
           <h1 className="text-3xl">Profil niedostępny</h1>
+
           <p className="mt-3 text-sm text-muted-foreground">
             {getApiStatus(query.error) === 404
               ? 'Profil nie istnieje lub nie jest już opublikowany.'
@@ -259,15 +264,26 @@ function TherapistDetails({
             {query.data.firstName} {query.data.lastName}
           </h1>
 
-          <p className="mt-3 break-words font-medium">{query.data.practiceName}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{query.data.city}</p>
+          <p className="mt-3 break-words font-medium">
+            {query.data.practiceName}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {query.data.city}
+          </p>
 
           <div className="mt-6 border-t pt-6">
             <h2 className="text-2xl">O terapeucie</h2>
+
             <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
               {query.data.bio || 'Terapeuta nie dodał jeszcze opisu.'}
             </p>
           </div>
+
+          <SendCooperationRequest
+            accountId={accountId}
+            therapistId={therapistId}
+            therapistName={`${query.data.firstName} ${query.data.lastName}`}
+          />
         </article>
       )}
     </section>
