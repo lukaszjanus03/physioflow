@@ -20,9 +20,7 @@ import type { AppointmentAction } from '@/lib/appointments-api';
 import { getCalendarError } from '@/lib/calendar-api';
 import type { CalendarSettings } from '@/lib/calendar-api';
 
-export type AppointmentSelection =
-  | { kind: 'new'; date: string }
-  | { kind: 'existing'; id: string };
+export type AppointmentSelection = { kind: 'new'; date: string } | { kind: 'existing'; id: string };
 
 const actionLabels: Record<AppointmentAction, string> = {
   cancel: 'Odwołaj wizytę',
@@ -74,8 +72,7 @@ export default function AppointmentDialog({
   }
 
   const statusMutation = useMutation({
-    mutationFn: (nextAction: AppointmentAction) =>
-      appointmentsApi.changeStatus(id, nextAction),
+    mutationFn: (nextAction: AppointmentAction) => appointmentsApi.changeStatus(id, nextAction),
     retry: false,
     onMutate: () => setBusy(true),
     onSuccess: () => onSaved('Status wizyty został zaktualizowany.'),
@@ -86,13 +83,9 @@ export default function AppointmentDialog({
   });
 
   const appointment = details.data;
-  const future = appointment
-    ? new Date(appointment.startsAt).getTime() > now
-    : false;
+  const future = appointment ? new Date(appointment.startsAt).getTime() > now : false;
 
-  const actionAllowed =
-    appointment?.status === 'Scheduled' &&
-    (action === 'cancel' ? future : !future);
+  const actionAllowed = appointment?.status === 'Scheduled' && (action === 'cancel' ? future : !future);
 
   function close() {
     confirmLeave(onClose);
@@ -100,12 +93,17 @@ export default function AppointmentDialog({
 
   return (
     <>
-      <Dialog.Root open onOpenChange={(open) => { if (!open) close(); }}>
+      <Dialog.Root
+        open
+        onOpenChange={(open) => {
+          if (!open) close();
+        }}
+      >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
 
           <Dialog.Content
-            className="fixed left-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border bg-background p-5 shadow-xl sm:p-7"
+            className="appointment-wide-dialog fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-background shadow-xl"
             onEscapeKeyDown={(event) => {
               event.preventDefault();
               close();
@@ -156,11 +154,11 @@ export default function AppointmentDialog({
                     <h2 className="text-2xl">{appointment.patientName}</h2>
                     <p className="mt-3 text-sm">
                       {appointmentDateTime(appointment.startsAt)}
-                      {' – '}{appointmentTime(appointment.endsAt)}
+                      {' – '}
+                      {appointmentTime(appointment.endsAt)}
                     </p>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      {appointment.durationMinutes} minut ·{' '}
-                      {APPOINTMENT_LABELS[appointment.status]}
+                      {appointment.durationMinutes} minut · {APPOINTMENT_LABELS[appointment.status]}
                     </p>
                     <Link
                       href={`/patients/${appointment.patientId}`}
@@ -208,8 +206,7 @@ export default function AppointmentDialog({
 
                       {!actionAllowed && (
                         <p role="alert" className="text-sm text-destructive">
-                          Operacja nie jest już dostępna dla aktualnego czasu
-                          lub statusu wizyty.
+                          Operacja nie jest już dostępna dla aktualnego czasu lub statusu wizyty.
                         </p>
                       )}
 
@@ -262,22 +259,21 @@ export default function AppointmentDialog({
                             </Button>
                           )}
 
-                          {(future
-                            ? ['cancel'] as const
-                            : ['complete', 'no-show'] as const
-                          ).map((nextAction) => (
-                            <Button
-                              key={nextAction}
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                statusMutation.reset();
-                                setAction(nextAction);
-                              }}
-                            >
-                              {actionLabels[nextAction]}
-                            </Button>
-                          ))}
+                          {(future ? (['cancel'] as const) : (['complete', 'no-show'] as const)).map(
+                            (nextAction) => (
+                              <Button
+                                key={nextAction}
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  statusMutation.reset();
+                                  setAction(nextAction);
+                                }}
+                              >
+                                {actionLabels[nextAction]}
+                              </Button>
+                            ),
+                          )}
                         </div>
                       )}
                     </>
