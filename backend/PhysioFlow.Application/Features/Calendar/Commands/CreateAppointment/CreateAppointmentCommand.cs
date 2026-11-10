@@ -122,7 +122,8 @@ internal static class AppointmentScheduling
         string? notes,
         Guid? exceptId,
         DateTime now,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? patientMessage = null)
     {
         var settings = await CalendarAccess.GetOrCreateSettingsAsync(db, therapistId, ct);
         var allowed = CalendarDurations.Parse(settings.AllowedDurations);
@@ -194,6 +195,7 @@ internal static class AppointmentScheduling
                 Status = AppointmentStatus.Scheduled,
                 Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
                 Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+                PatientMessage = string.IsNullOrWhiteSpace(patientMessage) ? null : patientMessage.Trim(),
             };
             db.Appointments.Add(appointment);
         }

@@ -256,7 +256,8 @@ internal static class CalendarMapping
         (int)appointment.Duration,
         appointment.Status,
         appointment.Reason,
-        appointment.Notes);
+        appointment.Notes,
+        appointment.PatientMessage);
 }
 
 internal static class CalendarAccess

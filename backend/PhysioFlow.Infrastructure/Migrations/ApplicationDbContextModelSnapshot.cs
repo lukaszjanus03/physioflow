@@ -787,6 +787,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("patient_id");
 
+                    b.Property<string>("PatientMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("patient_message");
+
                     b.Property<Guid?>("PatientUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("patient_user_id");

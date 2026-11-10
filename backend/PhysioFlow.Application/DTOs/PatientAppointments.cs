@@ -8,7 +8,8 @@ public record AppointmentTherapistDto(
 // Celowo bez patientId, powodu wizyty i wewnętrznych notatek terapeuty.
 public record PatientAppointmentDto(
     Guid Id, AppointmentTherapistDto Therapist, DateTime StartsAt, DateTime EndsAt,
-    int DurationMinutes, AppointmentStatus Status, bool CanCancel, DateTime CancellationDeadline);
+    int DurationMinutes, AppointmentStatus Status, bool CanCancel, DateTime CancellationDeadline,
+    string? PatientMessage = null);
 
 public record PatientBookingSettingsDto(Guid TherapistId, string TimeZone, IReadOnlyList<int> AllowedDurations);
 public record PatientAppointmentSummaryDto(PatientAppointmentDto? NextAppointment);

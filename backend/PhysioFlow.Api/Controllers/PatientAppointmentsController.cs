@@ -5,7 +5,8 @@ using PhysioFlow.Application.Features.Calendar;
 
 namespace PhysioFlow.Api.Controllers;
 
-public record BookPatientAppointmentBody(Guid? TherapistId, DateTime? StartsAt, int? DurationMinutes);
+public record BookPatientAppointmentBody(Guid? TherapistId, DateTime? StartsAt, int? DurationMinutes,
+    string? PatientMessage = null);
 
 [Route("api/patient-portal/appointments")]
 [Authorize(Roles = "Patient")]
@@ -42,7 +43,8 @@ public class PatientAppointmentsController : ApiControllerBase
     [ProducesResponseType(409)]
     public async Task<IActionResult> Book(BookPatientAppointmentBody body, CancellationToken ct)
     {
-        var result = await Mediator.Send(new BookPatientAppointmentCommand(body.TherapistId, body.StartsAt, body.DurationMinutes), ct);
+        var result = await Mediator.Send(new BookPatientAppointmentCommand(
+            body.TherapistId, body.StartsAt, body.DurationMinutes, body.PatientMessage), ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 

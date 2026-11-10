@@ -72,7 +72,18 @@ public class AppointmentReminderTests
     {
         using var factory = new PatientCalendarFactory();
         var s = await factory.CalendarScenarioAsync();
-        var a = await s.BookOkAsync();
+        var booked = await s.Patient.PostAsJsonAsync(PatientCalendarSteps.Url, new
+        {
+            therapistId = s.TherapistId, startsAt = s.Start, durationMinutes = 60,
+            patientMessage = "PRIVATE_PATIENT_MESSAGE",
+        });
+        booked.EnsureSuccessStatusCode();
+        var a = (await booked.Content.ReadFromJsonAsync<PatientAppointmentDto>(CalendarTestSteps.Json))!;
+        (await s.Therapist.PutAsJsonAsync($"/api/appointments/{a.Id}", new
+        {
+            patientId = s.CardId, startsAt = s.Start, durationMinutes = 60,
+            reason = "PRIVATE_REASON", notes = "PRIVATE_THERAPIST_NOTES",
+        })).EnsureSuccessStatusCode();
         var before = factory.Email.SentTo(s.Email).Count;
         factory.Clock.UtcNow = s.Start.AddHours(-25);
         await factory.ProcessRemindersAsync();
@@ -83,7 +94,7 @@ public class AppointmentReminderTests
         var reminders = factory.Email.SentTo(s.Email).Where(x => x.Subject == AppointmentReminderProcessor.Subject).ToList();
         reminders.Should().ContainSingle();
         reminders[0].HtmlBody.Should().Contain("Europe/Warsaw").And.Contain("Gabinet Ruch")
-            .And.Contain("Krak").And.NotContain("PESEL").And.NotContain("notes");
+            .And.Contain("Krak").And.NotContain("PESEL").And.NotContain("notes").And.NotContain("PRIVATE_");
         var stored = await factory.WithDbAsync(db => db.AppointmentReminders.SingleAsync(r => r.AppointmentId == a.Id));
         stored.Status.Should().Be(ReminderDeliveryStatus.Sent);
         stored.Attempts.Should().Be(1);
