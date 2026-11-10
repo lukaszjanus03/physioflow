@@ -73,7 +73,8 @@ public class GetAppointmentsQueryHandler
                 (int)a.Duration,
                 a.Status,
                 a.Reason,
-                a.Notes))
+                a.Notes,
+                a.PatientMessage))
             .ToListAsync(ct);
     }
 }

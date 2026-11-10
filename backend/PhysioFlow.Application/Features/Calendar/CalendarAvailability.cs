@@ -8,7 +8,7 @@ namespace PhysioFlow.Application.Features.Calendar;
 internal static class CalendarAvailability
 {
     public static async Task<AvailableSlotsDto> GetAsync(IApplicationDbContext db, Guid therapistId,
-        DateOnly date, int duration, DateTime now, CancellationToken ct)
+        DateOnly date, int duration, DateTime now, CancellationToken ct, Guid? excludeAppointmentId = null)
     {
         var settings = await CalendarAccess.GetOrCreateSettingsAsync(db, therapistId, ct);
         if (!CalendarDurations.Parse(settings.AllowedDurations).Contains(duration))
@@ -17,6 +17,7 @@ internal static class CalendarAvailability
         var (start, end) = WarsawTime.DayRangeUtc(date);
         var bufferStart = start.AddMinutes(-60);
         var occupied = await db.Appointments.Where(a => a.TherapistId == therapistId
+                && (excludeAppointmentId == null || a.Id != excludeAppointmentId)
                 && a.Status == AppointmentStatus.Scheduled && a.StartsAt < end && a.EndsAt > bufferStart)
             .Select(a => new { a.StartsAt, a.EndsAt, a.BufferMinutes }).ToListAsync(ct);
         return new(date, duration, CalendarSchedule.GenerateSlots(date, duration, settings.BufferMinutes,

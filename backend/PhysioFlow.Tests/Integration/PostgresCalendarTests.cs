@@ -22,7 +22,7 @@ public sealed class PostgresFactAttribute : FactAttribute
 }
 
 /// <summary>Każda fabryka tworzy i usuwa wyłącznie własną, losową bazę testową.</summary>
-public sealed class PostgresCalendarFactory : PatientCalendarFactory
+public class PostgresCalendarFactory : PatientCalendarFactory
 {
     private readonly string _adminConnection;
     private readonly string _databaseName = "physioflow_calendar_test_" + Guid.NewGuid().ToString("N");
@@ -74,6 +74,32 @@ public sealed class PostgresCalendarFactory : PatientCalendarFactory
 
 public class PostgresCalendarTests
 {
+    [PostgresFact]
+    public async Task Patient_message_migration_should_preserve_existing_visits_and_store_optional_message()
+    {
+        using var factory = new PostgresCalendarFactory();
+        var s = await factory.CalendarScenarioAsync();
+        var existing = await s.BookOkAsync();
+        await factory.WithDbAsync(async db =>
+        {
+            var migrator = db.GetService<IMigrator>();
+            await migrator.MigrateAsync("20261110120608_AddPatientAppointmentsAndReminders");
+            await migrator.MigrateAsync();
+            return 0;
+        });
+        var old = await factory.WithDbAsync(db => db.Appointments.AsNoTracking().SingleAsync(x => x.Id == existing.Id));
+        old.PatientMessage.Should().BeNull();
+        var booked = await s.Patient.PostAsJsonAsync(PatientCalendarSteps.Url, new
+        {
+            therapistId = s.TherapistId, startsAt = s.Start.AddHours(2), durationMinutes = 60,
+            patientMessage = "  Wiadomość zapisana na PostgreSQL.  ",
+        });
+        booked.StatusCode.Should().Be(HttpStatusCode.Created, await booked.Content.ReadAsStringAsync());
+        var result = await booked.Content.ReadFromJsonAsync<PhysioFlow.Application.DTOs.PatientAppointmentDto>(CalendarTestSteps.Json);
+        (await factory.WithDbAsync(db => db.Appointments.AsNoTracking().SingleAsync(x => x.Id == result!.Id)))
+            .PatientMessage.Should().Be("Wiadomość zapisana na PostgreSQL.");
+    }
+
     [PostgresFact]
     public async Task Two_patients_should_not_book_same_therapist_slot()
     {

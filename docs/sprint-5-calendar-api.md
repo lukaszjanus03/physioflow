@@ -1,6 +1,6 @@
 # Sprint 5 — wizyty pacjenta i przypomnienia
 
-Backend korzysta z istniejącego kalendarza terapeuty. Frontend kalendarza pacjenta wymaga podłączenia do poniższego kontraktu. Dokument stanowi propozycję kontraktu do uzgodnienia z frontendem; nie oznacza, że integracja interfejsu została już wykonana.
+Backend i podstawowy frontend kalendarza pacjenta są już zaimplementowane. Poniżej opisano kontrakt API, w tym uzupełnienie backendu o wiadomość pacjenta i wykluczanie edytowanej wizyty. Obsługa tych dwóch nowych pól wymaga jeszcze podłączenia po stronie frontendu.
 
 ## Endpointy pacjenta
 
@@ -20,13 +20,18 @@ Payload rezerwacji:
 {
   "therapistId": "00000000-0000-0000-0000-000000000001",
   "startsAt": "2026-11-30T09:00:00Z",
-  "durationMinutes": 60
+  "durationMinutes": 60,
+  "patientMessage": "Pierwsza konsultacja dotycząca bólu barku."
 }
 ```
 
 Nie przesyłamy `patientId`, statusu, powodu ani notatek. Kartę wybiera backend na podstawie konta z sesji i aktywnej zaakceptowanej współpracy. Nieznane pola JSON nie dają uprawnień do zmiany innych danych.
 
-Wizyta pacjenta ma pola: `id`, `therapist` (`id`, `firstName`, `lastName`, `practiceName`, `city`, `phoneNumber`), `startsAt`, `endsAt`, `durationMinutes`, `status`, `canCancel`, `cancellationDeadline`. Nie zawiera karty pacjenta, notatek ani powodu wpisanego przez terapeutę. Statusy są stringami: `Scheduled`, `Cancelled`, `Completed`, `NoShow`.
+`patientMessage` jest opcjonalne. Backend usuwa skrajne białe znaki, pustą lub składającą się wyłącznie z białych znaków wartość zapisuje jako `null` i sprawdza limit 500 znaków po przycięciu. Przekroczenie limitu zwraca `400` z `errors.patientMessage`, bez zapisania rezerwacji. Brak pola i jawne `null` zachowują dotychczasowe działanie.
+
+Wizyta pacjenta ma pola: `id`, `therapist` (`id`, `firstName`, `lastName`, `practiceName`, `city`, `phoneNumber`), `startsAt`, `endsAt`, `durationMinutes`, `status`, `canCancel`, `cancellationDeadline`, `patientMessage`. Nie zawiera karty pacjenta, notatek ani powodu wpisanego przez terapeutę. Statusy są stringami: `Scheduled`, `Cancelled`, `Completed`, `NoShow`.
+
+Oryginalna wiadomość jest osobna od `Reason` i `Notes`. Właściwy terapeuta otrzymuje `patientMessage` w istniejącym `AppointmentDto`, w tym w szczegółach wizyty. `PUT /api/appointments/{id}` nie przyjmuje wiadomości do edycji i nie nadpisuje jej przy zmianie terminu, długości, powodu ani notatek. Pacjent nie ma endpointu do późniejszej zmiany wiadomości. Jeśli terapeuta przeniesie wizytę na kartę innego konta, nowy pacjent nie otrzymuje wiadomości poprzedniego autora (`patientMessage: null`); terapeuta zachowuje jej oryginał. Widoczność w DTO pacjenta wymaga zgodności autora rezerwacji (`CreatedById`) z właścicielem wizyty (`PatientUserId`).
 
 Daty wizyt i granica odwołania są zwracane w UTC. Rezerwacja wymaga jednoznacznego czasu z `Z` lub offsetem, np. `+01:00`. Frontend prezentuje je z `timeZone: "Europe/Warsaw"`. `canCancel` jest wskazówką dla interfejsu; o przyjęciu odwołania decyduje ponowne sprawdzenie na serwerze. Dokładnie 24 godziny przed rozpoczęciem odwołanie jest dozwolone.
 
@@ -43,11 +48,20 @@ Daty wizyt i granica odwołania są zwracane w UTC. Rezerwacja wymaga jednoznacz
 - `409` z `code: "slot_conflict"` — kolizja lub termin zajęty równocześnie. Należy odświeżyć wolne terminy.
 - `409` z `code: "cancellation_too_late"` — do wizyty pozostało mniej niż 24 godziny.
 - `409` z `code: "invalid_status_transition"` — wizyta nie jest już zaplanowana albo zmieniła się podczas odwołania.
+- `409` z `code: "appointment_not_editable"` — próba wykluczenia z dostępności własnej wizyty rozpoczętej lub o statusie innym niż `Scheduled`.
 - `409` z `code: "concurrent_modification"` — równoczesna zmiana danych w pozostałych operacjach.
 
 ## Podsumowanie terapeuty
 
 `GET /api/appointments/summary`, JWT i rola `Therapist`. Zwraca `{"upcomingAppointments":[…]}` — maksymalnie 5 własnych przyszłych wizyt `Scheduled`, od najbliższej. Każda ma istniejący format `AppointmentDto`; brak wizyt: pusta tablica. Endpointy kalendarza terapeuty nadal działają.
+
+## Wolne terminy podczas edycji wizyty
+
+`GET /api/therapists/me/calendar/available-slots?date=2026-11-30&durationMinutes=60&excludeAppointmentId=<id>` wymaga JWT terapeuty. Opcjonalny parametr `excludeAppointmentId` pomija zajętość i bufor wskazanej wizyty. Pozostałe wizyty nadal blokują kolizje. Można pytać o inną datę i długość, aby przenieść lub wydłużyć wizytę.
+
+Wykluczana wizyta musi należeć do zalogowanego terapeuty, mieć status `Scheduled` i rozpoczynać się po aktualnym czasie serwera. Cudza, nieistniejąca lub usunięta wizyta zwraca `404`, bez ujawniania jej danych; własna wizyta niespełniająca warunków edycji zwraca `409 appointment_not_editable`. Niepoprawny format GUID zwraca `400`.
+
+Bez parametru endpoint działa jak dotąd. Endpoint wolnych terminów portalu pacjenta nie obsługuje wykluczania. Parametr dotyczy tylko podglądu dostępności: zapis `PUT /api/appointments/{id}` nadal ponownie sprawdza aktualną dostępność i wszystkie pozostałe wizyty w transakcji. Podgląd nie rezerwuje terminu.
 
 ## Własność i historia
 
@@ -55,7 +69,7 @@ Daty wizyt i granica odwołania są zwracane w UTC. Rezerwacja wymaga jednoznacz
 
 Pierwsze potwierdzone powiązanie karty przypisuje również wcześniejsze nieprzypisane wizyty. Ponowne połączenie karty z innym kontem nie przenosi własności istniejących wizyt. Przy zmianie karty wizyty przez terapeutę właściciel jest aktualizowany do konta nowej karty.
 
-Migracja `AddPatientAppointmentsAndReminders` uzupełnia istniejące rekordy na podstawie historii zaakceptowanych/zakończonych współprac i aktualnych jednoznacznych powiązań. Niejednoznaczna historia pozostaje nieprzypisana; nie przyznajemy dostępu przez zgadywanie właściciela.
+Migracja `AddPatientAppointmentsAndReminders` uzupełnia istniejące rekordy na podstawie historii zaakceptowanych/zakończonych współprac i aktualnych jednoznacznych powiązań. Niejednoznaczna historia pozostaje nieprzypisana; nie przyznajemy dostępu przez zgadywanie właściciela. Kolejna migracja `AddAppointmentPatientMessage` dodaje nullable `patient_message varchar(500)`; istniejące wizyty zachowują dane i mają pustą wiadomość.
 
 ## Przypomnienia
 
@@ -66,6 +80,8 @@ Rejestr `appointment_reminders` przechowuje wersję terminu, stan, liczbę prób
 Zmiana terminu lub karty nadaje nowy `reminder_schedule_id` i czyści `ReminderSent`. Stare wpisy zostają jako historia i nie są ponawiane. Odwołanie usuwa wizytę z kolejki kandydatów. Błąd poczty nie jest częścią żądania rezerwacji lub odwołania i nie cofa tych operacji. Brak adresu e-mail oznacza `Skipped`, bez zatrzymania pozostałych wiadomości.
 
 Adres przypomnienia dla wizyty konta portalu pochodzi z tego konta, również po zakończeniu współpracy. Nie jest zastępowany adresem nowego właściciela tej samej karty. Dla wizyt bez konta używany jest e-mail z karty. Treść zawiera termin warszawski z offsetem, imię i nazwisko terapeuty, nazwę gabinetu, miasto i telefon z istniejącego profilu. Model profilu nie ma jeszcze pola z adresem ulicznym gabinetu. Wiadomość nie zawiera imienia pacjenta, diagnoz, PESEL-u, powodu ani notatek.
+
+Pole `patientMessage` także nie trafia do przypomnień. Logowanie MediatR zapisuje nazwy operacji, a nie payload rezerwacji. Walidacja limitu wiadomości nie odsyła ani nie loguje jej treści.
 
 Resend otrzymuje stały klucz `appointment-reminder/{appointmentId}/{scheduleId}` i zapisany w bazie, niezmienny payload. Chroni to także przed powtórką po awarii między przyjęciem wiadomości a zapisem wyniku w bazie. [Resend utrzymuje klucze przez 24 godziny](https://resend.com/changelog/idempotency-keys); backend kończy ponawianie po 23 godzinach od przygotowania wysyłki. Domyślnie są maksymalnie 3 próby, z odstępami 5 i 10 minut po błędach. Stan `Sent` oznacza przyjęcie przez dostawcę, nie potwierdzenie dostarczenia do skrzynki.
 
@@ -116,3 +132,28 @@ Bez zmiennej testy PostgreSQL są jawnie pomijane; pozostałe działają z InMem
 Weryfikacja lokalna 10.11.2026: `dotnet test backend/PhysioFlow.sln --configuration Release --no-restore --verbosity minimal` ze skonfigurowanym PostgreSQL — 180 testów zakończonych powodzeniem, 0 błędów, 0 pominiętych. Cztery testy PostgreSQL obejmują konkurencję dwóch pacjentów, konkurencję pacjenta i terapeuty, równoległe zadania przypomnień oraz migrację istniejących wizyt po zakończonej współpracy. `dotnet ef migrations has-pending-model-changes` potwierdziło zgodność modelu z migracją; `git diff --check` nie wykazało błędów. Zdalny workflow GitHub Actions nie był uruchamiany w tej sesji. Migracje wykonano na izolowanych bazach testowych; baza aplikacji nie była aktualizowana.
 
 Do domknięcia integracji: uzgodnienie kontraktu z frontendem, sprawdzenie ekranów pacjenta i terapeuty w przeglądarce oraz zapisanie wyników w PR. Testy API nie zastępują weryfikacji interfejsu.
+
+## Weryfikacja uzupełnienia Sprintu 5
+
+Lokalna weryfikacja 10.11.2026: **196 testów zakończonych powodzeniem, 0 błędów i 0 pominiętych**, w konfiguracji Release z PostgreSQL 16. Użyto argumentów testowych Backend CI (`--logger trx` i `--collect:"XPlat Code Coverage"`); brak zainstalowanego collectora XPlat w istniejącym projekcie oznacza brak raportu pokrycia, ale nie zatrzymuje testów. Wynik testów znajduje się w ignorowanym przez Git `backend/PhysioFlow.Tests/TestResults/sprint5-completion.trx`. `has-pending-model-changes` potwierdza zgodność modelu z migracją.
+
+Dodane testy obejmują brak pola, jawne `null`, białe znaki, przycięcie, limit 500/501 znaków, odczyt i izolację wiadomości, zachowanie wiadomości przy edycji oraz brak jej ujawnienia po zmianie konta właściciela. Testy dostępności obejmują usunięcie zajętości i bufora własnej wizyty, zmianę długości, dalsze blokowanie innych terminów, odmowę wykluczenia cudzej lub nieedytowalnej wizyty i ponowne sprawdzenie kolizji przy zapisie. Dotychczasowe testy równoczesnych rezerwacji na PostgreSQL i granicy odwołania 24 godzin nadal przechodzą.
+
+`ReminderWorkerVerificationTests` uruchamia aplikację z rzeczywiście włączonym `AppointmentReminderWorker` (interwał 1 sekunda), izolowaną bazą PostgreSQL i lokalnym `LocalPickupEmailService`. Nie wywołuje procesora ręcznie. Po przygotowaniu kont testowych przełącza dostawcę poczty na lokalny zapis HTML. Sprawdzono:
+
+- odbiorcę zgodnego z kontem właściciela i dokładny termin w Europe/Warsaw;
+- jeden plik i trwałe `Sent` dla pierwotnego terminu;
+- nowy wpis i plik po przeniesieniu wizyty;
+- brak kolejnych plików podczas następnych przebiegów;
+- brak przypomnienia dla odwołanej wizyty;
+- brak wiadomości pacjenta i prywatnych notatek w HTML.
+
+Kontrolowany błąd dostawcy, opóźnienia ponowień, limit prób, odwołanie przed ponowieniem i skuteczne ponowienie są sprawdzane osobnymi testami z atrapą poczty. `Sent` oznacza przyjęcie przez wybranego dostawcę: w lokalnym teście zapis pliku, a w Resend przyjęcie żądania przez API. **Nie jest to potwierdzenie dostarczenia do skrzynki odbiorcy.** W tej weryfikacji nie wysyłano rzeczywistych wiadomości przez Resend.
+
+Do przekazania frontendowi:
+
+1. `frontend/src/lib/patient-appointments-api.ts`: opcjonalne `patientMessage?: string | null` w payloadzie i pole w odpowiedzi; formularz `PatientBookingDialog` oraz szczegóły wizyty powinny je obsłużyć.
+2. `frontend/src/lib/appointments-api.ts` i `AppointmentEditor`: podczas edycji przekazywać `excludeAppointmentId=appointment.id`, uwzględnić identyfikator w kluczu cache zapytania i korzystać z odpowiedzi backendu. Obecne ręczne dopisywanie oryginalnego terminu nie rozwiązuje zmiany długości wizyty i nie powinno omijać bieżącej dostępności.
+3. Po podłączeniu sprawdzić wspólny przepływ rezerwacji z wiadomością, szczegóły u terapeuty, zmianę długości/terminu i odwołanie.
+
+Pełnego przepływu w przeglądarce nie potwierdzono: narzędzie przeglądarki było niedostępne, a dostęp do okna Chrome wygasł. Przygotowano lokalny frontend i izolowany serwer API; zatrzymano je po próbie weryfikacji. Pozostaje wspólne sprawdzenie po podłączeniu nowych pól przez frontend. Migrację i testy wykonywano na bazach testowych; baza aplikacji nie była zmieniana.

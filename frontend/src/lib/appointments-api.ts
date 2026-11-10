@@ -24,10 +24,17 @@ type AvailableSlotsResponse = {
   slots: AvailableSlot[];
 };
 
-export type AppointmentAction = 'cancel' | 'complete' | 'no-show';
+export type AppointmentAction =
+  | 'cancel'
+  | 'complete'
+  | 'no-show';
 
 export const appointmentsApi = {
-  list: (from: string, to: string, signal?: AbortSignal) =>
+  list: (
+    from: string,
+    to: string,
+    signal?: AbortSignal,
+  ) =>
     apiClient
       .get<Appointment[]>('/api/appointments', {
         params: { from, to },
@@ -36,24 +43,37 @@ export const appointmentsApi = {
       })
       .then((response) => response.data),
 
-  details: (id: string, signal?: AbortSignal) =>
+  details: (
+    id: string,
+    signal?: AbortSignal,
+  ) =>
     apiClient
-      .get<Appointment>(`/api/appointments/${encodeURIComponent(id)}`, {
-        signal,
-        timeout: 15_000,
-      })
+      .get<Appointment>(
+        `/api/appointments/${encodeURIComponent(id)}`,
+        {
+          signal,
+          timeout: 15_000,
+        },
+      )
       .then((response) => response.data),
 
   slots: (
     date: string,
     durationMinutes: number,
     signal?: AbortSignal,
+    excludeAppointmentId?: string,
   ) =>
     apiClient
       .get<AvailableSlotsResponse>(
         '/api/therapists/me/calendar/available-slots',
         {
-          params: { date, durationMinutes },
+          params: {
+            date,
+            durationMinutes,
+            ...(excludeAppointmentId
+              ? { excludeAppointmentId }
+              : {}),
+          },
           signal,
           timeout: 15_000,
         },
@@ -62,12 +82,17 @@ export const appointmentsApi = {
 
   create: (payload: AppointmentPayload) =>
     apiClient
-      .post<Appointment>('/api/appointments', payload, {
-        timeout: 15_000,
-      })
+      .post<Appointment>(
+        '/api/appointments',
+        payload,
+        { timeout: 15_000 },
+      )
       .then((response) => response.data),
 
-  update: (id: string, payload: AppointmentPayload) =>
+  update: (
+    id: string,
+    payload: AppointmentPayload,
+  ) =>
     apiClient
       .put<Appointment>(
         `/api/appointments/${encodeURIComponent(id)}`,
@@ -76,7 +101,10 @@ export const appointmentsApi = {
       )
       .then((response) => response.data),
 
-  changeStatus: (id: string, action: AppointmentAction) =>
+  changeStatus: (
+    id: string,
+    action: AppointmentAction,
+  ) =>
     apiClient
       .post<Appointment>(
         `/api/appointments/${encodeURIComponent(id)}/${action}`,
@@ -85,18 +113,25 @@ export const appointmentsApi = {
       )
       .then((response) => response.data),
 
-  patients: (search: string, pageNumber: number, signal?: AbortSignal) =>
+  patients: (
+    search: string,
+    pageNumber: number,
+    signal?: AbortSignal,
+  ) =>
     apiClient
-      .get<PaginatedList<PatientListItem>>('/api/patients', {
-        params: {
-          search,
-          pageNumber,
-          pageSize: 10,
-          includeArchived: false,
-          onlyArchived: false,
+      .get<PaginatedList<PatientListItem>>(
+        '/api/patients',
+        {
+          params: {
+            search,
+            pageNumber,
+            pageSize: 10,
+            includeArchived: false,
+            onlyArchived: false,
+          },
+          signal,
+          timeout: 15_000,
         },
-        signal,
-        timeout: 15_000,
-      })
+      )
       .then((response) => response.data),
 };

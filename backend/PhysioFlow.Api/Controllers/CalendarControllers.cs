@@ -54,15 +54,19 @@ public class TherapistCalendarController : ApiControllerBase
     /// <summary>
     /// Wolne terminy na datę (dzień kalendarzowy w Warszawie).
     /// Krok startu = wybrana długość wizyty, od początku przedziału dostępności.
+    /// excludeAppointmentId pomija własną, przyszłą zaplanowaną wizytę podczas edycji.
     /// </summary>
     [HttpGet("available-slots")]
     [ProducesResponseType(typeof(AvailableSlotsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> GetAvailableSlots(
         [FromQuery] DateOnly? date,
         [FromQuery] int? durationMinutes,
+        [FromQuery] Guid? excludeAppointmentId,
         CancellationToken ct) =>
-        Ok(await Mediator.Send(new GetAvailableSlotsQuery(date, durationMinutes), ct));
+        Ok(await Mediator.Send(new GetAvailableSlotsQuery(date, durationMinutes, excludeAppointmentId), ct));
 }
 
 [Authorize(Roles = "Therapist")]

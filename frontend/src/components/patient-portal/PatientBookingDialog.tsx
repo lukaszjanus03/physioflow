@@ -2,15 +2,18 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import AppointmentSlotSelector from '@/components/calendar/AppointmentSlotSelector';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/primitives';
+import { Label, Textarea } from '@/components/ui/primitives';
 import { useCurrentTime } from '@/hooks/use-current-time';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
-import { appointmentDateTime, warsawDateKey } from '@/lib/appointment-display';
+import {
+  appointmentDateTime,
+  warsawDateKey,
+} from '@/lib/appointment-display';
 import { getCalendarFieldErrors } from '@/lib/calendar-api';
 import { isCalendarDate } from '@/lib/calendar-validation';
 import { cooperationApi, cooperationKeys } from '@/lib/cooperation-api';
@@ -21,7 +24,15 @@ import {
   patientAppointmentErrorCode,
   patientAppointmentKeys,
 } from '@/lib/patient-appointments-api';
-import type { PatientBookingPayload, PatientBookingSettings } from '@/lib/patient-appointments-api';
+import type {
+  PatientBookingPayload,
+  PatientBookingSettings,
+} from '@/lib/patient-appointments-api';
+
+type BookingReview = Pick<
+  PatientBookingPayload,
+  'therapistId' | 'startsAt' | 'durationMinutes'
+>;
 
 export default function PatientBookingDialog({
   accountId,
@@ -38,7 +49,10 @@ export default function PatientBookingDialog({
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const { confirmLeave, discardDialog } = useUnsavedChanges(dirty, busy);
+  const { confirmLeave, discardDialog } = useUnsavedChanges(
+    dirty,
+    busy,
+  );
 
   const cooperations = useQuery({
     queryKey: cooperationKeys.therapists(accountId),
@@ -47,7 +61,9 @@ export default function PatientBookingDialog({
     refetchOnWindowFocus: !busy,
   });
 
-  const selected = cooperations.data?.find((item) => item.therapist.id === therapistId)?.therapist;
+  const selected = cooperations.data?.find(
+    (item) => item.therapist.id === therapistId,
+  )?.therapist;
 
   function close() {
     confirmLeave(onClose);
@@ -75,9 +91,13 @@ export default function PatientBookingDialog({
               close();
             }}
           >
-            <Dialog.Title className="text-3xl">Zarezerwuj wizytę</Dialog.Title>
-            <Dialog.Description className="mt-2 text-sm text-muted-foreground">
-              Wybierz terapeutę i termin, a następnie potwierdź rezerwację.
+            <Dialog.Title className="text-3xl">
+              Zarezerwuj wizytę
+            </Dialog.Title>
+
+            <Dialog.Description className="sr-only">
+              Wybierz terapeutę i termin, a następnie potwierdź
+              rezerwację. Możesz dodać opcjonalną wiadomość.
             </Dialog.Description>
 
             <div className="patient-booking-content mt-6">
@@ -88,6 +108,7 @@ export default function PatientBookingDialog({
                   <p role="alert" className="text-sm text-destructive">
                     {patientAppointmentError(cooperations.error)}
                   </p>
+
                   <Button
                     type="button"
                     variant="outline"
@@ -99,11 +120,16 @@ export default function PatientBookingDialog({
                 </div>
               ) : cooperations.data.length === 0 ? (
                 <section className="space-y-4 rounded-xl border border-dashed p-5">
-                  <h2 className="text-2xl">Najpierw rozpocznij współpracę</h2>
+                  <h2 className="text-2xl">
+                    Najpierw rozpocznij współpracę
+                  </h2>
+
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    Wizytę zarezerwujesz u terapeuty, który zaakceptował współpracę i powiązał konto z Twoją
-                    kartą.
+                    Wizytę zarezerwujesz u terapeuty, który
+                    zaakceptował współpracę i powiązał konto
+                    z Twoją kartą.
                   </p>
+
                   <Button
                     type="button"
                     onClick={() =>
@@ -119,22 +145,38 @@ export default function PatientBookingDialog({
               ) : (
                 <>
                   <div className="space-y-2 rounded-2xl border bg-card p-4">
-                    <Label htmlFor="booking-therapist">Terapeuta</Label>
+                    <Label htmlFor="booking-therapist">
+                      Terapeuta
+                    </Label>
+
                     <select
                       id="booking-therapist"
                       value={therapistId}
                       disabled={busy}
                       onChange={(event) => {
-                        setTherapistId(event.target.value);
-                        setDirty(Boolean(event.target.value));
+                        const nextId = event.target.value;
+
+                        if (nextId === therapistId) return;
+
+                        confirmLeave(() => {
+                          setTherapistId(nextId);
+                          setDirty(Boolean(nextId));
+                        });
                       }}
                       className="h-11 w-full rounded-md border bg-background px-3 text-sm"
                     >
                       <option value="">Wybierz terapeutę</option>
+
                       {cooperations.data.map((item) => (
-                        <option key={item.requestId} value={item.therapist.id}>
-                          {item.therapist.firstName} {item.therapist.lastName}
-                          {item.therapist.practiceName ? ` — ${item.therapist.practiceName}` : ''}
+                        <option
+                          key={item.requestId}
+                          value={item.therapist.id}
+                        >
+                          {item.therapist.firstName}{' '}
+                          {item.therapist.lastName}
+                          {item.therapist.practiceName
+                            ? ` — ${item.therapist.practiceName}`
+                            : ''}
                         </option>
                       ))}
                     </select>
@@ -158,7 +200,12 @@ export default function PatientBookingDialog({
             </div>
 
             <div className="mt-6 border-t pt-4">
-              <Button type="button" variant="outline" disabled={busy} onClick={close}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={close}
+              >
                 Zamknij
               </Button>
             </div>
@@ -181,8 +228,13 @@ type BookingProps = {
 
 function BookingSettings(props: BookingProps) {
   const query = useQuery({
-    queryKey: [...patientAppointmentKeys.all(props.accountId), 'booking-settings', props.therapist.id],
-    queryFn: ({ signal }) => patientAppointmentsApi.settings(props.therapist.id, signal),
+    queryKey: [
+      ...patientAppointmentKeys.all(props.accountId),
+      'booking-settings',
+      props.therapist.id,
+    ],
+    queryFn: ({ signal }) =>
+      patientAppointmentsApi.settings(props.therapist.id, signal),
     staleTime: 0,
     refetchOnWindowFocus: false,
   });
@@ -197,7 +249,13 @@ function BookingSettings(props: BookingProps) {
         <p role="alert" className="text-sm text-destructive">
           {patientAppointmentError(query.error)}
         </p>
-        <Button type="button" variant="outline" onClick={() => void query.refetch()}>
+
+        <Button
+          type="button"
+          variant="outline"
+          disabled={query.isFetching}
+          onClick={() => void query.refetch()}
+        >
           Spróbuj ponownie
         </Button>
       </div>
@@ -206,7 +264,9 @@ function BookingSettings(props: BookingProps) {
 
   if (query.data.allowedDurations.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">Terapeuta nie udostępnił wariantów długości wizyt.</p>
+      <p className="text-sm text-muted-foreground">
+        Terapeuta nie udostępnił wariantów długości wizyt.
+      </p>
     );
   }
 
@@ -223,17 +283,38 @@ function BookingFields({
 }: BookingProps & { settings: PatientBookingSettings }) {
   const now = useCurrentTime();
   const queryClient = useQueryClient();
+  const messageId = useId();
+  const saving = useRef(false);
 
-  const [date, setDate] = useState(() => warsawDateKey(new Date()));
-  const [duration, setDuration] = useState(settings.allowedDurations[0]);
+  const [date, setDate] = useState(() =>
+    warsawDateKey(new Date()),
+  );
+  const [duration, setDuration] = useState(
+    settings.allowedDurations[0],
+  );
   const [startsAt, setStartsAt] = useState('');
-  const [review, setReview] = useState<PatientBookingPayload | null>(null);
+  const [patientMessage, setPatientMessage] = useState('');
+  const [review, setReview] = useState<BookingReview | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const slots = useQuery({
-    queryKey: [...patientAppointmentKeys.all(accountId), 'slots', therapist.id, date, duration],
-    queryFn: ({ signal }) => patientAppointmentsApi.slots(therapist.id, date, duration, signal),
-    enabled: isCalendarDate(date),
+    queryKey: [
+      ...patientAppointmentKeys.all(accountId),
+      'slots',
+      therapist.id,
+      date,
+      duration,
+    ],
+    queryFn: ({ signal }) =>
+      patientAppointmentsApi.slots(
+        therapist.id,
+        date,
+        duration,
+        signal,
+      ),
+    enabled:
+      isCalendarDate(date) &&
+      settings.allowedDurations.includes(duration),
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
@@ -245,15 +326,28 @@ function BookingFields({
     onSuccess: () => onSaved(),
     onError: (error) => {
       const code = patientAppointmentErrorCode(error);
-      setReview(null);
-      setErrors(getCalendarFieldErrors(error));
+      const nextErrors = getCalendarFieldErrors(error);
 
-      if (code === 'slot_conflict' || code === 'slot_unavailable' || code === 'appointment_in_past') {
+      if (
+        code === 'slot_conflict' ||
+        code === 'slot_unavailable' ||
+        code === 'appointment_in_past'
+      ) {
+        setReview(null);
         setStartsAt('');
-        setErrors({
-          startsAt: 'Ten termin nie jest już dostępny. Wybierz inną godzinę.',
-        });
+
+        nextErrors.startsAt =
+          'Ten termin nie jest już dostępny. Wybierz inną godzinę.';
+      } else if (
+        nextErrors.date ||
+        nextErrors.durationMinutes ||
+        nextErrors.startsAt ||
+        nextErrors.therapistId
+      ) {
+        setReview(null);
       }
+
+      setErrors(nextErrors);
     },
     onSettled: async () => {
       try {
@@ -269,6 +363,7 @@ function BookingFields({
           }),
         ]);
       } finally {
+        saving.current = false;
         onBusyChange(false);
       }
     },
@@ -280,17 +375,25 @@ function BookingFields({
     onDirty();
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function chooseTerm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (mutation.isPending || saving.current) return;
 
     const form = new FormData(event.currentTarget);
     const selectedStart = String(form.get('startsAt') ?? '');
 
-    const selectedSlot = slots.data?.slots.find((slot) => slot.startsAt === selectedStart);
+    const selectedSlot = slots.data?.slots.find(
+      (slot) =>
+        new Date(slot.startsAt).getTime() ===
+        new Date(selectedStart).getTime(),
+    );
 
     const next: Record<string, string> = {};
 
-    if (!isCalendarDate(date)) next.date = 'Wybierz poprawną datę.';
+    if (!isCalendarDate(date)) {
+      next.date = 'Wybierz poprawną datę.';
+    }
 
     if (!settings.allowedDurations.includes(duration)) {
       next.durationMinutes = 'Wybierz dozwoloną długość.';
@@ -298,6 +401,7 @@ function BookingFields({
 
     if (
       !selectedSlot ||
+      slots.isPending ||
       slots.isFetching ||
       slots.isError ||
       new Date(selectedSlot.startsAt).getTime() <= now
@@ -309,6 +413,7 @@ function BookingFields({
 
     if (Object.keys(next).length === 0 && selectedSlot) {
       mutation.reset();
+
       setReview({
         therapistId: therapist.id,
         startsAt: selectedSlot.startsAt,
@@ -317,42 +422,150 @@ function BookingFields({
     }
   }
 
+  function confirmBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!review || saving.current || mutation.isPending) return;
+
+    const next: Record<string, string> = {};
+
+    if (patientMessage.length > 500) {
+      next.patientMessage =
+        'Wiadomość może mieć maksymalnie 500 znaków.';
+    }
+
+    if (new Date(review.startsAt).getTime() <= now) {
+      next.startsAt = 'Ten termin już minął. Wybierz inną godzinę.';
+    }
+
+    setErrors(next);
+
+    if (next.startsAt) {
+      setReview(null);
+      setStartsAt('');
+      return;
+    }
+
+    if (Object.keys(next).length > 0) return;
+
+    saving.current = true;
+
+    mutation.mutate({
+      ...review,
+      patientMessage: patientMessage.trim() || null,
+    });
+  }
+
   if (review) {
-    const expired = new Date(review.startsAt).getTime() <= now;
+    const expired =
+      new Date(review.startsAt).getTime() <= now;
 
     return (
-      <section className="space-y-5 rounded-2xl border bg-primary/5 p-5">
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Podsumowanie</p>
-        <h2 className="text-3xl">Potwierdź wizytę</h2>
+      <form
+        noValidate
+        onSubmit={confirmBooking}
+        className="space-y-5 rounded-2xl border bg-primary/5 p-4 sm:p-5"
+      >
+        <header>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+            Podsumowanie
+          </p>
+          <h2 className="mt-2 text-3xl">Potwierdź wizytę</h2>
+        </header>
 
-        <dl className="space-y-4 text-sm">
-          <div>
-            <dt className="text-muted-foreground">Terapeuta</dt>
-            <dd className="mt-1 font-medium">
-              {therapist.firstName} {therapist.lastName}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Gabinet</dt>
-            <dd className="mt-1">
-              {[therapist.practiceName, therapist.city].filter(Boolean).join(' · ') ||
-                'Nie podano danych gabinetu'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Termin</dt>
-            <dd className="mt-1 font-medium">{appointmentDateTime(review.startsAt)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Długość</dt>
-            <dd className="mt-1">{review.durationMinutes} minut</dd>
-          </div>
-        </dl>
+        <fieldset
+          disabled={mutation.isPending}
+          className="grid min-w-0 gap-6 lg:grid-cols-2"
+        >
+          <div className="space-y-5">
+            <dl className="grid gap-4 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-muted-foreground">Terapeuta</dt>
+                <dd className="mt-1 font-medium">
+                  {therapist.firstName} {therapist.lastName}
+                </dd>
+              </div>
 
-        <p className="rounded-xl border bg-background/60 p-4 text-sm leading-relaxed text-muted-foreground">
-          Wizytę możesz samodzielnie odwołać najpóźniej 24 godziny przed rozpoczęciem. Później skontaktuj się
-          z gabinetem.
-        </p>
+              <div>
+                <dt className="text-muted-foreground">Gabinet</dt>
+                <dd className="mt-1 break-words">
+                  {[therapist.practiceName, therapist.city]
+                    .filter(Boolean)
+                    .join(' · ') || 'Nie podano danych gabinetu'}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-muted-foreground">Termin</dt>
+                <dd className="mt-1 font-medium">
+                  {appointmentDateTime(review.startsAt)}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-muted-foreground">Długość</dt>
+                <dd className="mt-1">
+                  {review.durationMinutes} minut
+                </dd>
+              </div>
+            </dl>
+
+            <p className="rounded-xl border bg-background/60 p-4 text-sm leading-relaxed text-muted-foreground">
+              Wizytę możesz samodzielnie odwołać najpóźniej
+              24 godziny przed rozpoczęciem. Później skontaktuj
+              się z gabinetem.
+            </p>
+          </div>
+
+          <div className="min-w-0 space-y-3 rounded-xl border bg-background p-4">
+            <Label htmlFor={messageId}>
+              Z czym chcesz się zgłosić? — opcjonalnie
+            </Label>
+
+            <p
+              id={`${messageId}-help`}
+              className="text-xs leading-relaxed text-muted-foreground"
+            >
+              Krótko opisz dolegliwość lub cel wizyty.
+              Nie wpisuj PESEL-u ani szczegółowej historii medycznej.
+              Wiadomość zobaczy terapeuta prowadzący wizytę.
+            </p>
+
+            <Textarea
+              id={messageId}
+              name="patientMessage"
+              rows={5}
+              maxLength={500}
+              value={patientMessage}
+              placeholder="Np. Pierwsza konsultacja dotycząca bólu barku od dwóch tygodni."
+              aria-invalid={Boolean(errors.patientMessage)}
+              aria-describedby={`${messageId}-help ${messageId}-count ${
+                errors.patientMessage ? `${messageId}-error` : ''
+              }`}
+              onChange={(event) => {
+                setPatientMessage(event.target.value);
+                clearErrors();
+              }}
+            />
+
+            <p
+              id={`${messageId}-count`}
+              className="text-right text-xs text-muted-foreground"
+            >
+              {patientMessage.length}/500 znaków
+            </p>
+
+            {errors.patientMessage && (
+              <p
+                id={`${messageId}-error`}
+                role="alert"
+                className="text-sm text-destructive"
+              >
+                {errors.patientMessage}
+              </p>
+            )}
+          </div>
+        </fieldset>
 
         {expired && (
           <p role="alert" className="text-sm text-destructive">
@@ -360,17 +573,26 @@ function BookingFields({
           </p>
         )}
 
+        {mutation.isError && (
+          <p
+            role="alert"
+            className="rounded-xl border border-destructive/30 bg-background p-4 text-sm text-destructive"
+          >
+            {patientAppointmentError(mutation.error)}
+          </p>
+        )}
+
         <div className="sticky bottom-0 space-y-3 border-t bg-background/95 pb-2 pt-4 backdrop-blur">
           <Button
-            type="button"
+            type="submit"
             className="w-full"
             disabled={mutation.isPending || expired}
-            onClick={() => {
-              if (!mutation.isPending) mutation.mutate(review);
-            }}
           >
-            {mutation.isPending ? 'Rezerwowanie…' : 'Potwierdź rezerwację'}
+            {mutation.isPending
+              ? 'Rezerwowanie…'
+              : 'Potwierdź rezerwację'}
           </Button>
+
           <Button
             type="button"
             variant="outline"
@@ -381,13 +603,16 @@ function BookingFields({
             Wróć do wyboru
           </Button>
         </div>
-      </section>
+      </form>
     );
   }
 
   return (
-    <form noValidate onSubmit={submit} className="space-y-5">
-      <fieldset disabled={mutation.isPending} className="min-w-0 space-y-5">
+    <form noValidate onSubmit={chooseTerm} className="space-y-5">
+      <fieldset
+        disabled={mutation.isPending}
+        className="min-w-0 space-y-5"
+      >
         <AppointmentSlotSelector
           date={date}
           onDateChange={(next) => {
@@ -410,14 +635,21 @@ function BookingFields({
           }}
           now={now}
           loading={slots.isPending || slots.isFetching}
-          error={slots.isError ? patientAppointmentError(slots.error) : undefined}
+          error={
+            slots.isError
+              ? patientAppointmentError(slots.error)
+              : undefined
+          }
           fieldErrors={errors}
           onRefresh={() => void slots.refetch()}
           disabled={mutation.isPending}
         />
 
         {mutation.isError && (
-          <p role="alert" className="rounded-xl border p-4 text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-xl border p-4 text-sm text-destructive"
+          >
             {patientAppointmentError(mutation.error)}
           </p>
         )}
@@ -426,7 +658,12 @@ function BookingFields({
           <Button
             type="submit"
             className="w-full"
-            disabled={slots.isFetching || slots.isError || mutation.isPending}
+            disabled={
+              slots.isPending ||
+              slots.isFetching ||
+              slots.isError ||
+              mutation.isPending
+            }
           >
             Przejdź do podsumowania
           </Button>

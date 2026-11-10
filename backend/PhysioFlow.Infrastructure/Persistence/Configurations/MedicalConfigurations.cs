@@ -12,6 +12,7 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
         b.Property(x => x.Duration).HasConversion<int>();
         b.Property(x => x.Reason).HasMaxLength(500);
+        b.Property(x => x.PatientMessage).HasMaxLength(Appointment.PatientMessageMaxLength);
 
         b.HasOne(x => x.Therapist).WithMany(t => t.Appointments)
             .HasForeignKey(x => x.TherapistId).OnDelete(DeleteBehavior.Restrict);
