@@ -1,0 +1,211 @@
+.calendar-scroll {
+  overflow-x: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: 14px;
+}
+
+.calendar-scroll-week .physio-calendar {
+  min-width: 1050px;
+}
+
+.physio-calendar {
+  height: 780px;
+  background: hsl(var(--card));
+}
+
+.physio-calendar .rbc-calendar {
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.physio-calendar .rbc-time-view {
+  border: 0;
+}
+
+.physio-calendar .rbc-header {
+  padding: 0;
+  overflow: visible;
+  white-space: normal;
+  background: hsl(var(--muted) / 0.35);
+}
+
+.physio-calendar .rbc-header > button {
+  width: 100%;
+}
+
+.calendar-day-heading {
+  display: flex;
+  min-height: 76px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 5px;
+  font-weight: 400;
+}
+
+.calendar-day-heading > span:first-child {
+  color: hsl(var(--foreground));
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.calendar-day-heading > span:last-child {
+  color: hsl(var(--primary));
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.physio-calendar .rbc-time-header-content,
+.physio-calendar .rbc-time-content,
+.physio-calendar .rbc-timeslot-group,
+.physio-calendar .rbc-header {
+  border-color: hsl(var(--border));
+}
+
+.physio-calendar .rbc-time-header-gutter,
+.physio-calendar .rbc-time-gutter {
+  min-width: 76px;
+}
+
+.physio-calendar .rbc-time-gutter {
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.physio-calendar .rbc-time-gutter .rbc-label {
+  display: inline-block;
+  padding: 8px 12px;
+}
+
+.physio-calendar .rbc-time-content {
+  border-top-width: 1px;
+}
+
+.physio-calendar .rbc-timeslot-group {
+  min-height: 144px;
+}
+
+.physio-calendar .rbc-time-slot {
+  min-height: 72px;
+}
+
+.physio-calendar .rbc-day-slot .rbc-time-slot {
+  border-top: 1px dashed hsl(var(--border) / 0.65);
+}
+
+.physio-calendar .rbc-today {
+  background: hsl(var(--primary) / 0.035);
+}
+
+.physio-calendar .calendar-unavailable-slot {
+  background: #f3f6f8;
+}
+
+.physio-calendar .rbc-allday-cell {
+  min-height: 8px;
+}
+
+.physio-calendar .rbc-event {
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-left-width: 4px;
+  border-radius: 9px;
+  box-shadow: 0 2px 5px rgb(15 23 42 / 0.06);
+  font-size: 12px;
+}
+
+.physio-calendar .rbc-event-label {
+  display: none;
+}
+
+.physio-calendar .rbc-event-content {
+  overflow: hidden;
+}
+
+.calendar-appointment {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.calendar-appointment-time {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-appointment-name {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-appointment-status {
+  overflow: hidden;
+  font-size: 10px;
+  opacity: 0.85;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.physio-calendar .calendar-event-scheduled {
+  border-color: #0f766e;
+  background: #e6f5f1;
+  color: #134e4a;
+}
+
+.physio-calendar .calendar-event-completed {
+  border-color: #2563eb;
+  background: #edf4ff;
+  color: #1e3a8a;
+}
+
+.physio-calendar .calendar-event-cancelled {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.physio-calendar .calendar-event-noshow {
+  border-color: #be123c;
+  background: #fff1f2;
+  color: #881337;
+}
+
+.physio-calendar .rbc-event:focus,
+.physio-calendar .rbc-event.rbc-selected {
+  outline: 3px solid hsl(var(--primary) / 0.45);
+  outline-offset: 2px;
+}
+
+.physio-calendar .rbc-current-time-indicator {
+  height: 2px;
+  background: #ef4444;
+}
+
+@media (max-width: 767px) {
+  .physio-calendar {
+    height: 680px;
+  }
+
+  .physio-calendar .rbc-time-header-gutter,
+  .physio-calendar .rbc-time-gutter {
+    min-width: 60px;
+  }
+
+  .physio-calendar .rbc-time-gutter .rbc-label {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+}
