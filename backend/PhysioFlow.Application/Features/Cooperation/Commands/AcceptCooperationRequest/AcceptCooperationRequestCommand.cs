@@ -175,6 +175,21 @@ public class AcceptCooperationRequestCommandHandler
             }
 
             entity.PatientId = card.Id;
+            // Pierwsze powiązanie obejmuje wizyty zapisane wcześniej przez terapeutę.
+            // Nie przypisujemy niejednoznacznej historii karty użytej już przez inne konto.
+            var hasOtherOwner = await _db.CooperationRequests.AnyAsync(r =>
+                r.PatientId == card.Id && r.PatientUserId != entity.PatientUserId
+                && (r.Status == CooperationRequestStatus.Accepted || r.Status == CooperationRequestStatus.Ended), ct);
+            if (!hasOtherOwner)
+            {
+                var appointments = await _db.Appointments.Where(a =>
+                    a.PatientId == card.Id && a.PatientUserId == null).ToListAsync(ct);
+                foreach (var appointment in appointments)
+                {
+                    appointment.PatientUserId = entity.PatientUserId;
+                    appointment.ConcurrencyStamp = Guid.NewGuid();
+                }
+            }
             await SaveAsync(ct);
             await transaction.CommitAsync(ct);
 

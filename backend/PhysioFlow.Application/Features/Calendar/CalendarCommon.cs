@@ -16,6 +16,7 @@ public static class CalendarErrorCodes
     public const string InvalidStatusTransition = "invalid_status_transition";
     public const string AppointmentNotEditable = "appointment_not_editable";
     public const string CardArchived = "card_archived";
+    public const string CancellationTooLate = "cancellation_too_late";
 }
 
 /// <summary>

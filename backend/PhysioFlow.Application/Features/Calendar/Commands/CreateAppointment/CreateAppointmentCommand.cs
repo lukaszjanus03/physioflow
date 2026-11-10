@@ -155,6 +155,7 @@ internal static class AppointmentScheduling
                 "Ten termin koliduje z inną zaplanowaną wizytą.");
 
         settings.ConcurrencyStamp = Guid.NewGuid();
+        patient.ConcurrencyStamp = Guid.NewGuid();
 
         Appointment appointment;
         if (exceptId is { } id)
@@ -163,6 +164,13 @@ internal static class AppointmentScheduling
             if (appointment.Status != AppointmentStatus.Scheduled)
                 throw new ConflictException(CalendarErrorCodes.AppointmentNotEditable,
                     "Można edytować tylko przyszłą zaplanowaną wizytę.");
+            if (appointment.StartsAt != startsAt || appointment.PatientId != patient.Id)
+            {
+                appointment.ReminderScheduleId = Guid.NewGuid();
+                appointment.ReminderSent = false;
+            }
+            if (appointment.PatientId != patient.Id)
+                appointment.PatientUserId = patient.UserId;
             appointment.PatientId = patient.Id;
             appointment.StartsAt = startsAt;
             appointment.EndsAt = endsAt;
@@ -178,6 +186,7 @@ internal static class AppointmentScheduling
             {
                 TherapistId = therapistId,
                 PatientId = patient.Id,
+                PatientUserId = patient.UserId,
                 StartsAt = startsAt,
                 EndsAt = endsAt,
                 Duration = CalendarDurations.ToEnum(durationMinutes),
@@ -192,6 +201,11 @@ internal static class AppointmentScheduling
         try
         {
             await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException ex) when (ex.Entries.Any(e => e.Entity is CooperationRequest || e.Entity is Patient))
+        {
+            throw new ConflictException(CooperationErrorCodes.CooperationNotActive,
+                "Współpraca lub karta zmieniła się w międzyczasie. Odśwież widok.");
         }
         catch (DbUpdateConcurrencyException)
         {

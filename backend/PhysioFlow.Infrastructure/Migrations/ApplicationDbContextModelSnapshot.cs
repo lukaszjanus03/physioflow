@@ -787,10 +787,18 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("patient_id");
 
+                    b.Property<Guid?>("PatientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_user_id");
+
                     b.Property<string>("Reason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("reason");
+
+                    b.Property<Guid>("ReminderScheduleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reminder_schedule_id");
 
                     b.Property<bool>("ReminderSent")
                         .HasColumnType("boolean")
@@ -824,10 +832,86 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasIndex("PatientId", "StartsAt")
                         .HasDatabaseName("ix_appointments_patient_id_starts_at");
 
+                    b.HasIndex("PatientUserId", "StartsAt")
+                        .HasDatabaseName("ix_appointments_patient_user_id_starts_at");
+
                     b.HasIndex("TherapistId", "StartsAt")
                         .HasDatabaseName("ix_appointments_therapist_id_starts_at");
 
                     b.ToTable("appointments", (string)null);
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.AppointmentReminder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_id");
+
+                    b.Property<DateTime>("AttemptWindowStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("attempt_window_started_at");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("HtmlBody")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("html_body");
+
+                    b.Property<DateTime>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<string>("Recipient")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("recipient");
+
+                    b.Property<Guid>("ScheduleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_appointment_reminders");
+
+                    b.HasIndex("AppointmentId", "ScheduleId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_appointment_reminders_appointment_id_schedule_id");
+
+                    b.ToTable("appointment_reminders", (string)null);
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Attachment", b =>
@@ -2078,6 +2162,18 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Therapist");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.AppointmentReminder", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointment_reminders_appointments_appointment_id");
+
+                    b.Navigation("Appointment");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Attachment", b =>

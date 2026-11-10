@@ -7,6 +7,9 @@ public class Appointment : SoftDeletableEntity
 {
     public Guid TherapistId { get; set; }
     public Guid PatientId { get; set; }
+    // Właściciel portalu pozostaje zapisany po odłączeniu konta od karty.
+    public Guid? PatientUserId { get; set; }
+    public Guid ReminderScheduleId { get; set; } = Guid.NewGuid();
 
     public DateTime StartsAt { get; set; }     // UTC
     public DateTime EndsAt { get; set; }       // UTC

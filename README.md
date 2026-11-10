@@ -61,6 +61,7 @@ npm run dev
 
 - [Specyfikacja techniczna](docs/technical-spec.md)
 - [Specyfikacja funkcjonalna](docs/functional-spec.md)
+- [Sprint 5 — API wizyt pacjenta i przypomnienia](docs/sprint-5-calendar-api.md)
 - [ADR — Architecture Decision Records](docs/adr/)
 
 ## Zespół

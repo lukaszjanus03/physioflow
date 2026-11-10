@@ -25,6 +25,18 @@ public class ResendEmailServiceTests
         _logger);
 
     [Fact]
+    public async Task Idempotent_email_should_forward_stable_key_and_payload_to_provider()
+    {
+        const string key = "appointment-reminder/test/schedule";
+        _resend.Setup(r => r.EmailSendAsync(key, It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResendResponse<Guid>(Guid.NewGuid(), null!));
+        await CreateService().SendIdempotentAsync("a@b.pl", "reminder", "<p>Termin</p>", key);
+        _resend.Verify(r => r.EmailSendAsync(key,
+            It.Is<EmailMessage>(m => m.HtmlBody == "<p>Termin</p>" && m.Subject == "reminder"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Unsuccessful_response_should_throw_and_not_log_link()
     {
         var error = new ResendException(HttpStatusCode.Unauthorized, ErrorType.RestrictedApiKey, "API key is invalid");

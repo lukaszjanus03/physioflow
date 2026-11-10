@@ -23,6 +23,21 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
 
         b.HasIndex(x => new { x.TherapistId, x.StartsAt });
         b.HasIndex(x => new { x.PatientId, x.StartsAt });
+        b.HasIndex(x => new { x.PatientUserId, x.StartsAt });
+    }
+}
+
+public class AppointmentReminderConfiguration : IEntityTypeConfiguration<AppointmentReminder>
+{
+    public void Configure(EntityTypeBuilder<AppointmentReminder> b)
+    {
+        b.ToTable("appointment_reminders");
+        b.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+        b.Property(x => x.Recipient).HasMaxLength(320);
+        b.HasIndex(x => new { x.AppointmentId, x.ScheduleId }).IsUnique();
+        b.HasOne(x => x.Appointment).WithMany().HasForeignKey(x => x.AppointmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasQueryFilter(x => !x.Appointment.IsDeleted);
     }
 }
 

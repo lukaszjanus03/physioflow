@@ -22,6 +22,7 @@ public class ApplicationDbContext
     public DbSet<TherapistProfile> Therapists => Set<TherapistProfile>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<AppointmentReminder> AppointmentReminders => Set<AppointmentReminder>();
     public DbSet<AvailabilitySlot> AvailabilitySlots => Set<AvailabilitySlot>();
     public DbSet<TherapistCalendarSettings> CalendarSettings => Set<TherapistCalendarSettings>();
     public DbSet<BodyMap> BodyMaps => Set<BodyMap>();
