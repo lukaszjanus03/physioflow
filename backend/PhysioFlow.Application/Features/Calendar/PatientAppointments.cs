@@ -18,7 +18,8 @@ public record GetPatientAppointmentSummaryQuery : IRequest<PatientAppointmentSum
 public record GetTherapistAppointmentSummaryQuery : IRequest<TherapistAppointmentSummaryDto>;
 public record GetPatientBookingSettingsQuery(Guid TherapistId) : IRequest<PatientBookingSettingsDto>;
 public record GetPatientAvailableSlotsQuery(Guid TherapistId, DateOnly? Date, int? DurationMinutes) : IRequest<AvailableSlotsDto>;
-public record BookPatientAppointmentCommand(Guid? TherapistId, DateTime? StartsAt, int? DurationMinutes)
+public record BookPatientAppointmentCommand(Guid? TherapistId, DateTime? StartsAt, int? DurationMinutes,
+    string? PatientMessage = null)
     : IRequest<PatientAppointmentDto>;
 public record CancelPatientAppointmentCommand(Guid Id) : IRequest<PatientAppointmentDto>;
 
@@ -43,6 +44,10 @@ public class BookPatientAppointmentValidator : AbstractValidator<BookPatientAppo
         RuleFor(x => x.StartsAt).NotNull().OverridePropertyName("startsAt");
         RuleFor(x => x.DurationMinutes).NotNull()
             .Must(x => x is null || CalendarDurations.Allowed.Contains(x.Value)).OverridePropertyName("durationMinutes");
+        RuleFor(x => x.PatientMessage == null ? null : x.PatientMessage.Trim())
+            .MaximumLength(Appointment.PatientMessageMaxLength)
+            .WithMessage("Wiadomość pacjenta może mieć maksymalnie 500 znaków.")
+            .OverridePropertyName("patientMessage");
     }
 }
 
@@ -53,7 +58,9 @@ internal static class PatientAppointmentAccess
             a.Therapist.PracticeName, a.Therapist.City, a.Therapist.PhoneNumber),
         DateTime.SpecifyKind(a.StartsAt, DateTimeKind.Utc), DateTime.SpecifyKind(a.EndsAt, DateTimeKind.Utc),
         (int)a.Duration, a.Status, a.Status == AppointmentStatus.Scheduled && a.StartsAt >= now.AddHours(24),
-        DateTime.SpecifyKind(a.StartsAt.AddHours(-24), DateTimeKind.Utc));
+        DateTime.SpecifyKind(a.StartsAt.AddHours(-24), DateTimeKind.Utc),
+        // Po przeniesieniu wizyty na inną kartę nie ujawniamy wiadomości poprzedniego pacjenta.
+        a.CreatedById == a.PatientUserId ? a.PatientMessage : null);
 
     public static async Task<(CooperationRequest Cooperation, Patient Card)> RequireBookingAccessAsync(
         IApplicationDbContext db, Guid userId, Guid therapistId, CancellationToken ct)
@@ -164,7 +171,8 @@ public class BookPatientAppointmentHandler : IRequestHandler<BookPatientAppointm
             cooperation.ConcurrencyStamp = Guid.NewGuid();
             card.ConcurrencyStamp = Guid.NewGuid();
             var appointment = await AppointmentScheduling.PlaceAsync(_db, request.TherapistId.Value,
-                card, start, request.DurationMinutes!.Value, null, null, null, now, ct);
+                card, start, request.DurationMinutes!.Value, null, null, null, now, ct,
+                patientMessage: request.PatientMessage);
             await transaction.CommitAsync(ct);
             appointment.Therapist = await _db.Therapists.FirstAsync(t => t.Id == appointment.TherapistId, ct);
             return appointment.ToPatientDto(now);

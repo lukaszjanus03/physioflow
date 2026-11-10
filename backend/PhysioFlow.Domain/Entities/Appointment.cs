@@ -5,6 +5,7 @@ namespace PhysioFlow.Domain.Entities;
 
 public class Appointment : SoftDeletableEntity
 {
+    public const int PatientMessageMaxLength = 500;
     public Guid TherapistId { get; set; }
     public Guid PatientId { get; set; }
     // Właściciel portalu pozostaje zapisany po odłączeniu konta od karty.
@@ -18,6 +19,7 @@ public class Appointment : SoftDeletableEntity
 
     public string? Reason { get; set; }        // powód wizyty
     public string? Notes { get; set; }         // notatka administracyjna (nie EDM)
+    public string? PatientMessage { get; set; } // oryginalna wiadomość z rezerwacji pacjenta
     public bool ReminderSent { get; set; }
 
     // Bufor obowiązujący przy tej wizycie; zmiana ustawień kalendarza go nie przesuwa.

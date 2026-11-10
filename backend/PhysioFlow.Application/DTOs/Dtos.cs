@@ -119,7 +119,8 @@ public record AppointmentDto(
     int DurationMinutes,
     AppointmentStatus Status,
     string? Reason,
-    string? Notes);
+    string? Notes,
+    string? PatientMessage = null);
 
 public record BodyMapDto(
     Guid Id,
