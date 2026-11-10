@@ -60,7 +60,11 @@ export interface UpdatePatientPayload extends CreatePatientPayload {
   id: string;
 }
 
-export type AppointmentStatus = 'Scheduled' | 'Completed' | 'Cancelled' | 'NoShow';
+export type AppointmentStatus =
+  | 'Scheduled'
+  | 'Completed'
+  | 'Cancelled'
+  | 'NoShow';
 
 export interface Appointment {
   id: string;
@@ -72,10 +76,15 @@ export interface Appointment {
   status: AppointmentStatus;
   reason: string | null;
   notes: string | null;
+  patientMessage?: string | null;
 }
 
 export type BodySide = 'Front' | 'Back';
-export type PainSeverity = 'AcutePain' | 'ChronicPain' | 'Tension';
+
+export type PainSeverity =
+  | 'AcutePain'
+  | 'ChronicPain'
+  | 'Tension';
 
 export interface PainPoint {
   id: string;
@@ -145,7 +154,6 @@ export interface ApiError {
   detail?: string;
   errors?: Record<string, string[]>;
 }
-
 
 export interface AnatomicalRegionInfo {
   regionId: string;

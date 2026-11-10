@@ -3,7 +3,10 @@ import { isAxiosError } from 'axios';
 import { apiClient } from '@/lib/api-client';
 import type { AvailableSlot } from '@/lib/appointments-api';
 import { getCalendarError } from '@/lib/calendar-api';
-import type { Appointment, AppointmentStatus } from '@/types/api';
+import type {
+  Appointment,
+  AppointmentStatus,
+} from '@/types/api';
 
 export type PatientAppointment = {
   id: string;
@@ -21,12 +24,14 @@ export type PatientAppointment = {
   status: AppointmentStatus;
   canCancel: boolean;
   cancellationDeadline: string;
+  patientMessage?: string | null;
 };
 
 export type PatientBookingPayload = {
   therapistId: string;
   startsAt: string;
   durationMinutes: number;
+  patientMessage?: string | null;
 };
 
 export type PatientBookingSettings = {
@@ -36,14 +41,19 @@ export type PatientBookingSettings = {
 };
 
 export const patientAppointmentKeys = {
-  all: (accountId: string) => ['patient-appointments', accountId] as const,
+  all: (accountId: string) =>
+    ['patient-appointments', accountId] as const,
+
   summary: (accountId: string) =>
     ['patient-appointments', accountId, 'summary'] as const,
+
   details: (accountId: string, id: string) =>
     ['patient-appointments', accountId, 'details', id] as const,
 };
 
-export function patientAppointmentError(error: unknown): string {
+export function patientAppointmentError(
+  error: unknown,
+): string {
   if (isAxiosError(error) && !error.response) {
     return (
       'Nie udało się połączyć z serwerem lub potwierdzić wyniku operacji. ' +
@@ -54,7 +64,9 @@ export function patientAppointmentError(error: unknown): string {
   return getCalendarError(error);
 }
 
-export function patientAppointmentErrorCode(error: unknown): string | undefined {
+export function patientAppointmentErrorCode(
+  error: unknown,
+): string | undefined {
   return isAxiosError<{ code?: string }>(error)
     ? error.response?.data?.code
     : undefined;
@@ -63,7 +75,11 @@ export function patientAppointmentErrorCode(error: unknown): string | undefined 
 const baseUrl = '/api/patient-portal/appointments';
 
 export const patientAppointmentsApi = {
-  list: (from: string, to: string, signal?: AbortSignal) =>
+  list: (
+    from: string,
+    to: string,
+    signal?: AbortSignal,
+  ) =>
     apiClient
       .get<PatientAppointment[]>(baseUrl, {
         params: { from, to },
@@ -72,27 +88,44 @@ export const patientAppointmentsApi = {
       })
       .then((response) => response.data),
 
-  details: (id: string, signal?: AbortSignal) =>
+  details: (
+    id: string,
+    signal?: AbortSignal,
+  ) =>
     apiClient
-      .get<PatientAppointment>(`${baseUrl}/${encodeURIComponent(id)}`, {
-        signal,
-        timeout: 15_000,
-      })
+      .get<PatientAppointment>(
+        `${baseUrl}/${encodeURIComponent(id)}`,
+        {
+          signal,
+          timeout: 15_000,
+        },
+      )
       .then((response) => response.data),
 
   summary: (signal?: AbortSignal) =>
     apiClient
-      .get<{ nextAppointment: PatientAppointment | null }>(
+      .get<{
+        nextAppointment: PatientAppointment | null;
+      }>(
         `${baseUrl}/summary`,
-        { signal, timeout: 15_000 },
+        {
+          signal,
+          timeout: 15_000,
+        },
       )
       .then((response) => response.data),
 
-  settings: (therapistId: string, signal?: AbortSignal) =>
+  settings: (
+    therapistId: string,
+    signal?: AbortSignal,
+  ) =>
     apiClient
       .get<PatientBookingSettings>(
         `${baseUrl}/therapists/${encodeURIComponent(therapistId)}/settings`,
-        { signal, timeout: 15_000 },
+        {
+          signal,
+          timeout: 15_000,
+        },
       )
       .then((response) => response.data),
 
@@ -110,7 +143,10 @@ export const patientAppointmentsApi = {
       }>(
         `${baseUrl}/therapists/${encodeURIComponent(therapistId)}/available-slots`,
         {
-          params: { date, durationMinutes },
+          params: {
+            date,
+            durationMinutes,
+          },
           signal,
           timeout: 15_000,
         },
@@ -119,9 +155,13 @@ export const patientAppointmentsApi = {
 
   book: (payload: PatientBookingPayload) =>
     apiClient
-      .post<PatientAppointment>(baseUrl, payload, {
-        timeout: 15_000,
-      })
+      .post<PatientAppointment>(
+        baseUrl,
+        payload,
+        {
+          timeout: 15_000,
+        },
+      )
       .then((response) => response.data),
 
   cancel: (id: string) =>
@@ -129,18 +169,33 @@ export const patientAppointmentsApi = {
       .post<PatientAppointment>(
         `${baseUrl}/${encodeURIComponent(id)}/cancel`,
         undefined,
-        { timeout: 15_000 },
+        {
+          timeout: 15_000,
+        },
       )
       .then((response) => response.data),
 };
 
-export const therapistSummaryKey = (accountId: string) =>
-  ['therapist-appointments', accountId, 'summary'] as const;
+export const therapistSummaryKey = (
+  accountId: string,
+) =>
+  [
+    'therapist-appointments',
+    accountId,
+    'summary',
+  ] as const;
 
-export const therapistAppointmentSummaryApi = (signal?: AbortSignal) =>
+export const therapistAppointmentSummaryApi = (
+  signal?: AbortSignal,
+) =>
   apiClient
-    .get<{ upcomingAppointments: Appointment[] }>(
+    .get<{
+      upcomingAppointments: Appointment[];
+    }>(
       '/api/appointments/summary',
-      { signal, timeout: 15_000 },
+      {
+        signal,
+        timeout: 15_000,
+      },
     )
     .then((response) => response.data);

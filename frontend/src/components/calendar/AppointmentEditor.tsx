@@ -14,10 +14,7 @@ import {
   warsawDateKey,
 } from '@/lib/appointment-display';
 import { appointmentsApi } from '@/lib/appointments-api';
-import type {
-  AppointmentPayload,
-  AvailableSlot,
-} from '@/lib/appointments-api';
+import type { AppointmentPayload } from '@/lib/appointments-api';
 import {
   getCalendarError,
   getCalendarFieldErrors,
@@ -38,7 +35,10 @@ type Step = 0 | 1 | 2;
 const steps = [
   { label: 'Pacjent', title: 'Wybierz pacjenta' },
   { label: 'Termin', title: 'Wybierz termin wizyty' },
-  { label: 'Potwierdzenie', title: 'Szczegóły i potwierdzenie' },
+  {
+    label: 'Potwierdzenie',
+    title: 'Szczegóły i potwierdzenie',
+  },
 ] as const;
 
 function ErrorText({
@@ -55,10 +55,16 @@ function ErrorText({
   ) : null;
 }
 
-function stepForErrors(errors: CalendarFormErrors): Step {
+function stepForErrors(
+  errors: CalendarFormErrors,
+): Step {
   if (errors.patientId) return 0;
 
-  if (errors.date || errors.durationMinutes || errors.startsAt) {
+  if (
+    errors.date ||
+    errors.durationMinutes ||
+    errors.startsAt
+  ) {
     return 1;
   }
 
@@ -93,7 +99,9 @@ export default function AppointmentEditor({
   const [base] = useState<AppointmentDraft>(() => {
     const duration =
       appointment &&
-      settings.allowedDurations.includes(appointment.durationMinutes)
+      settings.allowedDurations.includes(
+        appointment.durationMinutes,
+      )
         ? appointment.durationMinutes
         : settings.allowedDurations[0] ?? 30;
 
@@ -102,12 +110,14 @@ export default function AppointmentEditor({
     return {
       patientId: appointment?.patientId ?? '',
       date:
-        isCalendarDate(initialDate) && initialDate >= today
+        isCalendarDate(initialDate) &&
+        initialDate >= today
           ? initialDate
           : today,
       durationMinutes: duration,
       startsAt:
-        appointment && duration === appointment.durationMinutes
+        appointment &&
+        duration === appointment.durationMinutes
           ? appointment.startsAt
           : '',
       reason: appointment?.reason ?? '',
@@ -120,7 +130,10 @@ export default function AppointmentEditor({
     appointment?.patientName ?? '',
   );
   const [step, setStep] = useState<Step>(0);
-  const [errors, setErrors] = useState<CalendarFormErrors>({});
+  const [errors, setErrors] =
+    useState<CalendarFormErrors>({});
+
+  const excludeAppointmentId = appointment?.id;
 
   const slots = useQuery({
     queryKey: [
@@ -128,42 +141,26 @@ export default function AppointmentEditor({
       accountId,
       draft.date,
       draft.durationMinutes,
+      excludeAppointmentId ?? null,
     ],
     queryFn: ({ signal }) =>
       appointmentsApi.slots(
         draft.date,
         draft.durationMinutes,
         signal,
+        excludeAppointmentId,
       ),
     enabled:
       step >= 1 &&
       isCalendarDate(draft.date) &&
-      settings.allowedDurations.includes(draft.durationMinutes),
+      settings.allowedDurations.includes(
+        draft.durationMinutes,
+      ),
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
-  const options: AvailableSlot[] = [...(slots.data?.slots ?? [])];
-
-  const keepOriginal =
-    appointment &&
-    warsawDateKey(appointment.startsAt) === draft.date &&
-    appointment.durationMinutes === draft.durationMinutes &&
-    new Date(appointment.startsAt).getTime() > now;
-
-  if (
-    keepOriginal &&
-    !options.some(
-      (slot) =>
-        new Date(slot.startsAt).getTime() ===
-        new Date(appointment.startsAt).getTime(),
-    )
-  ) {
-    options.push({
-      startsAt: appointment.startsAt,
-      endsAt: appointment.endsAt,
-    });
-  }
+  const options = slots.data?.slots ?? [];
 
   const selectedSlot = options.find(
     (slot) =>
@@ -173,13 +170,16 @@ export default function AppointmentEditor({
       warsawDateKey(slot.startsAt) === draft.date,
   );
 
-  const checkingSlots = slots.isPending || slots.isFetching;
+  const checkingSlots =
+    slots.isPending || slots.isFetching;
 
   const slotReady = Boolean(
     selectedSlot &&
       !checkingSlots &&
       !slots.isError &&
-      settings.allowedDurations.includes(draft.durationMinutes),
+      settings.allowedDurations.includes(
+        draft.durationMinutes,
+      ),
   );
 
   const expired = Boolean(
@@ -198,7 +198,10 @@ export default function AppointmentEditor({
   const mutation = useMutation({
     mutationFn: (payload: AppointmentPayload) =>
       appointment
-        ? appointmentsApi.update(appointment.id, payload)
+        ? appointmentsApi.update(
+            appointment.id,
+            payload,
+          )
         : appointmentsApi.create(payload),
     retry: false,
     onMutate: () => onBusyChange(true),
@@ -247,17 +250,23 @@ export default function AppointmentEditor({
     },
   });
 
-  function change(patch: Partial<AppointmentDraft>) {
+  function change(
+    patch: Partial<AppointmentDraft>,
+  ) {
     const next = { ...draft, ...patch };
 
     setDraft(next);
     setErrors({});
     mutation.reset();
 
-    onDirtyChange(JSON.stringify(next) !== JSON.stringify(base));
+    onDirtyChange(
+      JSON.stringify(next) !== JSON.stringify(base),
+    );
   }
 
-  function validateCurrentDraft(includeNotes: boolean) {
+  function validateCurrentDraft(
+    includeNotes: boolean,
+  ) {
     const nextErrors = validateAppointment(
       draft,
       settings.allowedDurations,
@@ -280,14 +289,24 @@ export default function AppointmentEditor({
     return nextErrors;
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
-    if (saving.current || mutation.isPending || expired) return;
+    if (
+      saving.current ||
+      mutation.isPending ||
+      expired
+    ) {
+      return;
+    }
 
     if (step === 0) {
       if (!draft.patientId) {
-        setErrors({ patientId: 'Wybierz pacjenta.' });
+        setErrors({
+          patientId: 'Wybierz pacjenta.',
+        });
         return;
       }
 
@@ -310,10 +329,18 @@ export default function AppointmentEditor({
       return;
     }
 
-    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const submitter = (
+      event.nativeEvent as SubmitEvent
+    ).submitter;
 
     // Ostateczny zapis wymaga użycia przycisku potwierdzenia.
-    if (!submitter?.hasAttribute('data-save-appointment')) return;
+    if (
+      !submitter?.hasAttribute(
+        'data-save-appointment',
+      )
+    ) {
+      return;
+    }
 
     const nextErrors = validateCurrentDraft(true);
 
@@ -352,7 +379,9 @@ export default function AppointmentEditor({
               return (
                 <li
                   key={item.label}
-                  aria-current={active ? 'step' : undefined}
+                  aria-current={
+                    active ? 'step' : undefined
+                  }
                   className={`flex items-center gap-2 rounded-xl border px-3 py-3 sm:gap-3 sm:px-4 ${
                     active
                       ? 'border-primary bg-primary/5'
@@ -418,16 +447,24 @@ export default function AppointmentEditor({
           <AppointmentSlotSelector
             date={draft.date}
             onDateChange={(date) =>
-              change({ date, startsAt: '' })
+              change({
+                date,
+                startsAt: '',
+              })
             }
             duration={draft.durationMinutes}
             durations={settings.allowedDurations}
             onDurationChange={(durationMinutes) =>
-              change({ durationMinutes, startsAt: '' })
+              change({
+                durationMinutes,
+                startsAt: '',
+              })
             }
             slots={options}
             value={draft.startsAt}
-            onChange={(startsAt) => change({ startsAt })}
+            onChange={(startsAt) =>
+              change({ startsAt })
+            }
             now={now}
             loading={checkingSlots}
             error={
@@ -443,9 +480,9 @@ export default function AppointmentEditor({
 
           {appointment && (
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Możesz zachować obecny termin. Przy wyliczaniu
-              pozostałych godzin API nadal traktuje edytowaną
-              wizytę jako zajęty czas.
+              Podczas edycji API pomija tę wizytę przy
+              sprawdzaniu dostępności. Pozostałe wizyty,
+              godziny pracy i bufor nadal są uwzględniane.
             </p>
           )}
         </div>
@@ -458,7 +495,8 @@ export default function AppointmentEditor({
                   Pacjent
                 </dt>
                 <dd className="mt-2 break-words text-sm font-semibold">
-                  {patientName || 'Nie wybrano pacjenta'}
+                  {patientName ||
+                    'Nie wybrano pacjenta'}
                 </dd>
               </div>
 
@@ -468,14 +506,21 @@ export default function AppointmentEditor({
                 </dt>
                 <dd className="mt-2 text-sm font-semibold">
                   {Number.isFinite(
-                    new Date(draft.startsAt).getTime(),
+                    new Date(
+                      draft.startsAt,
+                    ).getTime(),
                   )
-                    ? appointmentDateTime(draft.startsAt)
+                    ? appointmentDateTime(
+                        draft.startsAt,
+                      )
                     : 'Nie wybrano terminu'}
 
                   {selectedSlot && (
                     <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                      Do {appointmentTime(selectedSlot.endsAt)}
+                      Do{' '}
+                      {appointmentTime(
+                        selectedSlot.endsAt,
+                      )}
                     </span>
                   )}
                 </dd>
@@ -488,7 +533,8 @@ export default function AppointmentEditor({
                 <dd className="mt-2 text-sm font-semibold">
                   {draft.durationMinutes} minut
                   <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                    Bufor po wizycie: {settings.bufferMinutes} min
+                    Bufor po wizycie:{' '}
+                    {settings.bufferMinutes} min
                   </span>
                 </dd>
               </div>
@@ -505,10 +551,14 @@ export default function AppointmentEditor({
                   rows={3}
                   maxLength={500}
                   value={draft.reason}
-                  aria-invalid={Boolean(errors.reason)}
+                  aria-invalid={Boolean(
+                    errors.reason,
+                  )}
                   aria-describedby={`${id}-reason-help ${id}-reason-error`}
                   onChange={(event) =>
-                    change({ reason: event.target.value })
+                    change({
+                      reason: event.target.value,
+                    })
                   }
                 />
 
@@ -535,10 +585,14 @@ export default function AppointmentEditor({
                   rows={3}
                   maxLength={2000}
                   value={draft.notes}
-                  aria-invalid={Boolean(errors.notes)}
+                  aria-invalid={Boolean(
+                    errors.notes,
+                  )}
                   aria-describedby={`${id}-notes-help ${id}-notes-error`}
                   onChange={(event) =>
-                    change({ notes: event.target.value })
+                    change({
+                      notes: event.target.value,
+                    })
                   }
                 />
 
@@ -561,18 +615,22 @@ export default function AppointmentEditor({
                 role="status"
                 className="text-sm text-muted-foreground"
               >
-                Sprawdzanie aktualnej dostępności terminu…
+                Sprawdzanie aktualnej dostępności
+                terminu…
               </p>
             ) : !slotReady ? (
-              <p role="alert" className="text-sm text-destructive">
-                Nie można potwierdzić dostępności wybranego
-                terminu. Wróć do poprzedniego kroku i sprawdź
-                godziny.
+              <p
+                role="alert"
+                className="text-sm text-destructive"
+              >
+                Nie można potwierdzić dostępności
+                wybranego terminu. Wróć do poprzedniego
+                kroku i sprawdź godziny.
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Dostępność zostanie ponownie sprawdzona przez
-                serwer podczas zapisu.
+                Dostępność zostanie ponownie sprawdzona
+                przez serwer podczas zapisu.
               </p>
             )}
           </section>
@@ -583,7 +641,8 @@ export default function AppointmentEditor({
             role="alert"
             className="mt-4 text-sm text-destructive"
           >
-            Wizyta już się rozpoczęła. Nie można zapisać zmian.
+            Wizyta już się rozpoczęła.
+            Nie można zapisać zmian.
           </p>
         )}
 
@@ -592,12 +651,16 @@ export default function AppointmentEditor({
             role="alert"
             className="mt-4 rounded-xl border border-destructive/30 p-4 text-sm text-destructive"
           >
-            <p className="font-medium">Sprawdź formularz:</p>
+            <p className="font-medium">
+              Sprawdź formularz:
+            </p>
 
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {[...new Set(Object.values(errors))].map(
                 (message) => (
-                  <li key={message}>{message}</li>
+                  <li key={message}>
+                    {message}
+                  </li>
                 ),
               )}
             </ul>
@@ -692,7 +755,11 @@ function PatientPicker({
       page,
     ],
     queryFn: ({ signal }) =>
-      appointmentsApi.patients(search, page, signal),
+      appointmentsApi.patients(
+        search,
+        page,
+        signal,
+      ),
     staleTime: 0,
   });
 
@@ -700,7 +767,10 @@ function PatientPicker({
     setSearch(draft.trim());
     setPage(1);
 
-    if (search === draft.trim() && page === 1) {
+    if (
+      search === draft.trim() &&
+      page === 1
+    ) {
       void query.refetch();
     }
   }
@@ -758,7 +828,10 @@ function PatientPicker({
         </p>
       ) : query.isError ? (
         <div className="space-y-3">
-          <p role="alert" className="text-sm text-destructive">
+          <p
+            role="alert"
+            className="text-sm text-destructive"
+          >
             {getCalendarError(query.error)}
           </p>
 
@@ -783,7 +856,9 @@ function PatientPicker({
             role="radiogroup"
             aria-label="Wybierz pacjenta"
             aria-describedby={
-              error ? 'appointment-patient-error' : undefined
+              error
+                ? 'appointment-patient-error'
+                : undefined
             }
             className="grid max-h-56 gap-3 overflow-y-auto p-1 sm:grid-cols-2"
           >
@@ -799,7 +874,9 @@ function PatientPicker({
                 <input
                   type="radio"
                   name="patient-choice"
-                  checked={selectedId === patient.id}
+                  checked={
+                    selectedId === patient.id
+                  }
                   onChange={() =>
                     onSelect(
                       patient.id,
@@ -811,15 +888,18 @@ function PatientPicker({
 
                 <span className="min-w-0">
                   <span className="block font-medium">
-                    {patient.firstName} {patient.lastName}
+                    {patient.firstName}{' '}
+                    {patient.lastName}
                   </span>
 
                   <span className="mt-1 block break-words text-xs text-muted-foreground">
-                    {patient.email || 'Brak e-maila'}
+                    {patient.email ||
+                      'Brak e-maila'}
                   </span>
 
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    {patient.phoneNumber || 'Brak telefonu'}
+                    {patient.phoneNumber ||
+                      'Brak telefonu'}
                   </span>
                 </span>
               </label>
@@ -832,27 +912,34 @@ function PatientPicker({
                 type="button"
                 variant="outline"
                 disabled={
-                  !query.data.hasPrevious || query.isFetching
+                  !query.data.hasPrevious ||
+                  query.isFetching
                 }
                 onClick={() =>
-                  setPage((current) => current - 1)
+                  setPage(
+                    (current) => current - 1,
+                  )
                 }
               >
                 Poprzednia
               </Button>
 
               <span className="text-xs">
-                {query.data.pageNumber}/{query.data.totalPages}
+                {query.data.pageNumber}/
+                {query.data.totalPages}
               </span>
 
               <Button
                 type="button"
                 variant="outline"
                 disabled={
-                  !query.data.hasNext || query.isFetching
+                  !query.data.hasNext ||
+                  query.isFetching
                 }
                 onClick={() =>
-                  setPage((current) => current + 1)
+                  setPage(
+                    (current) => current + 1,
+                  )
                 }
               >
                 Następna
