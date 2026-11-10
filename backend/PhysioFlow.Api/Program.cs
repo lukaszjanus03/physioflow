@@ -23,6 +23,7 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
 // --- Layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 // --- Controllers & Swagger
 builder.Services.AddControllers()
@@ -245,7 +246,9 @@ using (var scope = app.Services.CreateScope())
     await db.SaveChangesAsync(default);
 }
 
-if (string.IsNullOrEmpty(app.Configuration["Resend:ApiKey"]))
+if (!string.IsNullOrWhiteSpace(app.Configuration["Email:PickupDirectory"]))
+    app.Logger.LogInformation("Local email pickup is configured; messages will be saved to disk.");
+else if (string.IsNullOrEmpty(app.Configuration["Resend:ApiKey"]))
     app.Logger.LogWarning("Resend:ApiKey is not configured - emails (confirmation, notifications) will not be sent.");
 else if (app.Configuration["Resend:FromAddress"]?.Contains("@resend.dev", StringComparison.OrdinalIgnoreCase) == true)
     app.Logger.LogWarning(

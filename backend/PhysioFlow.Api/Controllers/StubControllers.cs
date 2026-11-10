@@ -32,10 +32,8 @@ public class TherapyPlansController : ApiControllerBase
 [Authorize(Roles = "Patient")]
 public class PatientPortalController : ApiControllerBase
 {
-    // TODO: GetMyUpcomingAppointmentsQuery
     // TODO: GetMyCurrentPlanQuery
     // TODO: CreateDiaryEntryCommand
-    // TODO: CancelMyAppointmentCommand
 }
 
 [Authorize(Roles = "Therapist")]

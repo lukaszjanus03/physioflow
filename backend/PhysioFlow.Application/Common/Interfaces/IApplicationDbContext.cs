@@ -9,6 +9,7 @@ public interface IApplicationDbContext
     DbSet<TherapistProfile> Therapists { get; }
     DbSet<Patient> Patients { get; }
     DbSet<Appointment> Appointments { get; }
+    DbSet<AppointmentReminder> AppointmentReminders { get; }
     DbSet<AvailabilitySlot> AvailabilitySlots { get; }
     DbSet<TherapistCalendarSettings> CalendarSettings { get; }
     DbSet<BodyMap> BodyMaps { get; }

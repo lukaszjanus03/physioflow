@@ -23,6 +23,7 @@ public interface IStorageService
 public interface IEmailService
 {
     Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default);
+    Task SendIdempotentAsync(string to, string subject, string htmlBody, string idempotencyKey, CancellationToken ct = default);
     Task SendEmailConfirmationAsync(string to, string firstName, string confirmationLink, CancellationToken ct = default);
     Task SendAppointmentReminderAsync(string to, string patientName, DateTime appointmentTime, CancellationToken ct = default);
     Task SendPatientInviteAsync(string to, string inviteLink, string therapistName, CancellationToken ct = default);

@@ -23,7 +23,13 @@ public class ResendEmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
+    public Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default) =>
+        SendCoreAsync(to, subject, htmlBody, null, ct);
+
+    public Task SendIdempotentAsync(string to, string subject, string htmlBody, string idempotencyKey, CancellationToken ct = default) =>
+        SendCoreAsync(to, subject, htmlBody, idempotencyKey, ct);
+
+    private async Task SendCoreAsync(string to, string subject, string htmlBody, string? idempotencyKey, CancellationToken ct)
     {
         var message = new EmailMessage
         {
@@ -36,7 +42,9 @@ public class ResendEmailService : IEmailService
         ResendResponse<Guid> response;
         try
         {
-            response = await _resend.EmailSendAsync(message, ct);
+            response = idempotencyKey is null
+                ? await _resend.EmailSendAsync(message, ct)
+                : await _resend.EmailSendAsync(idempotencyKey, message, ct);
         }
         catch (ResendException ex)
         {

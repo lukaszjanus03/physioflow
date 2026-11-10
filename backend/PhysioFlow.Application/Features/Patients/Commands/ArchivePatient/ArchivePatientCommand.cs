@@ -39,6 +39,7 @@ public class ArchivePatientCommandHandler : IRequestHandler<ArchivePatientComman
             return Unit.Value;
 
         patient.IsArchived = true;
+        patient.ConcurrencyStamp = Guid.NewGuid();
         await _db.SaveChangesAsync(ct);
 
         return Unit.Value;

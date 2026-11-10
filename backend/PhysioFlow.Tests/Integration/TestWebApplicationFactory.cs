@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -47,6 +48,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     ["Jwt:AccessTokenExpiryMinutes"] = "60",
 
                     ["Frontend:BaseUrl"] = FrontendBaseUrl + "/",
+                    ["AppointmentReminders:Enabled"] = "false",
 
                     ["RateLimiting:PatientRegistration:PermitLimit"] =
                         PatientRegistrationPermitLimit.ToString(),
@@ -86,6 +88,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            // Klucze testowe żyją w hoście; testy nie zapisują nic w profilu systemowym.
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
             // Usuwamy również konfigurację dostawcy PostgreSQL,
             // aby nie została połączona z dostawcą InMemory.
             services.RemoveAll<

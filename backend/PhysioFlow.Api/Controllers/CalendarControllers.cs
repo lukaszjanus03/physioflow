@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Application.DTOs;
+using PhysioFlow.Application.Features.Calendar;
 using PhysioFlow.Application.Features.Calendar.Commands.ChangeAppointmentStatus;
 using PhysioFlow.Application.Features.Calendar.Commands.CreateAppointment;
 using PhysioFlow.Application.Features.Calendar.Commands.UpdateAppointment;
@@ -67,6 +68,11 @@ public class TherapistCalendarController : ApiControllerBase
 [Authorize(Roles = "Therapist")]
 public class AppointmentsController : ApiControllerBase
 {
+    [HttpGet("summary")]
+    [ProducesResponseType(typeof(TherapistAppointmentSummaryDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Summary(CancellationToken ct) =>
+        Ok(await Mediator.Send(new GetTherapistAppointmentSummaryQuery(), ct));
+
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AppointmentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

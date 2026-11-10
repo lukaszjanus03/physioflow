@@ -16,6 +16,15 @@ public class FakeEmailService : IEmailService
     public ConcurrentQueue<SentEmail> Sent { get; } = new();
 
     public bool SimulateProviderFailure { get; set; }
+    private readonly ConcurrentDictionary<string, byte> _idempotencyKeys = new();
+
+    public Task SendIdempotentAsync(string to, string subject, string htmlBody, string idempotencyKey, CancellationToken ct = default)
+    {
+        ThrowIfFailing();
+        if (_idempotencyKeys.TryAdd(idempotencyKey, 0))
+            Sent.Enqueue(new SentEmail(to, subject, htmlBody));
+        return Task.CompletedTask;
+    }
 
     public Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
     {

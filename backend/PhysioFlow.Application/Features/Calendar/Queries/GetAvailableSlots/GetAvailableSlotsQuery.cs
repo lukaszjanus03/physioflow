@@ -1,10 +1,8 @@
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Cooperation;
-using PhysioFlow.Domain.Enums;
 
 namespace PhysioFlow.Application.Features.Calendar.Queries.GetAvailableSlots;
 
@@ -43,33 +41,7 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
     public async Task<AvailableSlotsDto> Handle(GetAvailableSlotsQuery request, CancellationToken ct)
     {
         var therapist = await _db.RequireTherapistAsync(_currentUser, ct);
-        var date = request.Date!.Value;
-        var duration = request.DurationMinutes!.Value;
-
-        var settings = await CalendarAccess.GetOrCreateSettingsAsync(_db, therapist.Id, ct);
-        var allowed = CalendarDurations.Parse(settings.AllowedDurations);
-        if (!allowed.Contains(duration))
-            throw CalendarValidation.Field("durationMinutes", "Ta długość wizyty nie jest włączona w Twoich ustawieniach kalendarza.");
-
-        var slots = await _db.AvailabilitySlots.Where(s => s.TherapistId == therapist.Id).ToListAsync(ct);
-        var intervals = CalendarSchedule.IntervalsFor(slots, date);
-        var (dayStart, dayEnd) = WarsawTime.DayRangeUtc(date);
-
-        var occupiedRows = await _db.Appointments
-            .Where(a => a.TherapistId == therapist.Id
-                        && a.Status == AppointmentStatus.Scheduled
-                        && a.StartsAt < dayEnd
-                        && a.EndsAt > dayStart)
-            .Select(a => new { a.StartsAt, a.EndsAt, a.BufferMinutes })
-            .ToListAsync(ct);
-
-        var occupied = occupiedRows
-            .Select(a => (a.StartsAt, a.EndsAt, a.BufferMinutes))
-            .ToList();
-
-        var generated = CalendarSchedule.GenerateSlots(
-            date, duration, settings.BufferMinutes, intervals, occupied, _clock.UtcNow);
-
-        return new AvailableSlotsDto(date, duration, generated);
+        return await CalendarAvailability.GetAsync(_db, therapist.Id, request.Date!.Value,
+            request.DurationMinutes!.Value, _clock.UtcNow, ct);
     }
 }

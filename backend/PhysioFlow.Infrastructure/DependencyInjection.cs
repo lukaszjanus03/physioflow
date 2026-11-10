@@ -84,8 +84,19 @@ public static class DependencyInjection
         }
 
         // --- Resend (email)
+        services.AddOptions<AppointmentReminderOptions>()
+            .Bind(config.GetSection(AppointmentReminderOptions.SectionName))
+            .Validate(o => o.PollIntervalSeconds is >= 1 and <= 3600 && o.BatchSize is >= 1 and <= 1000
+                && o.MaxAttempts is >= 1 and <= 10 && o.RetryDelayMinutes is >= 1 and <= 60,
+                "Nieprawidłowa konfiguracja AppointmentReminders.")
+            .ValidateOnStart();
+        services.AddScoped<AppointmentReminderProcessor>();
         var resendKey = config["Resend:ApiKey"];
-        if (!string.IsNullOrEmpty(resendKey))
+        if (!string.IsNullOrWhiteSpace(config["Email:PickupDirectory"]))
+        {
+            services.AddScoped<IEmailService, LocalPickupEmailService>();
+        }
+        else if (!string.IsNullOrEmpty(resendKey))
         {
             services.AddHttpClient<ResendClient>();
             services.Configure<ResendClientOptions>(o => o.ApiToken = resendKey);

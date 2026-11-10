@@ -28,6 +28,7 @@ appsettings.Local.json
 .DS_Store
 
 # Logs
+.local-emails/
 logs/
 *.log
 

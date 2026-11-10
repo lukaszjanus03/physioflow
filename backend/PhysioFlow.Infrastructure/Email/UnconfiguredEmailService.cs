@@ -13,6 +13,9 @@ public class UnconfiguredEmailService : IEmailService
     public Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default) =>
         throw new EmailDeliveryException(NotConfiguredMessage);
 
+    public Task SendIdempotentAsync(string to, string subject, string htmlBody, string idempotencyKey, CancellationToken ct = default) =>
+        throw new EmailDeliveryException(NotConfiguredMessage);
+
     public Task SendEmailConfirmationAsync(
         string to, string firstName, string confirmationLink, CancellationToken ct = default) =>
         throw new EmailDeliveryException(NotConfiguredMessage);
