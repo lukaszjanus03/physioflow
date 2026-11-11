@@ -2,11 +2,16 @@
 
 import { addDays, format, parse } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+} from 'lucide-react';
 import { useId, useState } from 'react';
 import './appointment-booking-layout.css';
 
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Input, Label } from '@/components/ui/primitives';
 import {
   appointmentDateTime,
@@ -19,7 +24,10 @@ import { isCalendarDate } from '@/lib/calendar-validation';
 
 type Period = 'all' | 'morning' | 'afternoon' | 'evening';
 
-const periods: { value: Period; label: string }[] = [
+const periods: {
+  value: Period;
+  label: string;
+}[] = [
   { value: 'all', label: 'Wszystkie' },
   { value: 'morning', label: 'Rano' },
   { value: 'afternoon', label: 'Popołudnie' },
@@ -75,8 +83,10 @@ export default function AppointmentSlotSelector({
   );
   const [period, setPeriod] = useState<Period>('all');
 
-  const effectiveStart = windowStart < today ? today : windowStart;
+  const effectiveStart =
+    windowStart < today ? today : windowStart;
   const firstDay = parseDay(effectiveStart);
+
   const days = Array.from({ length: 7 }, (_, index) =>
     addDays(firstDay, index),
   );
@@ -89,12 +99,14 @@ export default function AppointmentSlotSelector({
     )
     .sort(
       (a, b) =>
-        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+        new Date(a.startsAt).getTime() -
+        new Date(b.startsAt).getTime(),
     );
 
   const selected = options.find(
     (slot) =>
-      new Date(slot.startsAt).getTime() === new Date(value).getTime(),
+      new Date(slot.startsAt).getTime() ===
+      new Date(value).getTime(),
   );
 
   const filtered = options.filter((slot) => {
@@ -103,13 +115,17 @@ export default function AppointmentSlotSelector({
     const hour = toCalendarDate(slot.startsAt).getHours();
 
     if (period === 'morning') return hour < 12;
-    if (period === 'afternoon') return hour >= 12 && hour < 17;
+    if (period === 'afternoon') {
+      return hour >= 12 && hour < 17;
+    }
 
     return hour >= 17;
   });
 
   function moveDays(direction: -1 | 1) {
-    const proposed = dateKey(addDays(firstDay, direction * 7));
+    const proposed = dateKey(
+      addDays(firstDay, direction * 7),
+    );
     const next = proposed < today ? today : proposed;
 
     setWindowStart(next);
@@ -121,7 +137,11 @@ export default function AppointmentSlotSelector({
       <input
         type="hidden"
         name="startsAt"
-        value={!loading && !error && selected ? selected.startsAt : ''}
+        value={
+          !loading && !error && selected
+            ? selected.startsAt
+            : ''
+        }
       />
 
       <fieldset disabled={disabled} className="min-w-0">
@@ -133,6 +153,7 @@ export default function AppointmentSlotSelector({
                 Godziny w strefie Europe/Warsaw.
               </p>
             </div>
+
             <span className="text-sm font-medium capitalize">
               {format(firstDay, 'LLLL yyyy', { locale: pl })}
             </span>
@@ -145,15 +166,21 @@ export default function AppointmentSlotSelector({
 
             <div className="flex flex-wrap gap-2">
               {durations.map((minutes) => (
-                <label key={minutes} className="cursor-pointer">
+                <label
+                  key={minutes}
+                  className="cursor-pointer"
+                >
                   <input
                     type="radio"
                     name={`${id}-duration`}
                     value={minutes}
                     checked={duration === minutes}
-                    onChange={() => onDurationChange(minutes)}
+                    onChange={() =>
+                      onDurationChange(minutes)
+                    }
                     className="peer sr-only"
                   />
+
                   <span
                     className={`block rounded-xl border px-5 py-3 text-sm transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary ${
                       duration === minutes
@@ -168,7 +195,10 @@ export default function AppointmentSlotSelector({
             </div>
 
             {fieldErrors.durationMinutes && (
-              <p role="alert" className="text-sm text-destructive">
+              <p
+                role="alert"
+                className="text-sm text-destructive"
+              >
                 {fieldErrors.durationMinutes}
               </p>
             )}
@@ -184,7 +214,10 @@ export default function AppointmentSlotSelector({
               disabled={effectiveStart <= today}
               onClick={() => moveDays(-1)}
             >
-              <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+              <ChevronLeft
+                aria-hidden="true"
+                className="h-4 w-4"
+              />
             </Button>
 
             <div
@@ -200,7 +233,11 @@ export default function AppointmentSlotSelector({
                     key={key}
                     type="button"
                     aria-pressed={active}
-                    aria-label={format(day, 'EEEE, dd MMMM yyyy', { locale: pl })}
+                    aria-label={format(
+                      day,
+                      'EEEE, dd MMMM yyyy',
+                      { locale: pl },
+                    )}
                     onClick={() => onDateChange(key)}
                     className={`flex min-h-24 min-w-[70px] flex-1 flex-col items-center justify-center gap-2 rounded-xl border px-3 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                       active
@@ -211,13 +248,17 @@ export default function AppointmentSlotSelector({
                     <span className="text-xs capitalize">
                       {format(day, 'EEE', { locale: pl })}
                     </span>
+
                     <span className="text-xl font-semibold">
                       {format(day, 'dd')}
                     </span>
+
                     <span
                       aria-hidden="true"
                       className={`h-1 w-5 rounded-full ${
-                        active ? 'bg-primary-foreground' : 'bg-transparent'
+                        active
+                          ? 'bg-primary-foreground'
+                          : 'bg-transparent'
                       }`}
                     />
                   </button>
@@ -233,13 +274,19 @@ export default function AppointmentSlotSelector({
               aria-label="Następne siedem dni"
               onClick={() => moveDays(1)}
             >
-              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+              <ChevronRight
+                aria-hidden="true"
+                className="h-4 w-4"
+              />
             </Button>
           </div>
 
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="space-y-2">
-              <Label htmlFor={`${id}-date`}>Lub wybierz datę</Label>
+              <Label htmlFor={`${id}-date`}>
+                Lub wybierz datę
+              </Label>
+
               <Input
                 id={`${id}-date`}
                 type="date"
@@ -251,7 +298,10 @@ export default function AppointmentSlotSelector({
                   const next = event.target.value;
                   onDateChange(next);
 
-                  if (isCalendarDate(next) && next >= today) {
+                  if (
+                    isCalendarDate(next) &&
+                    next >= today
+                  ) {
                     setWindowStart(next);
                   }
                 }}
@@ -261,19 +311,26 @@ export default function AppointmentSlotSelector({
             <Button
               type="button"
               variant="outline"
-              disabled={loading || !isCalendarDate(date)}
+              disabled={
+                loading || !isCalendarDate(date)
+              }
               onClick={onRefresh}
             >
               <RefreshCw
                 aria-hidden="true"
-                className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                className={`mr-2 h-4 w-4 ${
+                  loading ? 'animate-spin' : ''
+                }`}
               />
               Odśwież godziny
             </Button>
           </div>
 
           {fieldErrors.date && (
-            <p id={`${id}-date-error`} className="text-sm text-destructive">
+            <p
+              id={`${id}-date-error`}
+              className="text-sm text-destructive"
+            >
               {fieldErrors.date}
             </p>
           )}
@@ -306,21 +363,34 @@ export default function AppointmentSlotSelector({
               Wybierz poprawną datę.
             </p>
           ) : loading ? (
-            <p role="status" className="py-5 text-center text-sm text-muted-foreground">
-              Sprawdzanie dostępnych godzin…
-            </p>
+            <LoadingState
+              title="Sprawdzanie wolnych terminów…"
+              description="Pobieramy dostępne godziny dla wybranego dnia."
+              className="min-h-36 border-0 bg-primary/5"
+            />
           ) : error ? (
-            <p role="alert" className="text-sm text-destructive">{error}</p>
+            <p
+              role="alert"
+              className="text-sm text-destructive"
+            >
+              {error}
+            </p>
           ) : options.length === 0 ? (
             <div className="rounded-xl border border-dashed p-6 text-center">
-              <p className="text-sm font-medium">Brak wolnych terminów</p>
+              <p className="text-sm font-medium">
+                Brak wolnych terminów
+              </p>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                 Wybierz inny dzień lub inną długość wizyty.
               </p>
             </div>
           ) : filtered.length === 0 ? (
-            <p role="status" className="py-4 text-center text-sm text-muted-foreground">
-              Brak godzin dla tej pory dnia. Wybierz inną porę lub „Wszystkie”.
+            <p
+              role="status"
+              className="py-4 text-center text-sm text-muted-foreground"
+            >
+              Brak godzin dla tej pory dnia. Wybierz inną porę
+              lub „Wszystkie”.
             </p>
           ) : (
             <div
@@ -328,7 +398,8 @@ export default function AppointmentSlotSelector({
               aria-label="Dostępne godziny"
             >
               {filtered.map((slot) => {
-                const active = selected?.startsAt === slot.startsAt;
+                const active =
+                  selected?.startsAt === slot.startsAt;
                 const current =
                   currentStartsAt &&
                   new Date(currentStartsAt).getTime() ===
@@ -339,8 +410,14 @@ export default function AppointmentSlotSelector({
                     key={slot.startsAt}
                     type="button"
                     aria-pressed={active}
-                    aria-label={`${appointmentTime(slot.startsAt)} do ${appointmentTime(slot.endsAt)}${current ? ', obecny termin' : ''}`}
-                    onClick={() => onChange(slot.startsAt)}
+                    aria-label={`${appointmentTime(
+                      slot.startsAt,
+                    )} do ${appointmentTime(slot.endsAt)}${
+                      current ? ', obecny termin' : ''
+                    }`}
+                    onClick={() =>
+                      onChange(slot.startsAt)
+                    }
                     className={`min-h-14 rounded-xl border px-2 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                       active
                         ? 'border-primary bg-primary text-primary-foreground shadow-sm'
@@ -350,7 +427,12 @@ export default function AppointmentSlotSelector({
                     <span className="block text-sm font-semibold">
                       {appointmentTime(slot.startsAt)}
                     </span>
-                    {current && <span className="mt-1 block text-[10px]">Obecny</span>}
+
+                    {current && (
+                      <span className="mt-1 block text-[10px]">
+                        Obecny
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -358,7 +440,10 @@ export default function AppointmentSlotSelector({
           )}
 
           {fieldErrors.startsAt && (
-            <p role="alert" className="text-sm text-destructive">
+            <p
+              role="alert"
+              className="text-sm text-destructive"
+            >
               {fieldErrors.startsAt}
             </p>
           )}
@@ -368,18 +453,22 @@ export default function AppointmentSlotSelector({
               <p className="text-xs font-medium uppercase tracking-wider text-primary">
                 Wybrany termin
               </p>
+
               <p className="mt-2 text-sm font-semibold">
                 {appointmentDateTime(selected.startsAt)}
               </p>
+
               <p className="mt-2 text-xs text-muted-foreground">
-                Do {appointmentTime(selected.endsAt)} · {duration} minut
+                Do {appointmentTime(selected.endsAt)} ·{' '}
+                {duration} minut
               </p>
             </div>
           )}
 
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Dostępność sprawdzamy dla wybranego dnia. Termin zostanie
-            ponownie zweryfikowany podczas zapisu.
+            Dostępność sprawdzamy dla wybranego dnia.
+            Termin zostanie ponownie zweryfikowany
+            podczas zapisu.
           </p>
         </div>
       </fieldset>

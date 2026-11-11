@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { portalApi } from '@/lib/portal-api';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -37,21 +38,14 @@ const navItems = [
 
 const LOGOUT_MIN_DURATION_MS = 2000;
 
-export default function TherapistLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function TherapistLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { isAuthenticated, roles, email, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const initials = useMemo(
-    () => (email ? email.slice(0, 2).toUpperCase() : 'PF'),
-    [email],
-  );
+  const initials = useMemo(() => (email ? email.slice(0, 2).toUpperCase() : 'PF'), [email]);
 
   const allowed = isAuthenticated && roles.includes('Therapist');
 
@@ -64,9 +58,7 @@ export default function TherapistLayout({
 
     setIsLoggingOut(true);
 
-    const minDelay = new Promise((resolve) =>
-      setTimeout(resolve, LOGOUT_MIN_DURATION_MS),
-    );
+    const minDelay = new Promise((resolve) => setTimeout(resolve, LOGOUT_MIN_DURATION_MS));
 
     await Promise.all([
       portalApi.logout().catch(() => {
@@ -102,9 +94,7 @@ export default function TherapistLayout({
         <nav aria-label="Panel terapeuty" className="flex-1 space-y-1 px-3 py-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active =
-              pathname === item.href ||
-              pathname.startsWith(`${item.href}/`);
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
@@ -154,6 +144,12 @@ export default function TherapistLayout({
       </aside>
 
       <main className="min-h-screen pb-24 md:ml-[260px] md:pb-0">
+        <header className="sticky top-0 z-30 flex min-h-[73px] items-center justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+          <span className="text-sm font-medium">Panel terapeuty</span>
+
+          <NotificationBell role="Therapist" />
+        </header>
+
         {children}
       </main>
 
@@ -164,9 +160,7 @@ export default function TherapistLayout({
         <div className="grid min-w-[420px] grid-cols-6 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active =
-              pathname === item.href ||
-              pathname.startsWith(`${item.href}/`);
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
@@ -175,9 +169,7 @@ export default function TherapistLayout({
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex min-h-14 flex-col items-center justify-center rounded-md px-1 text-center text-[11px] font-medium transition-colors',
-                  active
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent',
+                  active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent',
                 )}
               >
                 <Icon aria-hidden="true" className="mb-1 h-4 w-4" />
@@ -194,14 +186,9 @@ export default function TherapistLayout({
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
         >
           <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-8 shadow-lg">
-            <Loader2
-              aria-hidden="true"
-              className="h-8 w-8 animate-spin text-primary"
-            />
+            <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm font-medium">Wylogowywanie…</p>
-            <p className="text-xs text-muted-foreground">
-              Za chwilę nastąpi przekierowanie
-            </p>
+            <p className="text-xs text-muted-foreground">Za chwilę nastąpi przekierowanie</p>
           </div>
         </div>
       )}

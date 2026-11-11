@@ -15,15 +15,26 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
+import NotificationBell from '@/components/notifications/NotificationBell';
 import PatientAppointments, {
   PatientAppointmentDetails,
   PatientNextAppointment,
 } from '@/components/patient-portal/PatientAppointments';
-import { MyCooperationRequests, MyTherapists } from '@/components/patient-portal/PatientCooperation';
+import {
+  MyCooperationRequests,
+  MyTherapists,
+} from '@/components/patient-portal/PatientCooperation';
 import TherapistCatalog from '@/components/patient-portal/TherapistCatalog';
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/ui/loading-state';
+import { withMinimumLoading } from '@/lib/minimum-loading';
 import { getApiMessage, portalApi } from '@/lib/portal-api';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -39,7 +50,12 @@ function getServerSnapshot() {
   return false;
 }
 
-type PortalView = 'account' | 'appointments' | 'catalog' | 'requests' | 'therapists';
+type PortalView =
+  | 'account'
+  | 'appointments'
+  | 'catalog'
+  | 'requests'
+  | 'therapists';
 
 const navigation: {
   id: PortalView;
@@ -88,7 +104,10 @@ function PortalNavigation({
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`}
           >
-            <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+            <Icon
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0"
+            />
             <span className="truncate">{item.label}</span>
           </Button>
         );
@@ -116,8 +135,12 @@ function PortalAccountPanel({
         </div>
 
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{name || 'Pacjent'}</p>
-          <p className="truncate text-xs text-muted-foreground">{email || 'Konto pacjenta'}</p>
+          <p className="truncate text-sm font-medium">
+            {name || 'Pacjent'}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {email || 'Konto pacjenta'}
+          </p>
         </div>
       </div>
 
@@ -127,7 +150,10 @@ function PortalAccountPanel({
         className="h-10 w-full justify-start gap-3 text-muted-foreground"
         onClick={() => void onLogout()}
       >
-        <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />
+        <LogOut
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0"
+        />
         Wyloguj się
       </Button>
     </div>
@@ -137,14 +163,20 @@ function PortalAccountPanel({
 export default function PatientPortalPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-
   const { isAuthenticated, roles, userId, logout } = useAuthStore();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const ready = useSyncExternalStore(subscribeToClientReady, getClientSnapshot, getServerSnapshot);
+  const ready = useSyncExternalStore(
+    subscribeToClientReady,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
-  const allowed = isAuthenticated && roles.includes('Patient') && Boolean(userId);
+  const allowed =
+    isAuthenticated &&
+    roles.includes('Patient') &&
+    Boolean(userId);
 
   useEffect(() => {
     if (!ready || allowed || isLoggingOut) return;
@@ -172,19 +204,40 @@ export default function PatientPortalPage() {
   if (isLoggingOut || !ready || !allowed || !userId) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <p role="status" className="text-sm text-muted-foreground">
-          {isLoggingOut ? 'Wylogowywanie…' : 'Sprawdzanie sesji…'}
+        <p
+          role="status"
+          className="text-sm text-muted-foreground"
+        >
+          {isLoggingOut
+            ? 'Wylogowywanie…'
+            : 'Sprawdzanie sesji…'}
         </p>
       </main>
     );
   }
 
-  return <PatientPortal key={userId} accountId={userId} onLogout={handleLogout} />;
+  return (
+    <PatientPortal
+      key={userId}
+      accountId={userId}
+      onLogout={handleLogout}
+    />
+  );
 }
 
-function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: () => Promise<void> }) {
+function PatientPortal({
+  accountId,
+  onLogout,
+}: {
+  accountId: string;
+  onLogout: () => Promise<void>;
+}) {
+  const queryClient = useQueryClient();
+
   const [view, setView] = useState<PortalView>('account');
-  const [appointmentId, setAppointmentId] = useState<string | null>(null);
+  const [appointmentId, setAppointmentId] = useState<string | null>(
+    null,
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const mainRef = useRef<HTMLElement>(null);
@@ -192,19 +245,30 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
 
   const query = useQuery({
     queryKey: ['patient-account', accountId],
-    queryFn: ({ signal }) => portalApi.me(signal),
+    queryFn: ({ signal, queryKey }) =>
+      withMinimumLoading(
+        () => portalApi.me(signal),
+        queryClient.getQueryData(queryKey) === undefined,
+      ),
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
-  const fullName = [query.data?.firstName, query.data?.lastName].filter(Boolean).join(' ');
+  const fullName = [
+    query.data?.firstName,
+    query.data?.lastName,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const initials =
     `${query.data?.firstName?.trim().charAt(0) ?? ''}${
       query.data?.lastName?.trim().charAt(0) ?? ''
     }`.toUpperCase() || 'PA';
 
-  const activeLabel = navigation.find((item) => item.id === view)?.label ?? 'Moje konto';
+  const activeLabel =
+    navigation.find((item) => item.id === view)?.label ??
+    'Moje konto';
 
   function navigate(next: PortalView) {
     setView(next);
@@ -232,12 +296,19 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
             className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-              <HeartPulse aria-hidden="true" className="h-5 w-5" />
+              <HeartPulse
+                aria-hidden="true"
+                className="h-5 w-5"
+              />
             </span>
 
             <span className="min-w-0">
-              <span className="block text-lg font-bold leading-tight">PhysioFlow</span>
-              <span className="text-xs text-muted-foreground">Portal pacjenta</span>
+              <span className="block text-lg font-bold leading-tight">
+                PhysioFlow
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Portal pacjenta
+              </span>
             </span>
           </Link>
         </div>
@@ -247,7 +318,11 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
             Twoja przestrzeń
           </p>
 
-          <PortalNavigation view={view} onNavigate={navigate} label="Panel pacjenta" />
+          <PortalNavigation
+            view={view}
+            onNavigate={navigate}
+            label="Panel pacjenta"
+          />
         </div>
 
         <div className="border-t p-3">
@@ -268,38 +343,56 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
             className="flex items-center gap-3 md:hidden"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <HeartPulse aria-hidden="true" className="h-5 w-5" />
+              <HeartPulse
+                aria-hidden="true"
+                className="h-5 w-5"
+              />
             </span>
 
             <span>
-              <span className="block text-sm font-semibold">PhysioFlow</span>
-              <span className="text-xs text-muted-foreground">Portal pacjenta</span>
+              <span className="block text-sm font-semibold">
+                PhysioFlow
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Portal pacjenta
+              </span>
             </span>
           </Link>
 
           <div className="hidden items-center gap-2 text-sm md:flex">
-            <span className="text-muted-foreground">Portal pacjenta</span>
-            <ChevronRight aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">
+              Portal pacjenta
+            </span>
+            <ChevronRight
+              aria-hidden="true"
+              className="h-4 w-4 text-muted-foreground"
+            />
             <span className="font-medium">{activeLabel}</span>
           </div>
 
-          <Button
-            ref={menuButtonRef}
-            type="button"
-            variant="outline"
-            className="gap-2 md:hidden"
-            aria-expanded={mobileMenuOpen}
-            aria-controls="patient-mobile-navigation"
-            onClick={() => setMobileMenuOpen((current) => !current)}
-          >
-            {mobileMenuOpen ? (
-              <X aria-hidden="true" className="h-4 w-4" />
-            ) : (
-              <Menu aria-hidden="true" className="h-4 w-4" />
-            )}
+          <div className="flex items-center gap-2">
+            <NotificationBell role="Patient" />
 
-            {mobileMenuOpen ? 'Zamknij' : 'Menu'}
-          </Button>
+            <Button
+              ref={menuButtonRef}
+              type="button"
+              variant="outline"
+              className="gap-2 md:hidden"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="patient-mobile-navigation"
+              onClick={() =>
+                setMobileMenuOpen((current) => !current)
+              }
+            >
+              {mobileMenuOpen ? (
+                <X aria-hidden="true" className="h-4 w-4" />
+              ) : (
+                <Menu aria-hidden="true" className="h-4 w-4" />
+              )}
+
+              {mobileMenuOpen ? 'Zamknij' : 'Menu'}
+            </Button>
+          </div>
         </div>
 
         <div
@@ -314,7 +407,11 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
             }
           }}
         >
-          <PortalNavigation view={view} onNavigate={navigate} label="Mobilny panel pacjenta" />
+          <PortalNavigation
+            view={view}
+            onNavigate={navigate}
+            label="Mobilny panel pacjenta"
+          />
 
           <div className="mt-3 border-t pt-3">
             <PortalAccountPanel
@@ -334,12 +431,20 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
         className="space-y-6 p-4 outline-none sm:p-6 md:ml-[260px] lg:p-8"
       >
         {query.isPending ? (
-          <p role="status">Wczytywanie konta…</p>
+          <LoadingState
+            title="Wczytywanie Twojego konta…"
+            description="Pobieramy informacje do portalu pacjenta."
+          />
         ) : query.isError ? (
           <section className="space-y-4 rounded-xl border bg-card p-6">
-            <h1 className="text-3xl">Nie udało się wczytać konta</h1>
+            <h1 className="text-3xl">
+              Nie udało się wczytać konta
+            </h1>
 
-            <p role="alert" className="text-sm text-destructive">
+            <p
+              role="alert"
+              className="text-sm text-destructive"
+            >
               {getApiMessage(query.error)}
             </p>
 
@@ -355,14 +460,23 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
         ) : (
           <>
             {view === 'appointments' && (
-              <PatientAppointments accountId={accountId} onFindTherapist={() => navigate('catalog')} />
+              <PatientAppointments
+                accountId={accountId}
+                onFindTherapist={() => navigate('catalog')}
+              />
             )}
 
-            {view === 'catalog' && <TherapistCatalog accountId={accountId} />}
+            {view === 'catalog' && (
+              <TherapistCatalog accountId={accountId} />
+            )}
 
-            {view === 'requests' && <MyCooperationRequests accountId={accountId} />}
+            {view === 'requests' && (
+              <MyCooperationRequests accountId={accountId} />
+            )}
 
-            {view === 'therapists' && <MyTherapists accountId={accountId} />}
+            {view === 'therapists' && (
+              <MyTherapists accountId={accountId} />
+            )}
 
             {view === 'account' && (
               <>
@@ -373,19 +487,29 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
 
                   <h1 className="mt-3 text-4xl sm:text-5xl">
                     Witaj
-                    {query.data.firstName ? `, ${query.data.firstName}` : ''}
+                    {query.data.firstName
+                      ? `, ${query.data.firstName}`
+                      : ''}
                   </h1>
 
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Rezerwuj wizyty, sprawdzaj terminy i zarządzaj współpracą ze swoimi terapeutami.
+                    Rezerwuj wizyty, sprawdzaj terminy i zarządzaj
+                    współpracą ze swoimi terapeutami.
                   </p>
 
                   <div className="mt-5 flex flex-wrap gap-3">
-                    <Button type="button" onClick={() => navigate('appointments')}>
+                    <Button
+                      type="button"
+                      onClick={() => navigate('appointments')}
+                    >
                       Moje wizyty
                     </Button>
 
-                    <Button type="button" variant="outline" onClick={() => navigate('catalog')}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate('catalog')}
+                    >
                       Znajdź terapeutę
                     </Button>
                   </div>
@@ -402,25 +526,41 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
 
                   <dl className="mt-6 grid gap-5 sm:grid-cols-2">
                     {[
-                      ['Imię', query.data.firstName || 'Nie podano'],
-                      ['Nazwisko', query.data.lastName || 'Nie podano'],
+                      [
+                        'Imię',
+                        query.data.firstName || 'Nie podano',
+                      ],
+                      [
+                        'Nazwisko',
+                        query.data.lastName || 'Nie podano',
+                      ],
                       ['E-mail', query.data.email],
                       [
                         'Potwierdzenie e-maila',
-                        query.data.emailConfirmed ? 'Potwierdzony' : 'Niepotwierdzony',
+                        query.data.emailConfirmed
+                          ? 'Potwierdzony'
+                          : 'Niepotwierdzony',
                       ],
                     ].map(([label, value]) => (
-                      <div key={label} className="rounded-xl border p-4">
-                        <dt className="text-xs text-muted-foreground">{label}</dt>
-                        <dd className="mt-2 break-words text-sm font-medium">{value}</dd>
+                      <div
+                        key={label}
+                        className="rounded-xl border p-4"
+                      >
+                        <dt className="text-xs text-muted-foreground">
+                          {label}
+                        </dt>
+                        <dd className="mt-2 break-words text-sm font-medium">
+                          {value}
+                        </dd>
                       </div>
                     ))}
                   </dl>
                 </section>
 
                 <aside className="rounded-xl border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
-                  Rezerwacje i współpraca nie udostępniają automatycznie wewnętrznych notatek ani dokumentacji
-                  medycznej terapeuty.
+                  Rezerwacje i współpraca nie udostępniają
+                  automatycznie wewnętrznych notatek ani
+                  dokumentacji medycznej terapeuty.
                 </aside>
               </>
             )}
