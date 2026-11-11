@@ -23,6 +23,7 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
 // --- Layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<PhysioFlow.Application.Common.Interfaces.INotificationPublisher, SignalRNotificationPublisher>();
 builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 // --- Controllers & Swagger

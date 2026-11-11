@@ -6,6 +6,7 @@ using PhysioFlow.Application.Common.Exceptions;
 using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Cooperation;
+using PhysioFlow.Application.Features.Notifications;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Enums;
 
@@ -31,17 +32,20 @@ public class ChangeAppointmentStatusCommandHandler
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
     private readonly ILogger<ChangeAppointmentStatusCommandHandler> _logger;
+    private readonly AppointmentNotifications _notifications;
 
     public ChangeAppointmentStatusCommandHandler(
         IApplicationDbContext db,
         ICurrentUserService currentUser,
         IDateTimeProvider clock,
-        ILogger<ChangeAppointmentStatusCommandHandler> logger)
+        ILogger<ChangeAppointmentStatusCommandHandler> logger,
+        AppointmentNotifications notifications)
     {
         _db = db;
         _currentUser = currentUser;
         _clock = clock;
         _logger = logger;
+        _notifications = notifications;
     }
 
     public async Task<AppointmentDto> Handle(ChangeAppointmentStatusCommand request, CancellationToken ct)
@@ -74,6 +78,9 @@ public class ChangeAppointmentStatusCommandHandler
         appointment.Status = request.Status;
         appointment.ConcurrencyStamp = Guid.NewGuid();
         settings.ConcurrencyStamp = Guid.NewGuid();
+        var notification = request.Status == AppointmentStatus.Cancelled
+            ? await _notifications.StageAsync(appointment, NotificationTypes.AppointmentCancelled, ct)
+            : null;
 
         try
         {
@@ -85,6 +92,7 @@ public class ChangeAppointmentStatusCommandHandler
                 "Status wizyty zmienił się w międzyczasie. Odśwież widok.");
         }
 
+        await _notifications.PublishAsync(notification);
         _logger.LogInformation(
             "Appointment {AppointmentId} status {From} -> {To} by therapist {TherapistId}",
             appointment.Id, from, appointment.Status, therapist.Id);

@@ -6,6 +6,7 @@ using PhysioFlow.Application.Common.Exceptions;
 using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Cooperation;
+using PhysioFlow.Application.Features.Notifications;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Enums;
 
@@ -53,17 +54,20 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
     private readonly ILogger<CreateAppointmentCommandHandler> _logger;
+    private readonly AppointmentNotifications _notifications;
 
     public CreateAppointmentCommandHandler(
         IApplicationDbContext db,
         ICurrentUserService currentUser,
         IDateTimeProvider clock,
-        ILogger<CreateAppointmentCommandHandler> logger)
+        ILogger<CreateAppointmentCommandHandler> logger,
+        AppointmentNotifications notifications)
     {
         _db = db;
         _currentUser = currentUser;
         _clock = clock;
         _logger = logger;
+        _notifications = notifications;
     }
 
     public async Task<AppointmentDto> Handle(CreateAppointmentCommand request, CancellationToken ct)
@@ -79,15 +83,18 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         var patient = await AppointmentScheduling.RequireActiveCardAsync(_db, therapist.Id, request.PatientId!.Value, ct);
 
         var strategy = _db.Database.CreateExecutionStrategy();
-        var created = await strategy.ExecuteAsync(async () =>
+        var (created, notification) = await strategy.ExecuteAsync(async () =>
         {
             await using var transaction = await _db.Database.BeginTransactionAsync(ct);
             var appointment = await AppointmentScheduling.PlaceAsync(
                 _db, therapist.Id, patient, startsAt, duration, request.Reason, request.Notes, exceptId: null, now, ct);
+            var notification = await _notifications.StageAsync(appointment, NotificationTypes.AppointmentCreated, ct);
+            await _db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
-            return appointment;
+            return (appointment, notification);
         });
 
+        await _notifications.PublishAsync(notification);
         created.Patient = patient;
         _logger.LogInformation(
             "Appointment {AppointmentId} scheduled by therapist {TherapistId} for card {PatientId} at {StartsAt:o}",
