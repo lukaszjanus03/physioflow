@@ -7,6 +7,7 @@ using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Calendar.Commands.CreateAppointment;
 using PhysioFlow.Application.Features.Calendar.Queries.GetAppointments;
 using PhysioFlow.Application.Features.Cooperation;
+using PhysioFlow.Application.Features.Notifications;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Enums;
 
@@ -152,14 +153,16 @@ public class BookPatientAppointmentHandler : IRequestHandler<BookPatientAppointm
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUserService _user;
     private readonly IDateTimeProvider _clock;
-    public BookPatientAppointmentHandler(IApplicationDbContext db, ICurrentUserService user, IDateTimeProvider clock)
-        => (_db, _user, _clock) = (db, user, clock);
+    private readonly AppointmentNotifications _notifications;
+    public BookPatientAppointmentHandler(IApplicationDbContext db, ICurrentUserService user, IDateTimeProvider clock,
+        AppointmentNotifications notifications)
+        => (_db, _user, _clock, _notifications) = (db, user, clock, notifications);
 
     public async Task<PatientAppointmentDto> Handle(BookPatientAppointmentCommand request, CancellationToken ct)
     {
         var userId = _user.RequireUserId();
         var start = WarsawTime.RequireUtc(request.StartsAt!.Value, "startsAt");
-        return await _db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        var (appointment, notification, bookedAt) = await _db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
         {
             await using var transaction = await _db.Database.BeginTransactionAsync(ct);
             var now = _clock.UtcNow;
@@ -173,10 +176,14 @@ public class BookPatientAppointmentHandler : IRequestHandler<BookPatientAppointm
             var appointment = await AppointmentScheduling.PlaceAsync(_db, request.TherapistId.Value,
                 card, start, request.DurationMinutes!.Value, null, null, null, now, ct,
                 patientMessage: request.PatientMessage);
+            var notification = await _notifications.StageAsync(appointment, NotificationTypes.AppointmentBooked, ct);
+            await _db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
-            appointment.Therapist = await _db.Therapists.FirstAsync(t => t.Id == appointment.TherapistId, ct);
-            return appointment.ToPatientDto(now);
+            return (appointment, notification, now);
         });
+        await _notifications.PublishAsync(notification);
+        appointment.Therapist = await _db.Therapists.FirstAsync(t => t.Id == appointment.TherapistId, ct);
+        return appointment.ToPatientDto(bookedAt);
     }
 }
 
@@ -185,8 +192,10 @@ public class CancelPatientAppointmentHandler : IRequestHandler<CancelPatientAppo
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUserService _user;
     private readonly IDateTimeProvider _clock;
-    public CancelPatientAppointmentHandler(IApplicationDbContext db, ICurrentUserService user, IDateTimeProvider clock)
-        => (_db, _user, _clock) = (db, user, clock);
+    private readonly AppointmentNotifications _notifications;
+    public CancelPatientAppointmentHandler(IApplicationDbContext db, ICurrentUserService user, IDateTimeProvider clock,
+        AppointmentNotifications notifications)
+        => (_db, _user, _clock, _notifications) = (db, user, clock, notifications);
 
     public async Task<PatientAppointmentDto> Handle(CancelPatientAppointmentCommand request, CancellationToken ct)
     {
@@ -203,11 +212,13 @@ public class CancelPatientAppointmentHandler : IRequestHandler<CancelPatientAppo
         a.Status = AppointmentStatus.Cancelled;
         a.ConcurrencyStamp = Guid.NewGuid();
         settings.ConcurrencyStamp = Guid.NewGuid();
+        var notification = await _notifications.StageAsync(a, NotificationTypes.AppointmentCancelled, ct);
         try { await _db.SaveChangesAsync(ct); }
         catch (DbUpdateConcurrencyException)
         {
             throw new ConflictException(CalendarErrorCodes.InvalidStatusTransition, "Wizyta zmieniła się w międzyczasie. Odśwież widok.");
         }
+        await _notifications.PublishAsync(notification);
         return a.ToPatientDto(now);
     }
 }

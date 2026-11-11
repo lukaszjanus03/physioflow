@@ -1,12 +1,17 @@
 'use client';
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import AppointmentSlotSelector from '@/components/calendar/AppointmentSlotSelector';
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Label, Textarea } from '@/components/ui/primitives';
 import { useCurrentTime } from '@/hooks/use-current-time';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
@@ -16,8 +21,12 @@ import {
 } from '@/lib/appointment-display';
 import { getCalendarFieldErrors } from '@/lib/calendar-api';
 import { isCalendarDate } from '@/lib/calendar-validation';
-import { cooperationApi, cooperationKeys } from '@/lib/cooperation-api';
+import {
+  cooperationApi,
+  cooperationKeys,
+} from '@/lib/cooperation-api';
 import type { CooperationTherapist } from '@/lib/cooperation-api';
+import { withMinimumLoading } from '@/lib/minimum-loading';
 import {
   patientAppointmentsApi,
   patientAppointmentError,
@@ -45,6 +54,8 @@ export default function PatientBookingDialog({
   onSaved: () => void;
   onFindTherapist: () => void;
 }) {
+  const queryClient = useQueryClient();
+
   const [therapistId, setTherapistId] = useState('');
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -56,7 +67,11 @@ export default function PatientBookingDialog({
 
   const cooperations = useQuery({
     queryKey: cooperationKeys.therapists(accountId),
-    queryFn: ({ signal }) => cooperationApi.therapists(signal),
+    queryFn: ({ signal, queryKey }) =>
+      withMinimumLoading(
+        () => cooperationApi.therapists(signal),
+        queryClient.getQueryData(queryKey) === undefined,
+      ),
     staleTime: 0,
     refetchOnWindowFocus: !busy,
   });
@@ -102,10 +117,16 @@ export default function PatientBookingDialog({
 
             <div className="patient-booking-content mt-6">
               {cooperations.isPending ? (
-                <p role="status">Wczytywanie współprac…</p>
+                <LoadingState
+                  title="Wczytywanie Twoich terapeutów…"
+                  description="Sprawdzamy, u kogo możesz zarezerwować wizytę."
+                />
               ) : cooperations.isError ? (
                 <div className="space-y-3">
-                  <p role="alert" className="text-sm text-destructive">
+                  <p
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
                     {patientAppointmentError(cooperations.error)}
                   </p>
 
@@ -227,20 +248,34 @@ type BookingProps = {
 };
 
 function BookingSettings(props: BookingProps) {
+  const queryClient = useQueryClient();
+
   const query = useQuery({
     queryKey: [
       ...patientAppointmentKeys.all(props.accountId),
       'booking-settings',
       props.therapist.id,
     ],
-    queryFn: ({ signal }) =>
-      patientAppointmentsApi.settings(props.therapist.id, signal),
+    queryFn: ({ signal, queryKey }) =>
+      withMinimumLoading(
+        () =>
+          patientAppointmentsApi.settings(
+            props.therapist.id,
+            signal,
+          ),
+        queryClient.getQueryData(queryKey) === undefined,
+      ),
     staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
   if (query.isPending) {
-    return <p role="status">Wczytywanie zasad rezerwacji…</p>;
+    return (
+      <LoadingState
+        title="Przygotowywanie rezerwacji…"
+        description="Pobieramy ustawienia wizyt terapeuty."
+      />
+    );
   }
 
   if (query.isError) {
@@ -435,7 +470,8 @@ function BookingFields({
     }
 
     if (new Date(review.startsAt).getTime() <= now) {
-      next.startsAt = 'Ten termin już minął. Wybierz inną godzinę.';
+      next.startsAt =
+        'Ten termin już minął. Wybierz inną godzinę.';
     }
 
     setErrors(next);
@@ -480,7 +516,9 @@ function BookingFields({
           <div className="space-y-5">
             <dl className="grid gap-4 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-muted-foreground">Terapeuta</dt>
+                <dt className="text-muted-foreground">
+                  Terapeuta
+                </dt>
                 <dd className="mt-1 font-medium">
                   {therapist.firstName} {therapist.lastName}
                 </dd>
@@ -491,7 +529,8 @@ function BookingFields({
                 <dd className="mt-1 break-words">
                   {[therapist.practiceName, therapist.city]
                     .filter(Boolean)
-                    .join(' · ') || 'Nie podano danych gabinetu'}
+                    .join(' · ') ||
+                    'Nie podano danych gabinetu'}
                 </dd>
               </div>
 
@@ -527,8 +566,9 @@ function BookingFields({
               className="text-xs leading-relaxed text-muted-foreground"
             >
               Krótko opisz dolegliwość lub cel wizyty.
-              Nie wpisuj PESEL-u ani szczegółowej historii medycznej.
-              Wiadomość zobaczy terapeuta prowadzący wizytę.
+              Nie wpisuj PESEL-u ani szczegółowej historii
+              medycznej. Wiadomość zobaczy terapeuta
+              prowadzący wizytę.
             </p>
 
             <Textarea
@@ -540,7 +580,9 @@ function BookingFields({
               placeholder="Np. Pierwsza konsultacja dotycząca bólu barku od dwóch tygodni."
               aria-invalid={Boolean(errors.patientMessage)}
               aria-describedby={`${messageId}-help ${messageId}-count ${
-                errors.patientMessage ? `${messageId}-error` : ''
+                errors.patientMessage
+                  ? `${messageId}-error`
+                  : ''
               }`}
               onChange={(event) => {
                 setPatientMessage(event.target.value);
@@ -608,7 +650,11 @@ function BookingFields({
   }
 
   return (
-    <form noValidate onSubmit={chooseTerm} className="space-y-5">
+    <form
+      noValidate
+      onSubmit={chooseTerm}
+      className="space-y-5"
+    >
       <fieldset
         disabled={mutation.isPending}
         className="min-w-0 space-y-5"

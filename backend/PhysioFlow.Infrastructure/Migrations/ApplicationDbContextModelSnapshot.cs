@@ -1451,6 +1451,70 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("medical_records", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_at");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notifications");
+
+                    b.HasIndex("AppointmentId")
+                        .HasDatabaseName("ix_notifications_appointment_id");
+
+                    b.HasIndex("EventId", "RecipientId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_notifications_event_id_recipient_id");
+
+                    b.HasIndex("RecipientId", "ReadAt")
+                        .HasDatabaseName("ix_notifications_recipient_id_read_at");
+
+                    b.HasIndex("RecipientId", "CreatedAt", "Id")
+                        .HasDatabaseName("ix_notifications_recipient_id_created_at_id");
+
+                    b.ToTable("notifications", (string)null);
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.PainPoint", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2296,6 +2360,23 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Therapist");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.Appointment", null)
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_notifications_appointments_appointment_id");
+
+                    b.HasOne("PhysioFlow.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notifications_asp_net_users_recipient_id");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.PainPoint", b =>
