@@ -7,6 +7,7 @@ using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Calendar.Commands.CreateAppointment;
 using PhysioFlow.Application.Features.Cooperation;
+using PhysioFlow.Application.Features.Notifications;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Enums;
 
@@ -55,17 +56,20 @@ public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointment
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
     private readonly ILogger<UpdateAppointmentCommandHandler> _logger;
+    private readonly AppointmentNotifications _notifications;
 
     public UpdateAppointmentCommandHandler(
         IApplicationDbContext db,
         ICurrentUserService currentUser,
         IDateTimeProvider clock,
-        ILogger<UpdateAppointmentCommandHandler> logger)
+        ILogger<UpdateAppointmentCommandHandler> logger,
+        AppointmentNotifications notifications)
     {
         _db = db;
         _currentUser = currentUser;
         _clock = clock;
         _logger = logger;
+        _notifications = notifications;
     }
 
     public async Task<AppointmentDto> Handle(UpdateAppointmentCommand request, CancellationToken ct)
@@ -86,18 +90,27 @@ public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointment
                 "Można edytować tylko przyszłą zaplanowaną wizytę.");
 
         var patient = await AppointmentScheduling.RequireActiveCardAsync(_db, therapist.Id, request.PatientId!.Value, ct);
+        var scheduleChanged = existing.StartsAt != startsAt
+            || existing.EndsAt != startsAt.AddMinutes(request.DurationMinutes!.Value);
+        var cardChanged = existing.PatientId != patient.Id;
 
         var strategy = _db.Database.CreateExecutionStrategy();
-        var updated = await strategy.ExecuteAsync(async () =>
+        var (updated, notification) = await strategy.ExecuteAsync(async () =>
         {
             await using var transaction = await _db.Database.BeginTransactionAsync(ct);
             var appointment = await AppointmentScheduling.PlaceAsync(
                 _db, therapist.Id, patient, startsAt, request.DurationMinutes!.Value,
                 request.Reason, request.Notes, exceptId: existing.Id, now, ct);
+            var notification = scheduleChanged || cardChanged
+                ? await _notifications.StageAsync(appointment,
+                    cardChanged ? NotificationTypes.AppointmentCreated : NotificationTypes.AppointmentRescheduled, ct)
+                : null;
+            await _db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
-            return appointment;
+            return (appointment, notification);
         });
 
+        await _notifications.PublishAsync(notification);
         updated.Patient = patient;
         _logger.LogInformation(
             "Appointment {AppointmentId} rescheduled by therapist {TherapistId} for card {PatientId}",
