@@ -175,7 +175,8 @@ public class TherapistCatalogTests : IClassFixture<TestWebApplicationFactory>
         var details = await patient.GetAsync($"{CatalogUrl}/{profile.Id}");
 
         page.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(new TherapistCatalogEntryDto(
-            profile.Id, "Marta", "Zielińska", $"Toruń{tag}", "Fizjo Plus", "Terapia manualna."));
+            profile.Id, "Marta", "Zielińska", $"Toruń{tag}", "Fizjo Plus", "Terapia manualna.",
+            new TherapistMarketplaceDto(Specializations: [])));
         details.StatusCode.Should().Be(HttpStatusCode.OK);
         (await details.Content.ReadFromJsonAsync<TherapistCatalogEntryDto>())
             .Should().BeEquivalentTo(page.Items.Single());
@@ -192,7 +193,7 @@ public class TherapistCatalogTests : IClassFixture<TestWebApplicationFactory>
         var listBody = await patient.GetStringAsync($"{CatalogUrl}?search={tag}");
         var detailBody = await patient.GetStringAsync($"{CatalogUrl}/{profile.Id}");
 
-        var expectedFields = new[] { "id", "firstName", "lastName", "city", "practiceName", "bio" };
+        var expectedFields = new[] { "id", "firstName", "lastName", "city", "practiceName", "bio", "marketplace", "photoUrl" };
         JsonDocument.Parse(listBody).RootElement.GetProperty("items")[0].EnumerateObject().Select(p => p.Name)
             .Should().BeEquivalentTo(expectedFields);
         JsonDocument.Parse(detailBody).RootElement.EnumerateObject().Select(p => p.Name)

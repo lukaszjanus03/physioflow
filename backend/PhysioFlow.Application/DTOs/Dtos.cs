@@ -38,7 +38,9 @@ public record TherapistOwnProfileDto(
     string? PracticeName,
     string? Bio,
     bool IsPublished,
-    IReadOnlyList<string> MissingFieldsForPublication);
+    IReadOnlyList<string> MissingFieldsForPublication,
+    TherapistMarketplaceDto? Marketplace = null,
+    string? PhotoUrl = null);
 
 /// <summary>Publiczne dane opublikowanego profilu w katalogu. Bez e-maila konta i danych pacjentów.</summary>
 public record TherapistCatalogEntryDto(
@@ -47,7 +49,9 @@ public record TherapistCatalogEntryDto(
     string LastName,
     string City,
     string PracticeName,
-    string? Bio);
+    string? Bio,
+    TherapistMarketplaceDto? Marketplace = null,
+    string? PhotoUrl = null);
 
 /// <summary>Publiczne dane terapeuty widoczne dla pacjenta w prośbach i współpracach.</summary>
 public record CooperationTherapistDto(

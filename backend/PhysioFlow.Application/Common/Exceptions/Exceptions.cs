@@ -1,5 +1,12 @@
 namespace PhysioFlow.Application.Common.Exceptions;
 
+/// <summary>Provider diagnostics remain internal; API responses never include storage credentials.</summary>
+public class StorageUnavailableException : Exception
+{
+    public StorageUnavailableException(Exception? inner = null)
+        : base("Przechowywanie zdjęć jest chwilowo niedostępne.", inner) { }
+}
+
 public class NotFoundException : Exception
 {
     public NotFoundException(string name, object key)

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
+using PhysioFlow.Application.Features.Therapists.Queries.GetMyTherapistProfile;
 
 namespace PhysioFlow.Application.Features.Therapists.Queries.SearchTherapistCatalog;
 
@@ -79,13 +80,7 @@ public class SearchTherapistCatalogQueryHandler
             .OrderBy(t => t.LastName).ThenBy(t => t.FirstName).ThenBy(t => t.Id)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(t => new TherapistCatalogEntryDto(
-                t.Id,
-                t.FirstName,
-                t.LastName,
-                t.City!,
-                t.PracticeName!,
-                t.Bio))
+            .Select(TherapistProfileMapping.CatalogProjection)
             .ToListAsync(ct);
 
         return new PaginatedList<TherapistCatalogEntryDto>(items, total, request.PageNumber, request.PageSize);

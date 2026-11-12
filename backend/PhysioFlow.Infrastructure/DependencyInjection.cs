@@ -62,13 +62,16 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IUserAccountService, UserAccountService>();
+        services.AddSingleton<IProfilePhotoProcessor, ProfilePhotoProcessor>();
 
         // --- Cloudflare R2 (S3-compatible)
         var r2AccountId = config["R2:AccountId"];
         var r2AccessKey = config["R2:AccessKey"];
         var r2SecretKey = config["R2:SecretKey"];
+        var r2BucketName = config["R2:BucketName"];
 
-        if (!string.IsNullOrEmpty(r2AccountId))
+        if (!string.IsNullOrWhiteSpace(r2AccountId) && !string.IsNullOrWhiteSpace(r2AccessKey)
+            && !string.IsNullOrWhiteSpace(r2SecretKey) && !string.IsNullOrWhiteSpace(r2BucketName))
         {
             services.AddSingleton<IAmazonS3>(_ =>
             {
@@ -81,6 +84,10 @@ public static class DependencyInjection
                 return new AmazonS3Client(new BasicAWSCredentials(r2AccessKey, r2SecretKey), s3Config);
             });
             services.AddScoped<IStorageService, R2StorageService>();
+        }
+        else
+        {
+            services.AddScoped<IStorageService, UnconfiguredStorageService>();
         }
 
         // --- Resend (email)

@@ -13,6 +13,12 @@ public class TherapistProfile : SoftDeletableEntity
     public const int CityMaxLength = 100;
     public const int PracticeNameMaxLength = 150;
     public const int BioMaxLength = 500;
+    public const int DescriptionMaxLength = 2000;
+    public const int StreetMaxLength = 150;
+    public const int BuildingNumberMaxLength = 20;
+    public const int PostalCodeMaxLength = 6;
+    public const int PublicPhoneMaxLength = 30;
+    public const int PublicEmailMaxLength = 254;
 
     // Nazwisko wpisywane przy automatycznym tworzeniu brakujących profili; nie nadaje się do katalogu.
     public const string PlaceholderLastName = "(uzupełnij)";
@@ -29,6 +35,19 @@ public class TherapistProfile : SoftDeletableEntity
     public string? PracticeName { get; set; }
     public string? Bio { get; set; }
     public bool IsPublished { get; set; }
+
+    // Marketplace fields are independent of legacy Specialization/PhoneNumber and Identity contact data.
+    public string[] Specializations { get; set; } = [];
+    public string? Experience { get; set; }
+    public string? Education { get; set; }
+    public string? Street { get; set; }
+    public string? BuildingNumber { get; set; }
+    public string? PostalCode { get; set; }
+    public string? PublicPhoneNumber { get; set; }
+    public string? PublicEmail { get; set; }
+    public string? OrganizationalInfo { get; set; }
+    public string? FirstVisitPreparation { get; set; }
+    public string? PhotoStorageKey { get; set; }
 
     /// <summary>Pola wymagane do publikacji w katalogu, których brakuje (nazwy jak w API).</summary>
     public IReadOnlyList<string> MissingCatalogFields()

@@ -69,6 +69,13 @@ public class ExceptionHandlingMiddleware
                 code = t.Code,
                 detail = ex.Message
             } as object),
+            StorageUnavailableException => (HttpStatusCode.ServiceUnavailable, new
+            {
+                title = "Storage unavailable",
+                status = 503,
+                code = "storage_unavailable",
+                detail = ex.Message
+            }),
             EmailDeliveryException => (HttpStatusCode.ServiceUnavailable, new
             {
                 title = "Email delivery failed",

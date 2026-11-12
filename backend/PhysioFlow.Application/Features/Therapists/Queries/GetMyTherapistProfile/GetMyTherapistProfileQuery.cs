@@ -44,5 +44,16 @@ public static class TherapistProfileMapping
         p.PracticeName,
         p.Bio,
         p.IsPublished,
-        p.MissingCatalogFields());
+        p.MissingCatalogFields(),
+        new TherapistMarketplaceDto(p.Specializations, p.Experience, p.Education, p.Street,
+            p.BuildingNumber, p.PostalCode, p.PublicPhoneNumber, p.PublicEmail,
+            p.OrganizationalInfo, p.FirstVisitPreparation),
+        p.PhotoStorageKey == null ? null : $"/api/therapists/{p.Id}/photo");
+
+    public static readonly System.Linq.Expressions.Expression<Func<TherapistProfile, TherapistCatalogEntryDto>> CatalogProjection =
+        p => new TherapistCatalogEntryDto(p.Id, p.FirstName, p.LastName, p.City!, p.PracticeName!, p.Bio,
+            new TherapistMarketplaceDto(p.Specializations, p.Experience, p.Education, p.Street,
+                p.BuildingNumber, p.PostalCode, p.PublicPhoneNumber, p.PublicEmail,
+                p.OrganizationalInfo, p.FirstVisitPreparation),
+            p.PhotoStorageKey == null ? null : "/api/therapists/" + p.Id + "/photo");
 }

@@ -17,7 +17,8 @@ public record UpdateMyTherapistProfileCommand(
     string? City,
     string? PracticeName,
     string? Bio,
-    bool? IsPublished
+    bool? IsPublished,
+    TherapistMarketplaceDto? Marketplace = null
 ) : IRequest<TherapistOwnProfileDto>;
 
 public class UpdateMyTherapistProfileCommandValidator : AbstractValidator<UpdateMyTherapistProfileCommand>
@@ -63,6 +64,9 @@ public class UpdateMyTherapistProfileCommandValidator : AbstractValidator<Update
         RuleFor(x => x.IsPublished)
             .NotNull().WithMessage("Określ, czy profil ma być widoczny w katalogu.")
             .OverridePropertyName("isPublished");
+
+        RuleFor(x => x.Marketplace).SetValidator(new TherapistMarketplaceValidator()!)
+            .OverridePropertyName("marketplace");
     }
 }
 
@@ -93,6 +97,20 @@ public class UpdateMyTherapistProfileCommandHandler
         profile.PracticeName = NullIfBlank(request.PracticeName);
         profile.Bio = NullIfBlank(request.Bio);
         profile.IsPublished = request.IsPublished!.Value;
+        // Older clients do not send this object; their saves must preserve marketplace data.
+        if (request.Marketplace is { } m)
+        {
+            profile.Specializations = m.Specializations?.ToArray() ?? [];
+            profile.Experience = NullIfBlank(m.Experience);
+            profile.Education = NullIfBlank(m.Education);
+            profile.Street = NullIfBlank(m.Street);
+            profile.BuildingNumber = NullIfBlank(m.BuildingNumber);
+            profile.PostalCode = NullIfBlank(m.PostalCode);
+            profile.PublicPhoneNumber = NullIfBlank(m.PublicPhoneNumber);
+            profile.PublicEmail = NullIfBlank(m.PublicEmail);
+            profile.OrganizationalInfo = NullIfBlank(m.OrganizationalInfo);
+            profile.FirstVisitPreparation = NullIfBlank(m.FirstVisitPreparation);
+        }
         profile.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);

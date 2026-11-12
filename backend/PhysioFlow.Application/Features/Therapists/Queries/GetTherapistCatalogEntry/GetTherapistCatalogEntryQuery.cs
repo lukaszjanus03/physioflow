@@ -4,6 +4,7 @@ using PhysioFlow.Application.Common.Exceptions;
 using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Domain.Entities;
+using PhysioFlow.Application.Features.Therapists.Queries.GetMyTherapistProfile;
 
 namespace PhysioFlow.Application.Features.Therapists.Queries.GetTherapistCatalogEntry;
 
@@ -28,13 +29,7 @@ public class GetTherapistCatalogEntryQueryHandler
             .AsNoTracking()
             .Where(t => t.Id == request.Id && t.IsPublished && t.City != null && t.PracticeName != null
                         && _accounts.ActiveUserIds().Contains(t.UserId))
-            .Select(t => new TherapistCatalogEntryDto(
-                t.Id,
-                t.FirstName,
-                t.LastName,
-                t.City!,
-                t.PracticeName!,
-                t.Bio))
+            .Select(TherapistProfileMapping.CatalogProjection)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException(nameof(TherapistProfile), request.Id);
     }

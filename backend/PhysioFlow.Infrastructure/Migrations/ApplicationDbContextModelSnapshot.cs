@@ -1807,6 +1807,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("bio");
 
+                    b.Property<string>("BuildingNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("building_number");
+
                     b.Property<string>("City")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -1824,10 +1829,25 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
+                    b.Property<string>("Education")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("education");
+
+                    b.Property<string>("Experience")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("experience");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("first_name");
+
+                    b.Property<string>("FirstVisitPreparation")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("first_visit_preparation");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
@@ -1846,18 +1866,56 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("license_number");
 
+                    b.Property<string>("OrganizationalInfo")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("organizational_info");
+
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("text")
                         .HasColumnName("phone_number");
+
+                    b.Property<string>("PhotoStorageKey")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("photo_storage_key");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)")
+                        .HasColumnName("postal_code");
 
                     b.Property<string>("PracticeName")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("practice_name");
 
+                    b.Property<string>("PublicEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("public_email");
+
+                    b.Property<string>("PublicPhoneNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("public_phone_number");
+
                     b.Property<string>("Specialization")
                         .HasColumnType("text")
                         .HasColumnName("specialization");
+
+                    b.PrimitiveCollection<string[]>("Specializations")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("specializations")
+                        .HasDefaultValueSql("ARRAY[]::text[]");
+
+                    b.Property<string>("Street")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("street");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
