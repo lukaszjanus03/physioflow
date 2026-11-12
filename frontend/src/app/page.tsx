@@ -21,11 +21,12 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/stores/auth-store';
 import Image from 'next/image';
-import landingPreview from '../../public/preview-laptop.png';
+
+import { Button } from '@/components/ui/button';
 import FeaturePreview from '@/components/landing/FeaturePreview';
+import { useAuthStore } from '@/stores/auth-store';
+import landingPreview from '../../public/preview-laptop.png';
 
 export default function HomePage() {
   const router = useRouter();
@@ -34,14 +35,25 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    if (roles.includes('Therapist')) router.replace('/dashboard');
-    else if (roles.includes('Patient')) router.replace('/portal');
+
+    if (roles.includes('Therapist')) {
+      router.replace('/dashboard');
+    } else if (roles.includes('Patient')) {
+      router.replace('/portal');
+    }
   }, [isAuthenticated, roles, router]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () =>
+      setScrolled(window.scrollY > 20);
+
     window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+
+    return () =>
+      window.removeEventListener(
+        'scroll',
+        onScroll,
+      );
   }, []);
 
   return (
@@ -60,36 +72,54 @@ export default function HomePage() {
 
       <header
         className={`sticky top-0 z-40 transition-all ${
-          scrolled ? 'border-b bg-background/80 backdrop-blur-lg' : 'bg-transparent'
+          scrolled
+            ? 'border-b bg-background/80 backdrop-blur-lg'
+            : 'bg-transparent'
         }`}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2"
+          >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-emerald-500 shadow-lg shadow-primary/30">
               <HeartPulse className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold">PhysioFlow</span>
+            <span className="text-lg font-bold">
+              PhysioFlow
+            </span>
           </Link>
 
           <div className="hidden items-center gap-1 text-sm md:flex">
+            <Link
+              href="/terapeuci"
+              prefetch={false}
+              className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
+            >
+              Znajdź terapeutę
+            </Link>
+
             <a
               href="#features"
               className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
             >
               Funkcje
             </a>
+
             <a
               href="#how"
               className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
             >
               Jak to działa
             </a>
+
             <a
               href="#tech"
               className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
             >
               Technologia
             </a>
+
             <a
               href="#faq"
               className="rounded-md px-3 py-2 text-slate-700 transition-colors hover:text-primary"
@@ -99,9 +129,16 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">Zaloguj</Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+            >
+              <Link href="/login">
+                Zaloguj
+              </Link>
             </Button>
+
             <Button size="sm" asChild>
               <Link href="/register">
                 Załóż konto
@@ -129,19 +166,44 @@ export default function HomePage() {
               </h1>
 
               <p className="max-w-lg text-lg text-muted-foreground">
-                Karty pacjentów, kalendarz wizyt, plany ćwiczeń, mapa bólu i komunikacja z pacjentem -
+                Karty pacjentów, kalendarz wizyt, plany ćwiczeń,
+                mapa bólu i komunikacja z pacjentem -
                 wszystko w jednym miejscu, dostępne z przeglądarki.
               </p>
 
               <div className="flex flex-wrap gap-3">
-                <Button size="lg" asChild className="group">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                >
+                  <Link
+                    href="/terapeuci"
+                    prefetch={false}
+                  >
+                    Znajdź terapeutę
+                  </Link>
+                </Button>
+
+                <Button
+                  size="lg"
+                  asChild
+                  className="group"
+                >
                   <Link href="/register">
                     Zacznij teraz
                     <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/login">Zaloguj się</Link>
+
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                >
+                  <Link href="/login">
+                    Zaloguj się
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -151,6 +213,7 @@ export default function HomePage() {
                 aria-hidden
                 className="absolute -inset-8 -z-10 rounded-[40px] bg-gradient-to-br from-primary/25 via-emerald-500/20 to-cyan-500/25 opacity-70 blur-3xl"
               />
+
               <div className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10 ring-1 ring-zinc-900/5">
                 <Image
                   src={landingPreview}
@@ -164,11 +227,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="how" className="border-y bg-card/30 px-6 py-20 backdrop-blur-sm">
+        <section
+          id="how"
+          className="border-y bg-card/30 px-6 py-20 backdrop-blur-sm"
+        >
           <div className="mx-auto max-w-6xl">
             <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold md:text-4xl">Jak to działa</h2>
+              <h2 className="text-3xl font-bold md:text-4xl">
+                Jak to działa
+              </h2>
             </div>
+
             <div className="grid gap-6 md:grid-cols-4">
               {[
                 {
@@ -203,20 +272,35 @@ export default function HomePage() {
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-emerald-500 text-white shadow-lg shadow-primary/30">
                     {step.icon}
                   </div>
-                  <div className="mb-1 font-mono text-xs font-bold text-primary">{step.num}</div>
-                  <h3 className="mb-1.5 font-semibold">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">{step.desc}</p>
+
+                  <div className="mb-1 font-mono text-xs font-bold text-primary">
+                    {step.num}
+                  </div>
+
+                  <h3 className="mb-1.5 font-semibold">
+                    {step.title}
+                  </h3>
+
+                  <p className="text-sm text-muted-foreground">
+                    {step.desc}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="features" className="px-6 py-24">
+        <section
+          id="features"
+          className="px-6 py-24"
+        >
           <div className="mx-auto max-w-6xl">
             <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold md:text-4xl">Wszystko czego potrzebujesz</h2>
+              <h2 className="text-3xl font-bold md:text-4xl">
+                Wszystko czego potrzebujesz
+              </h2>
             </div>
+
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {[
                 {
@@ -255,31 +339,45 @@ export default function HomePage() {
                   desc: 'Indywidualne konta i uprawnienia użytkowników pomagają ograniczać dostęp do dokumentacji pacjentów.',
                   color: 'from-teal-600 to-emerald-600',
                 },
-              ].map((f) => (
+              ].map((feature) => (
                 <div
-                  key={f.title}
+                  key={feature.title}
                   className="group relative overflow-hidden rounded-xl border bg-card p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div
-                    className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${f.color} opacity-0 transition-opacity group-hover:opacity-100`}
+                    className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${feature.color} opacity-0 transition-opacity group-hover:opacity-100`}
                   />
+
                   <div
-                    className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${f.color} text-white shadow-md`}
+                    className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${feature.color} text-white shadow-md`}
                   >
-                    {f.icon}
+                    {feature.icon}
                   </div>
-                  <h3 className="mb-2 font-semibold">{f.title}</h3>
-                  <p className="text-sm text-muted-foreground">{f.desc}</p>
+
+                  <h3 className="mb-2 font-semibold">
+                    {feature.title}
+                  </h3>
+
+                  <p className="text-sm text-muted-foreground">
+                    {feature.desc}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
+
         <FeaturePreview />
-        <section id="tech" className="border-y bg-card/30 px-6 py-24 backdrop-blur-sm">
+
+        <section
+          id="tech"
+          className="border-y bg-card/30 px-6 py-24 backdrop-blur-sm"
+        >
           <div className="mx-auto max-w-6xl">
             <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold md:text-4xl">Nowoczesny stack technologiczny</h2>
+              <h2 className="text-3xl font-bold md:text-4xl">
+                Nowoczesny stack technologiczny
+              </h2>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
@@ -321,7 +419,10 @@ export default function HomePage() {
                   ],
                 },
               ].map((group) => (
-                <div key={group.title} className="rounded-xl border bg-card p-6">
+                <div
+                  key={group.title}
+                  className="rounded-xl border bg-card p-6"
+                >
                   <div className="mb-4 flex items-center gap-2 font-semibold">
                     {group.icon}
                     {group.title}
@@ -329,7 +430,10 @@ export default function HomePage() {
 
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     {group.items.map((item) => (
-                      <li key={item} className="flex items-start gap-2">
+                      <li
+                        key={item}
+                        className="flex items-start gap-2"
+                      >
                         <span
                           aria-hidden="true"
                           className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
@@ -344,11 +448,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="faq" className="px-6 py-24">
+        <section
+          id="faq"
+          className="px-6 py-24"
+        >
           <div className="mx-auto max-w-3xl">
             <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold md:text-4xl">Pytania i odpowiedzi</h2>
+              <h2 className="text-3xl font-bold md:text-4xl">
+                Pytania i odpowiedzi
+              </h2>
             </div>
+
             <div className="space-y-3">
               {[
                 {
@@ -384,7 +494,10 @@ export default function HomePage() {
                     {item.q}
                     <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="border-t p-5 pt-4 text-sm text-muted-foreground">{item.a}</div>
+
+                  <div className="border-t p-5 pt-4 text-sm text-muted-foreground">
+                    {item.a}
+                  </div>
                 </details>
               ))}
             </div>
@@ -394,22 +507,39 @@ export default function HomePage() {
         <section className="border-y bg-card/30 px-6 py-24 backdrop-blur-sm">
           <div className="mx-auto max-w-4xl">
             <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold md:text-4xl">Autorzy</h2>
+              <h2 className="text-3xl font-bold md:text-4xl">
+                Autorzy
+              </h2>
             </div>
+
             <div className="grid gap-5 sm:grid-cols-2">
               {[
-                { initials: 'HR', name: 'Hubert Rola', role: 'Frontend & UX' },
-                { initials: 'ŁJ', name: 'Łukasz Janus', role: 'Backend & Infrastructure' },
-              ].map((p) => (
+                {
+                  initials: 'HR',
+                  name: 'Hubert Rola',
+                  role: 'Frontend & UX',
+                },
+                {
+                  initials: 'ŁJ',
+                  name: 'Łukasz Janus',
+                  role: 'Backend & Infrastructure',
+                },
+              ].map((person) => (
                 <div
-                  key={p.name}
+                  key={person.name}
                   className="rounded-xl border bg-card p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-emerald-500 text-xl font-bold text-white shadow-lg shadow-primary/30">
-                    {p.initials}
+                    {person.initials}
                   </div>
-                  <h3 className="font-semibold">{p.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{p.role}</p>
+
+                  <h3 className="font-semibold">
+                    {person.name}
+                  </h3>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {person.role}
+                  </p>
                 </div>
               ))}
             </div>
@@ -423,13 +553,20 @@ export default function HomePage() {
                 aria-hidden
                 className="pointer-events-none absolute inset-0 -z-10 opacity-50"
                 style={{
-                  backgroundImage: 'radial-gradient(at 50% 0%, hsl(173 80% 50% / 0.3) 0px, transparent 70%)',
+                  backgroundImage:
+                    'radial-gradient(at 50% 0%, hsl(173 80% 50% / 0.3) 0px, transparent 70%)',
                 }}
               />
-              <h2 className="text-3xl font-bold md:text-4xl">Gotowy, by zacząć?</h2>
+
+              <h2 className="text-3xl font-bold md:text-4xl">
+                Gotowy, by zacząć?
+              </h2>
+
               <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-                Załóż konto terapeuty w minutę. Bez zobowiązań, bez karty kredytowej.
+                Załóż konto terapeuty w minutę.
+                Bez zobowiązań, bez karty kredytowej.
               </p>
+
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Button size="lg" asChild>
                   <Link href="/register">
@@ -437,8 +574,15 @@ export default function HomePage() {
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/login">Logowanie</Link>
+
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                >
+                  <Link href="/login">
+                    Logowanie
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -450,18 +594,29 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-12">
           <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <Link href="/" className="flex items-center gap-2">
+              <Link
+                href="/"
+                className="flex items-center gap-2"
+              >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-emerald-500">
                   <HeartPulse className="h-4 w-4 text-white" />
                 </div>
-                <span className="font-bold">PhysioFlow</span>
+                <span className="font-bold">
+                  PhysioFlow
+                </span>
               </Link>
+
               <p className="mt-3 text-xs text-muted-foreground">
-                Cyfrowy ekosystem dla fizjoterapii i rehabilitacji.
+                Cyfrowy ekosystem dla fizjoterapii
+                i rehabilitacji.
               </p>
             </div>
+
             <div>
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider">Produkt</div>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider">
+                Produkt
+              </div>
+
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <a href="#features" className="hover:text-foreground">
@@ -485,8 +640,12 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
+
             <div>
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider">Konto</div>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider">
+                Konto
+              </div>
+
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/login" className="hover:text-foreground">
@@ -500,11 +659,16 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
+
             <div>
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider">Projekt</div>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider">
+                Projekt
+              </div>
+
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <Github className="h-3.5 w-3.5" />
+
                   <a
                     href="https://github.com/lukaszjanus03/physioflow"
                     target="_blank"
@@ -514,6 +678,7 @@ export default function HomePage() {
                     GitHub
                   </a>
                 </li>
+
                 <li className="flex items-center gap-2">
                   <Languages className="h-3.5 w-3.5" />
                   <span>Polski</span>
@@ -521,8 +686,11 @@ export default function HomePage() {
               </ul>
             </div>
           </div>
+
           <div className="mt-12 flex flex-col items-center justify-between gap-2 border-t pt-6 text-xs text-muted-foreground sm:flex-row">
-            <span>Hubert Rola &amp; Łukasz Janus</span>
+            <span>
+              Hubert Rola &amp; Łukasz Janus
+            </span>
           </div>
         </div>
       </footer>
