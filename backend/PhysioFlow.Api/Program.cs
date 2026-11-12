@@ -164,13 +164,17 @@ builder.Services.AddRateLimiter(opts =>
     opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     opts.OnRejected = async (ctx, ct) =>
     {
-        ctx.HttpContext.Response.ContentType = "application/problem+json";
+        ctx.HttpContext.Response.Headers.CacheControl = "no-store";
+        if (ctx.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            ctx.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
         await ctx.HttpContext.Response.WriteAsJsonAsync(new
         {
             title = "Too many requests",
             status = StatusCodes.Status429TooManyRequests,
             detail = "Zbyt wiele prób. Spróbuj ponownie później."
-        }, ct);
+        }, options: (System.Text.Json.JsonSerializerOptions?)null,
+            contentType: "application/problem+json", cancellationToken: ct);
     };
 
     foreach (var policy in RateLimitPolicies.ConfigSections.Keys)

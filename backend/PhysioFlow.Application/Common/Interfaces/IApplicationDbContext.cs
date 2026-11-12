@@ -7,6 +7,7 @@ namespace PhysioFlow.Application.Common.Interfaces;
 public interface IApplicationDbContext
 {
     DbSet<TherapistProfile> Therapists { get; }
+    DbSet<FavoriteTherapist> FavoriteTherapists { get; }
     DbSet<Patient> Patients { get; }
     DbSet<Appointment> Appointments { get; }
     DbSet<AppointmentReminder> AppointmentReminders { get; }

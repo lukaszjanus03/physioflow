@@ -1,5 +1,9 @@
 # Sprint 5.5, etap 1 — profile terapeutów (backend)
 
+**Aktualizacja etapu 2:** katalog, szczegóły i słownik są teraz publiczne.
+Filtry, limit żądań i ulubieni konta pacjenta są opisane w
+[kontrakcie etapu 2](sprint-5.5-public-catalog-favorites-api.md).
+
 Rozszerzenie istniejącego kontraktu `/api/therapists`. Dotychczasowe pola i role
 katalogu pozostają bez zmian. Nie dodajemy statusu „zweryfikowany”: opis wykształcenia,
 specjalizacji ani zapis zdjęcia nie stanowią weryfikacji kwalifikacji.
@@ -8,9 +12,9 @@ specjalizacji ani zapis zdjęcia nie stanowią weryfikacji kwalifikacji.
 
 - `GET /api/therapists/me/profile` — własny profil, rola `Therapist`.
 - `PUT /api/therapists/me/profile` — zapis własnego profilu, rola `Therapist`.
-- `GET /api/therapists` — katalog opublikowanych profili, rola `Patient`.
-- `GET /api/therapists/{id}` — szczegóły opublikowanego profilu, rola `Patient`.
-- `GET /api/therapists/specializations` — słownik, role `Therapist` i `Patient`.
+- `GET /api/therapists` — publiczny katalog opublikowanych profili.
+- `GET /api/therapists/{id}` — publiczne szczegóły opublikowanego profilu.
+- `GET /api/therapists/specializations` — publiczny słownik.
 
 Właściciel zawsze pochodzi z JWT. Nie ma endpointu edycji dowolnego profilu po ID;
 przesłane `id` lub `userId` nie wybierają właściciela. Profile nieopublikowane,

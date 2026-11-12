@@ -38,6 +38,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IFavoriteTherapistWriter, FavoriteTherapistWriter>();
 
         // --- Identity
         // AddIdentityCore zamiast AddIdentity - ta druga rejestruje cookie auth jako domyślne,

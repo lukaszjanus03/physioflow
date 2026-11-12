@@ -357,14 +357,14 @@ public class TherapistCatalogTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Catalog_should_require_patient_role()
+    public async Task Catalog_should_allow_anonymous_and_therapist_readers()
     {
         var anonymous = _factory.CreateClient();
         var therapist = await _factory.CreateTherapistClientAsync();
 
-        (await anonymous.GetAsync(CatalogUrl)).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        (await anonymous.GetAsync($"{CatalogUrl}/{Guid.NewGuid()}")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        (await therapist.GetAsync(CatalogUrl)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await anonymous.GetAsync(CatalogUrl)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await anonymous.GetAsync($"{CatalogUrl}/{Guid.NewGuid()}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await therapist.GetAsync(CatalogUrl)).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     private static string UniqueTag() => Guid.NewGuid().ToString("N")[..10];

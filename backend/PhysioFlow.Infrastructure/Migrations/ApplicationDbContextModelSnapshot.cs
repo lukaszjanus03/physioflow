@@ -1376,6 +1376,32 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("exercise_images", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.FavoriteTherapist", b =>
+                {
+                    b.Property<Guid>("PatientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_user_id");
+
+                    b.Property<Guid>("TherapistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapist_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("PatientUserId", "TherapistId")
+                        .HasName("pk_favorite_therapists");
+
+                    b.HasIndex("TherapistId")
+                        .HasDatabaseName("ix_favorite_therapists_therapist_id");
+
+                    b.HasIndex("PatientUserId", "CreatedAt", "TherapistId")
+                        .HasDatabaseName("ix_favorite_therapists_patient_user_id_created_at_therapist_id");
+
+                    b.ToTable("favorite_therapists", (string)null);
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.MedicalRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2389,6 +2415,23 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasConstraintName("fk_exercise_images_exercises_exercise_id");
 
                     b.Navigation("Exercise");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.FavoriteTherapist", b =>
+                {
+                    b.HasOne("PhysioFlow.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("PatientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_favorite_therapists_asp_net_users_patient_user_id");
+
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_favorite_therapists_therapists_therapist_id");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.MedicalRecord", b =>

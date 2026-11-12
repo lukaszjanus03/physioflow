@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using PhysioFlow.Api.Options;
 using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Therapists.Commands.UpdateMyTherapistProfile;
@@ -14,12 +16,14 @@ using PhysioFlow.Domain.Entities;
 namespace PhysioFlow.Api.Controllers;
 
 /// <summary>
-/// Profil zawodowy terapeuty (endpointy /me, właściciel z sesji) oraz katalog opublikowanych profili dla pacjentów.
+/// Profil zawodowy terapeuty (endpointy /me, właściciel z sesji) oraz publiczny katalog.
 /// </summary>
 public class TherapistsController : ApiControllerBase
 {
     [HttpGet("specializations")]
-    [Authorize(Roles = "Therapist,Patient")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.PublicTherapistCatalog)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(IReadOnlyList<TherapistSpecializationDto>), StatusCodes.Status200OK)]
     public IActionResult Specializations() => Ok(TherapistSpecializations.All
         .Select(s => new TherapistSpecializationDto(s.Key, s.Value)).ToArray());
@@ -51,6 +55,8 @@ public class TherapistsController : ApiControllerBase
     /// <summary>Published profile photos are public; drafts are accessible only to their owner.</summary>
     [HttpGet("{id:guid}/photo")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.PublicTherapistCatalog)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPhoto(Guid id, CancellationToken ct)
@@ -81,19 +87,25 @@ public class TherapistsController : ApiControllerBase
 
     /// <summary>Wyszukiwanie opublikowanych profili po imieniu, nazwisku, mieście i nazwie gabinetu.</summary>
     [HttpGet]
-    [Authorize(Roles = "Patient")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.PublicTherapistCatalog)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(PaginatedList<TherapistCatalogEntryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Search(
         [FromQuery] string? search = null,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = SearchTherapistCatalogQuery.DefaultPageSize,
+        [FromQuery] string? city = null,
+        [FromQuery] string? specialization = null,
         CancellationToken ct = default) =>
-        Ok(await Mediator.Send(new SearchTherapistCatalogQuery(search, pageNumber, pageSize), ct));
+        Ok(await Mediator.Send(new SearchTherapistCatalogQuery(search, pageNumber, pageSize, city, specialization), ct));
 
     /// <summary>Szczegóły opublikowanego profilu. Nieopublikowany i nieistniejący dają 404.</summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Patient")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.PublicTherapistCatalog)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(TherapistCatalogEntryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct) =>
