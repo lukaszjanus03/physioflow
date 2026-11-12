@@ -26,9 +26,8 @@ public class GetTherapistCatalogEntryQueryHandler
     public async Task<TherapistCatalogEntryDto> Handle(GetTherapistCatalogEntryQuery request, CancellationToken ct)
     {
         return await _db.Therapists
-            .AsNoTracking()
-            .Where(t => t.Id == request.Id && t.IsPublished && t.City != null && t.PracticeName != null
-                        && _accounts.ActiveUserIds().Contains(t.UserId))
+            .PubliclyAvailable(_accounts)
+            .Where(t => t.Id == request.Id)
             .Select(TherapistProfileMapping.CatalogProjection)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException(nameof(TherapistProfile), request.Id);

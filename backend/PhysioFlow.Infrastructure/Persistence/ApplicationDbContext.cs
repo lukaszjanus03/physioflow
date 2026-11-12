@@ -20,6 +20,7 @@ public class ApplicationDbContext
     }
 
     public DbSet<TherapistProfile> Therapists => Set<TherapistProfile>();
+    public DbSet<FavoriteTherapist> FavoriteTherapists => Set<FavoriteTherapist>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentReminder> AppointmentReminders => Set<AppointmentReminder>();

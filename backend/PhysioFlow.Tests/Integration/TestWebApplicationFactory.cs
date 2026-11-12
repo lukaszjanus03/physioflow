@@ -24,6 +24,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     // TestServer nie ustawia IP klienta, więc wszystkie testy trafiają do jednej partycji limitera.
     protected virtual int PatientRegistrationPermitLimit => 10_000;
+    protected virtual int PublicTherapistCatalogPermitLimit => 10_000;
     protected virtual int ConfirmationResendPermitLimit => 10_000;
     protected virtual int ConfirmationEmailCooldownSeconds => 0;
 
@@ -53,6 +54,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     ["RateLimiting:PatientRegistration:PermitLimit"] =
                         PatientRegistrationPermitLimit.ToString(),
                     ["RateLimiting:EmailConfirmation:PermitLimit"] = "10000",
+                    ["RateLimiting:PublicTherapistCatalog:PermitLimit"] = PublicTherapistCatalogPermitLimit.ToString(),
                     ["RateLimiting:CooperationRequest:PermitLimit"] = "10000",
                     ["RateLimiting:ConfirmationResend:PermitLimit"] =
                         ConfirmationResendPermitLimit.ToString(),

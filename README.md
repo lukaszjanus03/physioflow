@@ -60,6 +60,7 @@ npm run dev
 ## Dokumentacja
 
 - [Sprint 5.5 — profile terapeutów i zdjęcia (backend)](docs/sprint-5.5-therapist-profiles-api.md)
+- [Sprint 5.5 — publiczny katalog, filtry i ulubieni (backend)](docs/sprint-5.5-public-catalog-favorites-api.md)
 
 - [Specyfikacja techniczna](docs/technical-spec.md)
 - [Specyfikacja funkcjonalna](docs/functional-spec.md)

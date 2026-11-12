@@ -5,13 +5,16 @@ using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Therapists.Queries.GetMyTherapistProfile;
+using PhysioFlow.Domain.Entities;
 
 namespace PhysioFlow.Application.Features.Therapists.Queries.SearchTherapistCatalog;
 
 public record SearchTherapistCatalogQuery(
     string? Search = null,
     int PageNumber = 1,
-    int PageSize = SearchTherapistCatalogQuery.DefaultPageSize
+    int PageSize = SearchTherapistCatalogQuery.DefaultPageSize,
+    string? City = null,
+    string? Specialization = null
 ) : IRequest<PaginatedList<TherapistCatalogEntryDto>>
 {
     public const int DefaultPageSize = 20;
@@ -25,6 +28,8 @@ public class SearchTherapistCatalogQueryValidator : AbstractValidator<SearchTher
     {
         RuleFor(x => x.PageNumber)
             .GreaterThanOrEqualTo(1).WithMessage("Numer strony musi być większy lub równy 1.")
+            .Must((q, page) => page < 1 || (long)(page - 1) * q.PageSize <= int.MaxValue)
+            .WithMessage("Numer strony jest za duży.")
             .OverridePropertyName("pageNumber");
 
         RuleFor(x => x.PageSize)
@@ -36,6 +41,16 @@ public class SearchTherapistCatalogQueryValidator : AbstractValidator<SearchTher
             .MaximumLength(SearchTherapistCatalogQuery.SearchMaxLength)
             .WithMessage($"Wyszukiwana fraza może mieć maksymalnie {SearchTherapistCatalogQuery.SearchMaxLength} znaków.")
             .OverridePropertyName("search");
+
+        RuleFor(x => x.City).MaximumLength(TherapistProfile.CityMaxLength)
+            .WithMessage($"Miejscowość może mieć maksymalnie {TherapistProfile.CityMaxLength} znaków.")
+            .OverridePropertyName("city");
+        RuleFor(x => x.Specialization)
+            .Must(v => string.IsNullOrWhiteSpace(v) || TherapistSpecializations.All.ContainsKey(v.Trim()))
+            .WithMessage("Wybierz kod specjalizacji ze słownika.")
+            .MaximumLength(50)
+            .WithMessage("Kod specjalizacji może mieć maksymalnie 50 znaków.")
+            .OverridePropertyName("specialization");
     }
 }
 
@@ -54,15 +69,23 @@ public class SearchTherapistCatalogQueryHandler
     public async Task<PaginatedList<TherapistCatalogEntryDto>> Handle(
         SearchTherapistCatalogQuery request, CancellationToken ct)
     {
-        var query = _db.Therapists
-            .AsNoTracking()
-            .Where(t => t.IsPublished && t.City != null && t.PracticeName != null
-                        && _accounts.ActiveUserIds().Contains(t.UserId));
+        var query = _db.Therapists.PubliclyAvailable(_accounts);
+
+        if (!string.IsNullOrWhiteSpace(request.City))
+        {
+            var city = request.City.Trim().ToLowerInvariant();
+            query = query.Where(t => t.City!.ToLower() == city);
+        }
+        if (!string.IsNullOrWhiteSpace(request.Specialization))
+        {
+            var specialization = request.Specialization.Trim();
+            query = query.Where(t => t.Specializations.Contains(specialization));
+        }
 
         // Każde słowo musi pasować do któregoś pola, więc "anna kraków" zawęża wyniki zamiast je poszerzać.
         var terms = (request.Search ?? string.Empty)
             .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(t => t.ToLower())
+            .Select(t => t.ToLowerInvariant())
             .Distinct();
 
         foreach (var term in terms)
