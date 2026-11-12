@@ -48,25 +48,27 @@ export default function PatientBookingDialog({
   onClose,
   onSaved,
   onFindTherapist,
+  initialTherapistId = '',
 }: {
   accountId: string;
   onClose: () => void;
   onSaved: () => void;
   onFindTherapist: () => void;
+  initialTherapistId?: string;
 }) {
   const queryClient = useQueryClient();
 
-  const [therapistId, setTherapistId] = useState('');
+  const [therapistId, setTherapistId] =
+    useState(initialTherapistId);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const { confirmLeave, discardDialog } = useUnsavedChanges(
-    dirty,
-    busy,
-  );
+  const { confirmLeave, discardDialog } =
+    useUnsavedChanges(dirty, busy);
 
   const cooperations = useQuery({
-    queryKey: cooperationKeys.therapists(accountId),
+    queryKey:
+      cooperationKeys.therapists(accountId),
     queryFn: ({ signal, queryKey }) =>
       withMinimumLoading(
         () => cooperationApi.therapists(signal),
@@ -77,7 +79,8 @@ export default function PatientBookingDialog({
   });
 
   const selected = cooperations.data?.find(
-    (item) => item.therapist.id === therapistId,
+    (item) =>
+      item.therapist.id === therapistId,
   )?.therapist;
 
   function close() {
@@ -111,8 +114,9 @@ export default function PatientBookingDialog({
             </Dialog.Title>
 
             <Dialog.Description className="sr-only">
-              Wybierz terapeutę i termin, a następnie potwierdź
-              rezerwację. Możesz dodać opcjonalną wiadomość.
+              Wybierz terapeutę i termin, a następnie
+              potwierdź rezerwację. Możesz dodać
+              opcjonalną wiadomość.
             </Dialog.Description>
 
             <div className="patient-booking-content mt-6">
@@ -127,14 +131,18 @@ export default function PatientBookingDialog({
                     role="alert"
                     className="text-sm text-destructive"
                   >
-                    {patientAppointmentError(cooperations.error)}
+                    {patientAppointmentError(
+                      cooperations.error,
+                    )}
                   </p>
 
                   <Button
                     type="button"
                     variant="outline"
                     disabled={cooperations.isFetching}
-                    onClick={() => void cooperations.refetch()}
+                    onClick={() =>
+                      void cooperations.refetch()
+                    }
                   >
                     Spróbuj ponownie
                   </Button>
@@ -146,9 +154,9 @@ export default function PatientBookingDialog({
                   </h2>
 
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    Wizytę zarezerwujesz u terapeuty, który
-                    zaakceptował współpracę i powiązał konto
-                    z Twoją kartą.
+                    Wizytę zarezerwujesz u terapeuty,
+                    który zaakceptował współpracę
+                    i powiązał konto z Twoją kartą.
                   </p>
 
                   <Button
@@ -175,9 +183,14 @@ export default function PatientBookingDialog({
                       value={therapistId}
                       disabled={busy}
                       onChange={(event) => {
-                        const nextId = event.target.value;
+                        const nextId =
+                          event.target.value;
 
-                        if (nextId === therapistId) return;
+                        if (
+                          nextId === therapistId
+                        ) {
+                          return;
+                        }
 
                         confirmLeave(() => {
                           setTherapistId(nextId);
@@ -186,20 +199,31 @@ export default function PatientBookingDialog({
                       }}
                       className="h-11 w-full rounded-md border bg-background px-3 text-sm"
                     >
-                      <option value="">Wybierz terapeutę</option>
+                      <option value="">
+                        Wybierz terapeutę
+                      </option>
 
-                      {cooperations.data.map((item) => (
-                        <option
-                          key={item.requestId}
-                          value={item.therapist.id}
-                        >
-                          {item.therapist.firstName}{' '}
-                          {item.therapist.lastName}
-                          {item.therapist.practiceName
-                            ? ` — ${item.therapist.practiceName}`
-                            : ''}
-                        </option>
-                      ))}
+                      {cooperations.data.map(
+                        (item) => (
+                          <option
+                            key={item.requestId}
+                            value={item.therapist.id}
+                          >
+                            {
+                              item.therapist
+                                .firstName
+                            }{' '}
+                            {
+                              item.therapist
+                                .lastName
+                            }
+                            {item.therapist
+                              .practiceName
+                              ? ` — ${item.therapist.practiceName}`
+                              : ''}
+                          </option>
+                        ),
+                      )}
                     </select>
                   </div>
 
@@ -208,7 +232,9 @@ export default function PatientBookingDialog({
                       key={selected.id}
                       accountId={accountId}
                       therapist={selected}
-                      onDirty={() => setDirty(true)}
+                      onDirty={() =>
+                        setDirty(true)
+                      }
                       onBusyChange={setBusy}
                       onSaved={() => {
                         setDirty(false);
@@ -252,7 +278,9 @@ function BookingSettings(props: BookingProps) {
 
   const query = useQuery({
     queryKey: [
-      ...patientAppointmentKeys.all(props.accountId),
+      ...patientAppointmentKeys.all(
+        props.accountId,
+      ),
       'booking-settings',
       props.therapist.id,
     ],
@@ -281,7 +309,10 @@ function BookingSettings(props: BookingProps) {
   if (query.isError) {
     return (
       <div className="space-y-3">
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="text-sm text-destructive"
+        >
           {patientAppointmentError(query.error)}
         </p>
 
@@ -297,15 +328,23 @@ function BookingSettings(props: BookingProps) {
     );
   }
 
-  if (query.data.allowedDurations.length === 0) {
+  if (
+    query.data.allowedDurations.length === 0
+  ) {
     return (
       <p className="text-sm text-muted-foreground">
-        Terapeuta nie udostępnił wariantów długości wizyt.
+        Terapeuta nie udostępnił wariantów
+        długości wizyt.
       </p>
     );
   }
 
-  return <BookingFields {...props} settings={query.data} />;
+  return (
+    <BookingFields
+      {...props}
+      settings={query.data}
+    />
+  );
 }
 
 function BookingFields({
@@ -315,7 +354,9 @@ function BookingFields({
   onDirty,
   onBusyChange,
   onSaved,
-}: BookingProps & { settings: PatientBookingSettings }) {
+}: BookingProps & {
+  settings: PatientBookingSettings;
+}) {
   const now = useCurrentTime();
   const queryClient = useQueryClient();
   const messageId = useId();
@@ -324,13 +365,20 @@ function BookingFields({
   const [date, setDate] = useState(() =>
     warsawDateKey(new Date()),
   );
+
   const [duration, setDuration] = useState(
     settings.allowedDurations[0],
   );
+
   const [startsAt, setStartsAt] = useState('');
-  const [patientMessage, setPatientMessage] = useState('');
-  const [review, setReview] = useState<BookingReview | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [patientMessage, setPatientMessage] =
+    useState('');
+
+  const [review, setReview] =
+    useState<BookingReview | null>(null);
+
+  const [errors, setErrors] =
+    useState<Record<string, string>>({});
 
   const slots = useQuery({
     queryKey: [
@@ -349,7 +397,9 @@ function BookingFields({
       ),
     enabled:
       isCalendarDate(date) &&
-      settings.allowedDurations.includes(duration),
+      settings.allowedDurations.includes(
+        duration,
+      ),
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
@@ -360,8 +410,10 @@ function BookingFields({
     onMutate: () => onBusyChange(true),
     onSuccess: () => onSaved(),
     onError: (error) => {
-      const code = patientAppointmentErrorCode(error);
-      const nextErrors = getCalendarFieldErrors(error);
+      const code =
+        patientAppointmentErrorCode(error);
+      const nextErrors =
+        getCalendarFieldErrors(error);
 
       if (
         code === 'slot_conflict' ||
@@ -388,13 +440,19 @@ function BookingFields({
       try {
         await Promise.all([
           queryClient.invalidateQueries({
-            queryKey: patientAppointmentKeys.all(accountId),
+            queryKey:
+              patientAppointmentKeys.all(
+                accountId,
+              ),
           }),
           queryClient.invalidateQueries({
-            queryKey: ['therapist-appointments'],
+            queryKey: [
+              'therapist-appointments',
+            ],
           }),
           queryClient.invalidateQueries({
-            queryKey: cooperationKeys.all(accountId),
+            queryKey:
+              cooperationKeys.all(accountId),
           }),
         ]);
       } finally {
@@ -410,28 +468,51 @@ function BookingFields({
     onDirty();
   }
 
-  function chooseTerm(event: FormEvent<HTMLFormElement>) {
+  function chooseTerm(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
-    if (mutation.isPending || saving.current) return;
+    if (
+      mutation.isPending ||
+      saving.current
+    ) {
+      return;
+    }
 
-    const form = new FormData(event.currentTarget);
-    const selectedStart = String(form.get('startsAt') ?? '');
-
-    const selectedSlot = slots.data?.slots.find(
-      (slot) =>
-        new Date(slot.startsAt).getTime() ===
-        new Date(selectedStart).getTime(),
+    const form = new FormData(
+      event.currentTarget,
     );
+
+    const selectedStart = String(
+      form.get('startsAt') ?? '',
+    );
+
+    const selectedSlot =
+      slots.data?.slots.find(
+        (slot) =>
+          new Date(
+            slot.startsAt,
+          ).getTime() ===
+          new Date(
+            selectedStart,
+          ).getTime(),
+      );
 
     const next: Record<string, string> = {};
 
     if (!isCalendarDate(date)) {
-      next.date = 'Wybierz poprawną datę.';
+      next.date =
+        'Wybierz poprawną datę.';
     }
 
-    if (!settings.allowedDurations.includes(duration)) {
-      next.durationMinutes = 'Wybierz dozwoloną długość.';
+    if (
+      !settings.allowedDurations.includes(
+        duration,
+      )
+    ) {
+      next.durationMinutes =
+        'Wybierz dozwoloną długość.';
     }
 
     if (
@@ -439,14 +520,20 @@ function BookingFields({
       slots.isPending ||
       slots.isFetching ||
       slots.isError ||
-      new Date(selectedSlot.startsAt).getTime() <= now
+      new Date(
+        selectedSlot.startsAt,
+      ).getTime() <= now
     ) {
-      next.startsAt = 'Wybierz aktualny wolny termin.';
+      next.startsAt =
+        'Wybierz aktualny wolny termin.';
     }
 
     setErrors(next);
 
-    if (Object.keys(next).length === 0 && selectedSlot) {
+    if (
+      Object.keys(next).length === 0 &&
+      selectedSlot
+    ) {
       mutation.reset();
 
       setReview({
@@ -457,10 +544,18 @@ function BookingFields({
     }
   }
 
-  function confirmBooking(event: FormEvent<HTMLFormElement>) {
+  function confirmBooking(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
-    if (!review || saving.current || mutation.isPending) return;
+    if (
+      !review ||
+      saving.current ||
+      mutation.isPending
+    ) {
+      return;
+    }
 
     const next: Record<string, string> = {};
 
@@ -469,7 +564,11 @@ function BookingFields({
         'Wiadomość może mieć maksymalnie 500 znaków.';
     }
 
-    if (new Date(review.startsAt).getTime() <= now) {
+    if (
+      new Date(
+        review.startsAt,
+      ).getTime() <= now
+    ) {
       next.startsAt =
         'Ten termin już minął. Wybierz inną godzinę.';
     }
@@ -482,19 +581,26 @@ function BookingFields({
       return;
     }
 
-    if (Object.keys(next).length > 0) return;
+    if (
+      Object.keys(next).length > 0
+    ) {
+      return;
+    }
 
     saving.current = true;
 
     mutation.mutate({
       ...review,
-      patientMessage: patientMessage.trim() || null,
+      patientMessage:
+        patientMessage.trim() || null,
     });
   }
 
   if (review) {
     const expired =
-      new Date(review.startsAt).getTime() <= now;
+      new Date(
+        review.startsAt,
+      ).getTime() <= now;
 
     return (
       <form
@@ -506,7 +612,10 @@ function BookingFields({
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
             Podsumowanie
           </p>
-          <h2 className="mt-2 text-3xl">Potwierdź wizytę</h2>
+
+          <h2 className="mt-2 text-3xl">
+            Potwierdź wizytę
+          </h2>
         </header>
 
         <fieldset
@@ -520,14 +629,20 @@ function BookingFields({
                   Terapeuta
                 </dt>
                 <dd className="mt-1 font-medium">
-                  {therapist.firstName} {therapist.lastName}
+                  {therapist.firstName}{' '}
+                  {therapist.lastName}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-muted-foreground">Gabinet</dt>
+                <dt className="text-muted-foreground">
+                  Gabinet
+                </dt>
                 <dd className="mt-1 break-words">
-                  {[therapist.practiceName, therapist.city]
+                  {[
+                    therapist.practiceName,
+                    therapist.city,
+                  ]
                     .filter(Boolean)
                     .join(' · ') ||
                     'Nie podano danych gabinetu'}
@@ -535,40 +650,50 @@ function BookingFields({
               </div>
 
               <div>
-                <dt className="text-muted-foreground">Termin</dt>
+                <dt className="text-muted-foreground">
+                  Termin
+                </dt>
                 <dd className="mt-1 font-medium">
-                  {appointmentDateTime(review.startsAt)}
+                  {appointmentDateTime(
+                    review.startsAt,
+                  )}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-muted-foreground">Długość</dt>
+                <dt className="text-muted-foreground">
+                  Długość
+                </dt>
                 <dd className="mt-1">
-                  {review.durationMinutes} minut
+                  {review.durationMinutes}{' '}
+                  minut
                 </dd>
               </div>
             </dl>
 
             <p className="rounded-xl border bg-background/60 p-4 text-sm leading-relaxed text-muted-foreground">
-              Wizytę możesz samodzielnie odwołać najpóźniej
-              24 godziny przed rozpoczęciem. Później skontaktuj
-              się z gabinetem.
+              Wizytę możesz samodzielnie
+              odwołać najpóźniej 24 godziny
+              przed rozpoczęciem. Później
+              skontaktuj się z gabinetem.
             </p>
           </div>
 
           <div className="min-w-0 space-y-3 rounded-xl border bg-background p-4">
             <Label htmlFor={messageId}>
-              Z czym chcesz się zgłosić? — opcjonalnie
+              Z czym chcesz się zgłosić?
+              — opcjonalnie
             </Label>
 
             <p
               id={`${messageId}-help`}
               className="text-xs leading-relaxed text-muted-foreground"
             >
-              Krótko opisz dolegliwość lub cel wizyty.
-              Nie wpisuj PESEL-u ani szczegółowej historii
-              medycznej. Wiadomość zobaczy terapeuta
-              prowadzący wizytę.
+              Krótko opisz dolegliwość lub
+              cel wizyty. Nie wpisuj PESEL-u
+              ani szczegółowej historii
+              medycznej. Wiadomość zobaczy
+              terapeuta prowadzący wizytę.
             </p>
 
             <Textarea
@@ -578,14 +703,18 @@ function BookingFields({
               maxLength={500}
               value={patientMessage}
               placeholder="Np. Pierwsza konsultacja dotycząca bólu barku od dwóch tygodni."
-              aria-invalid={Boolean(errors.patientMessage)}
+              aria-invalid={Boolean(
+                errors.patientMessage,
+              )}
               aria-describedby={`${messageId}-help ${messageId}-count ${
                 errors.patientMessage
                   ? `${messageId}-error`
                   : ''
               }`}
               onChange={(event) => {
-                setPatientMessage(event.target.value);
+                setPatientMessage(
+                  event.target.value,
+                );
                 clearErrors();
               }}
             />
@@ -594,7 +723,8 @@ function BookingFields({
               id={`${messageId}-count`}
               className="text-right text-xs text-muted-foreground"
             >
-              {patientMessage.length}/500 znaków
+              {patientMessage.length}/500
+              znaków
             </p>
 
             {errors.patientMessage && (
@@ -610,8 +740,12 @@ function BookingFields({
         </fieldset>
 
         {expired && (
-          <p role="alert" className="text-sm text-destructive">
-            Ten termin już minął. Wróć do wyboru godziny.
+          <p
+            role="alert"
+            className="text-sm text-destructive"
+          >
+            Ten termin już minął. Wróć do
+            wyboru godziny.
           </p>
         )}
 
@@ -620,7 +754,9 @@ function BookingFields({
             role="alert"
             className="rounded-xl border border-destructive/30 bg-background p-4 text-sm text-destructive"
           >
-            {patientAppointmentError(mutation.error)}
+            {patientAppointmentError(
+              mutation.error,
+            )}
           </p>
         )}
 
@@ -628,7 +764,10 @@ function BookingFields({
           <Button
             type="submit"
             className="w-full"
-            disabled={mutation.isPending || expired}
+            disabled={
+              mutation.isPending ||
+              expired
+            }
           >
             {mutation.isPending
               ? 'Rezerwowanie…'
@@ -640,7 +779,9 @@ function BookingFields({
             variant="outline"
             className="w-full"
             disabled={mutation.isPending}
-            onClick={() => setReview(null)}
+            onClick={() =>
+              setReview(null)
+            }
           >
             Wróć do wyboru
           </Button>
@@ -667,27 +808,38 @@ function BookingFields({
             clearErrors();
           }}
           duration={duration}
-          durations={settings.allowedDurations}
+          durations={
+            settings.allowedDurations
+          }
           onDurationChange={(next) => {
             setDuration(next);
             setStartsAt('');
             clearErrors();
           }}
-          slots={slots.data?.slots ?? []}
+          slots={
+            slots.data?.slots ?? []
+          }
           value={startsAt}
           onChange={(next) => {
             setStartsAt(next);
             clearErrors();
           }}
           now={now}
-          loading={slots.isPending || slots.isFetching}
+          loading={
+            slots.isPending ||
+            slots.isFetching
+          }
           error={
             slots.isError
-              ? patientAppointmentError(slots.error)
+              ? patientAppointmentError(
+                  slots.error,
+                )
               : undefined
           }
           fieldErrors={errors}
-          onRefresh={() => void slots.refetch()}
+          onRefresh={() =>
+            void slots.refetch()
+          }
           disabled={mutation.isPending}
         />
 
@@ -696,7 +848,9 @@ function BookingFields({
             role="alert"
             className="rounded-xl border p-4 text-sm text-destructive"
           >
-            {patientAppointmentError(mutation.error)}
+            {patientAppointmentError(
+              mutation.error,
+            )}
           </p>
         )}
 
