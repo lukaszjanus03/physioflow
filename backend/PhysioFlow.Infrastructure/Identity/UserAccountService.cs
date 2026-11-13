@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using PhysioFlow.Application.Common.Interfaces;
 
 namespace PhysioFlow.Infrastructure.Identity;
@@ -17,4 +18,20 @@ public class UserAccountService : IUserAccountService
 
     public IQueryable<Guid> ActiveUserIds() =>
         _userManager.Users.Where(u => u.IsActive).Select(u => u.Id);
+
+    public async Task<bool> IsConfirmedPatientAsync(Guid userId, CancellationToken ct)
+    {
+        var account = await _userManager.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        return account is { IsActive: true, EmailConfirmed: true }
+            && await _userManager.IsInRoleAsync(account, "Patient");
+    }
+
+    public async Task<bool> IsReviewModeratorAsync(Guid userId, CancellationToken ct)
+    {
+        var account = await _userManager.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        return account is { IsActive: true } && await _userManager.IsInRoleAsync(account, "Admin");
+    }
+
+    public IQueryable<ReviewAuthorName> ReviewAuthorNames() =>
+        _userManager.Users.Select(u => new ReviewAuthorName { Id = u.Id, FirstName = u.FirstName, LastName = u.LastName });
 }

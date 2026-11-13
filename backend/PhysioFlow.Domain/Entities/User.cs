@@ -63,6 +63,7 @@ public class TherapistProfile : SoftDeletableEntity
     // Nawigacje
     public ICollection<Patient> Patients { get; set; } = new List<Patient>();
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+    public ICollection<TherapistReview> Reviews { get; set; } = new List<TherapistReview>();
     public ICollection<Exercise> Exercises { get; set; } = new List<Exercise>();
     public ICollection<AvailabilitySlot> AvailabilitySlots { get; set; } = new List<AvailabilitySlot>();
     public TherapistCalendarSettings? CalendarSettings { get; set; }

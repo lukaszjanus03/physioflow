@@ -32,6 +32,9 @@ public class ExceptionHandlingMiddleware
             {
                 title = "Validation failed",
                 status = 400,
+                code = "validation_failed",
+                errorCodes = v.Errors.GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorCode).ToArray()),
                 errors = v.Errors
                     .GroupBy(e => e.PropertyName)
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
@@ -42,10 +45,11 @@ public class ExceptionHandlingMiddleware
                 status = 404,
                 detail = ex.Message
             }),
-            ForbiddenAccessException => (HttpStatusCode.Forbidden, new
+            ForbiddenAccessException f => (HttpStatusCode.Forbidden, new
             {
                 title = "Forbidden",
                 status = 403,
+                code = f.Code,
                 detail = ex.Message
             }),
             ConflictException c => (HttpStatusCode.Conflict, new

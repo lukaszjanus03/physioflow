@@ -15,6 +15,7 @@ public static class RateLimitPolicies
     public const string ConfirmationResend = "confirmation-resend";
     public const string CooperationRequest = "cooperation-request";
     public const string PublicTherapistCatalog = "public-therapist-catalog";
+    public const string TherapistReviewWrite = "therapist-review-write";
 
     /// <summary>Nazwa polityki -> sekcja konfiguracji z jej limitami.</summary>
     public static readonly IReadOnlyDictionary<string, string> ConfigSections = new Dictionary<string, string>
@@ -24,5 +25,6 @@ public static class RateLimitPolicies
         [ConfirmationResend] = "RateLimiting:ConfirmationResend",
         [CooperationRequest] = "RateLimiting:CooperationRequest",
         [PublicTherapistCatalog] = "RateLimiting:PublicTherapistCatalog",
+        [TherapistReviewWrite] = "RateLimiting:TherapistReviewWrite",
     };
 }

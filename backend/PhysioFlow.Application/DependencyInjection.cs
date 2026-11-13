@@ -21,6 +21,9 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly);
         services.AddScoped<Features.Notifications.AppointmentNotifications>();
+        services.AddScoped<Features.Therapists.TherapistReviewAccess>();
+        services.AddScoped<Features.Therapists.ReviewModeratorAccess>();
+        services.AddScoped<Features.Therapists.ReviewStatusHistory>();
         // AutoMapper celowo pominięty - używamy .Select(...) w handlerach (patrz GetPatientListQuery).
         // Gdy zajdzie potrzeba, dodamy paczkę i re-enable: services.AddAutoMapper(assembly);
 

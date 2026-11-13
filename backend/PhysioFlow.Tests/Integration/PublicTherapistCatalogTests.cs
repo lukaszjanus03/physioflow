@@ -48,7 +48,7 @@ public class PublicTherapistCatalogTests : IClassFixture<PhotoTestFactory>
             var json = JsonDocument.Parse(body).RootElement;
             if (json.TryGetProperty("items", out var items)) json = items[0];
             json.EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(
-                "id", "firstName", "lastName", "city", "practiceName", "bio", "marketplace", "photoUrl");
+                "id", "firstName", "lastName", "city", "practiceName", "bio", "marketplace", "photoUrl", "averageRating", "reviewCount");
             json.GetProperty("marketplace").EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(
                 "specializations", "experience", "education", "street", "buildingNumber", "postalCode",
                 "publicPhoneNumber", "publicEmail", "organizationalInfo", "firstVisitPreparation");

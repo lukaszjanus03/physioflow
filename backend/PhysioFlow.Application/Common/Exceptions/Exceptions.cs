@@ -17,6 +17,8 @@ public class ForbiddenAccessException : Exception
 {
     public ForbiddenAccessException() : base("Access to this resource is forbidden.") { }
     public ForbiddenAccessException(string message) : base(message) { }
+    public ForbiddenAccessException(string code, string message) : base(message) => Code = code;
+    public string? Code { get; }
 }
 
 /// <summary>Message trafia do odpowiedzi i logów, więc nie może zawierać danych osobowych ani medycznych.</summary>

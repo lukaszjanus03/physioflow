@@ -51,7 +51,9 @@ public record TherapistCatalogEntryDto(
     string PracticeName,
     string? Bio,
     TherapistMarketplaceDto? Marketplace = null,
-    string? PhotoUrl = null);
+    string? PhotoUrl = null,
+    double? AverageRating = null,
+    int ReviewCount = 0);
 
 /// <summary>Publiczne dane terapeuty widoczne dla pacjenta w prośbach i współpracach.</summary>
 public record CooperationTherapistDto(

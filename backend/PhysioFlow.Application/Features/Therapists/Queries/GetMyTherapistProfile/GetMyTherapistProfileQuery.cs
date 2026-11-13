@@ -55,5 +55,7 @@ public static class TherapistProfileMapping
             new TherapistMarketplaceDto(p.Specializations, p.Experience, p.Education, p.Street,
                 p.BuildingNumber, p.PostalCode, p.PublicPhoneNumber, p.PublicEmail,
                 p.OrganizationalInfo, p.FirstVisitPreparation),
-            p.PhotoStorageKey == null ? null : "/api/therapists/" + p.Id + "/photo");
+            p.PhotoStorageKey == null ? null : "/api/therapists/" + p.Id + "/photo",
+            p.Reviews.Where(r => r.Status == PhysioFlow.Domain.Enums.ReviewStatus.Approved).Average(r => (double?)r.Rating),
+            p.Reviews.Count(r => r.Status == PhysioFlow.Domain.Enums.ReviewStatus.Approved));
 }

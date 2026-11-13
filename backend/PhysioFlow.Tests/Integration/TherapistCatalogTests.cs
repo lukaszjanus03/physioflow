@@ -193,7 +193,7 @@ public class TherapistCatalogTests : IClassFixture<TestWebApplicationFactory>
         var listBody = await patient.GetStringAsync($"{CatalogUrl}?search={tag}");
         var detailBody = await patient.GetStringAsync($"{CatalogUrl}/{profile.Id}");
 
-        var expectedFields = new[] { "id", "firstName", "lastName", "city", "practiceName", "bio", "marketplace", "photoUrl" };
+        var expectedFields = new[] { "id", "firstName", "lastName", "city", "practiceName", "bio", "marketplace", "photoUrl", "averageRating", "reviewCount" };
         JsonDocument.Parse(listBody).RootElement.GetProperty("items")[0].EnumerateObject().Select(p => p.Name)
             .Should().BeEquivalentTo(expectedFields);
         JsonDocument.Parse(detailBody).RootElement.EnumerateObject().Select(p => p.Name)

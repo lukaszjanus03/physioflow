@@ -16,7 +16,8 @@ Bez tokenu, także dla zalogowanych pacjentów i terapeutów:
 
 Lista i szczegóły zwracają dotychczasowy `TherapistCatalogEntryDto`, identyczny dla
 wszystkich odbiorców. Wyłącznie: `id`, `firstName`, `lastName`, `city`,
-`practiceName`, `bio`, `marketplace`, `photoUrl`. `marketplace` zawiera
+`practiceName`, `bio`, `marketplace`, `photoUrl`, `averageRating`, `reviewCount`. Podsumowania
+ocen opisuje [etap 3](sprint-5.5-therapist-reviews-api.md). `marketplace` zawiera
 `specializations` (zawsze tablica), `experience`, `education`, `street`,
 `buildingNumber`, `postalCode`, `publicPhoneNumber`, `publicEmail`,
 `organizationalInfo`, `firstVisitPreparation`. Pola opcjonalne mogą być `null`.

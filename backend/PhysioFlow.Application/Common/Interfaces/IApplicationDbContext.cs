@@ -8,6 +8,8 @@ public interface IApplicationDbContext
 {
     DbSet<TherapistProfile> Therapists { get; }
     DbSet<FavoriteTherapist> FavoriteTherapists { get; }
+    DbSet<TherapistReview> TherapistReviews { get; }
+    DbSet<ReviewStatusChange> ReviewStatusChanges { get; }
     DbSet<Patient> Patients { get; }
     DbSet<Appointment> Appointments { get; }
     DbSet<AppointmentReminder> AppointmentReminders { get; }
@@ -40,9 +42,18 @@ public interface IUserAccountService
 
     /// <summary>Id aktywnych kont, do składania z zapytaniami EF (katalog, wysyłka prośby).</summary>
     IQueryable<Guid> ActiveUserIds();
+    Task<bool> IsConfirmedPatientAsync(Guid userId, CancellationToken ct);
+    Task<bool> IsReviewModeratorAsync(Guid userId, CancellationToken ct);
+    IQueryable<ReviewAuthorName> ReviewAuthorNames();
 }
 
 public record UserAccountInfo(Guid Id, string? FirstName, string? LastName, string Email);
+public record ReviewAuthorName
+{
+    public Guid Id { get; init; }
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+}
 
 /// <summary>
 /// Zwraca informacje o aktualnie zalogowanym userze.

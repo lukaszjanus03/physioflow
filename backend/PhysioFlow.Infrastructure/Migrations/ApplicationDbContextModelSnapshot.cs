@@ -1769,6 +1769,46 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("patient_diary_entries", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ReviewStatusChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("integer")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<int?>("FromStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("from_status");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("ReviewId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("review_id");
+
+                    b.Property<int?>("ToStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("to_status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_review_status_changes");
+
+                    b.HasIndex("ReviewId", "OccurredAt")
+                        .HasDatabaseName("ix_review_status_changes_review_id_occurred_at");
+
+                    b.ToTable("review_status_changes", (string)null);
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapistCalendarSettings", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1959,6 +1999,85 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasName("pk_therapists");
 
                     b.ToTable("therapists", (string)null);
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapistReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("comment");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid>("PatientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_user_id");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer")
+                        .HasColumnName("rating");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TherapistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapist_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_therapist_reviews");
+
+                    b.HasIndex("PatientUserId", "TherapistId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_therapist_reviews_patient_therapist");
+
+                    b.HasIndex("Status", "CreatedAt", "Id")
+                        .HasDatabaseName("ix_therapist_reviews_status_created_at_id");
+
+                    b.HasIndex("TherapistId", "Status", "CreatedAt", "Id")
+                        .HasDatabaseName("ix_therapist_reviews_therapist_id_status_created_at_id");
+
+                    b.ToTable("therapist_reviews", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_therapist_reviews_rating", "rating BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("ck_therapist_reviews_status", "status IN (1, 2, 3)");
+                        });
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlan", b =>
@@ -2528,6 +2647,23 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Therapist");
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapistReview", b =>
+                {
+                    b.HasOne("PhysioFlow.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("PatientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_therapist_reviews_asp_net_users_patient_user_id");
+
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", null)
+                        .WithMany("Reviews")
+                        .HasForeignKey("TherapistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_therapist_reviews_therapists_therapist_id");
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlan", b =>
                 {
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
@@ -2616,6 +2752,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Exercises");
 
                     b.Navigation("Patients");
+
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlan", b =>

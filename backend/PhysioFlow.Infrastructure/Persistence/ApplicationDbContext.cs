@@ -4,6 +4,9 @@ using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Domain.Common;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Infrastructure.Identity;
+using Npgsql;
+using PhysioFlow.Application.Common.Exceptions;
+using PhysioFlow.Infrastructure.Persistence.Configurations;
 
 namespace PhysioFlow.Infrastructure.Persistence;
 
@@ -21,6 +24,8 @@ public class ApplicationDbContext
 
     public DbSet<TherapistProfile> Therapists => Set<TherapistProfile>();
     public DbSet<FavoriteTherapist> FavoriteTherapists => Set<FavoriteTherapist>();
+    public DbSet<TherapistReview> TherapistReviews => Set<TherapistReview>();
+    public DbSet<ReviewStatusChange> ReviewStatusChanges => Set<ReviewStatusChange>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentReminder> AppointmentReminders => Set<AppointmentReminder>();
@@ -114,6 +119,14 @@ public class ApplicationDbContext
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: TherapistReviewConfiguration.UniquePairIndex })
+        {
+            throw new ConflictException("review_already_exists", "An opinion for this therapist already exists.");
+        }
     }
 }

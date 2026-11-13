@@ -28,6 +28,17 @@ builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 // --- Controllers & Swagger
 builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        var defaultFactory = options.InvalidModelStateResponseFactory;
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var result = defaultFactory(context);
+            if (result is Microsoft.AspNetCore.Mvc.ObjectResult { Value: Microsoft.AspNetCore.Mvc.ProblemDetails problem })
+                problem.Extensions["code"] = "validation_failed";
+            return result;
+        };
+    })
     .AddJsonOptions(opts =>
     {
         // Pozwala wysyłać enumy jako stringi (np. "Front", "AcutePain")
@@ -172,6 +183,7 @@ builder.Services.AddRateLimiter(opts =>
         {
             title = "Too many requests",
             status = StatusCodes.Status429TooManyRequests,
+            code = "rate_limit_exceeded",
             detail = "Zbyt wiele prób. Spróbuj ponownie później."
         }, options: (System.Text.Json.JsonSerializerOptions?)null,
             contentType: "application/problem+json", cancellationToken: ct);
@@ -185,7 +197,10 @@ builder.Services.AddRateLimiter(opts =>
             var limits = http.RequestServices
                 .GetRequiredService<IOptionsMonitor<FixedWindowRateLimitOptions>>().Get(policy);
             return RateLimitPartition.GetFixedWindowLimiter(
-                http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                policy == RateLimitPolicies.TherapistReviewWrite
+                    ? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown"
+                    : http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = limits.PermitLimit,
