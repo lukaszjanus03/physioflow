@@ -43,6 +43,7 @@ public class ApplicationDbContext
     public DbSet<Exercise> Exercises => Set<Exercise>();
     public DbSet<ExerciseImage> ExerciseImages => Set<ExerciseImage>();
     public DbSet<TherapyPlan> TherapyPlans => Set<TherapyPlan>();
+    public DbSet<TherapyPlanVersion> TherapyPlanVersions => Set<TherapyPlanVersion>();
     public DbSet<TherapyPlanExercise> TherapyPlanExercises => Set<TherapyPlanExercise>();
     public DbSet<PatientDiaryEntry> PatientDiaryEntries => Set<PatientDiaryEntry>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
@@ -83,7 +84,7 @@ public class ApplicationDbContext
         builder.Entity<PatientDiaryEntry>()
             .HasQueryFilter(e => !e.Patient.IsDeleted);
         builder.Entity<TherapyPlanExercise>()
-            .HasQueryFilter(e => !e.Exercise.IsDeleted && !e.TherapyPlan.IsDeleted);
+            .HasQueryFilter(e => !e.TherapyPlan.IsDeleted);
         builder.Entity<PainPoint>()
             .HasQueryFilter(p => !p.BodyMap.Patient.IsDeleted);
     }
@@ -92,6 +93,8 @@ public class ApplicationDbContext
     {
         if (ChangeTracker.Entries<MedicalRecordVersion>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Approved documentation versions are immutable.");
+        if (ChangeTracker.Entries<TherapyPlanVersion>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Activated therapy plan versions are immutable.");
 
         // Audit fields - auto uzupełnianie
         var now = DateTime.UtcNow;
@@ -141,6 +144,11 @@ public class ApplicationDbContext
             { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: MedicalRecordVersionConfiguration.UniqueVersionIndex })
         {
             throw new ConflictException("concurrent_modification", "Documentation changed. Reload it before saving.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: TherapyPlanVersionConfiguration.UniqueVersionIndex })
+        {
+            throw new ConflictException("concurrent_modification", "Therapy plan changed. Reload before saving.");
         }
     }
 }

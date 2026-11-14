@@ -26,6 +26,7 @@ public interface IApplicationDbContext
     DbSet<Exercise> Exercises { get; }
     DbSet<ExerciseImage> ExerciseImages { get; }
     DbSet<TherapyPlan> TherapyPlans { get; }
+    DbSet<TherapyPlanVersion> TherapyPlanVersions { get; }
     DbSet<TherapyPlanExercise> TherapyPlanExercises { get; }
     DbSet<PatientDiaryEntry> PatientDiaryEntries { get; }
     DbSet<ChatMessage> ChatMessages { get; }

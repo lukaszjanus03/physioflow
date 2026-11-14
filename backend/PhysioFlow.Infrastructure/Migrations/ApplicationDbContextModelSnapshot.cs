@@ -1273,6 +1273,16 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("category");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1289,6 +1299,14 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<string>("Instructions")
+                        .HasColumnType("text")
+                        .HasColumnName("instructions");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
@@ -1301,6 +1319,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("name");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
 
                     b.Property<Guid>("TherapistId")
                         .HasColumnType("uuid")
@@ -1325,8 +1348,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_exercises");
 
-                    b.HasIndex("TherapistId")
-                        .HasDatabaseName("ix_exercises_therapist_id");
+                    b.HasIndex("TherapistId", "IsArchived", "Name", "Id")
+                        .HasDatabaseName("ix_exercises_therapist_id_is_archived_name_id");
 
                     b.ToTable("exercises", (string)null);
                 });
@@ -2194,6 +2217,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -2201,6 +2229,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedById")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_id");
+
+                    b.Property<int>("CurrentVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_version");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2214,6 +2246,16 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("date")
                         .HasColumnName("end_date");
 
+                    b.Property<string>("GeneralRecommendations")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("general_recommendations");
+
+                    b.Property<string>("Goal")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("goal");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
@@ -2223,7 +2265,6 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnName("is_published");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("name");
 
@@ -2231,9 +2272,17 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("patient_id");
 
-                    b.Property<DateOnly>("StartDate")
+                    b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date")
                         .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Draft")
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TherapistId")
                         .HasColumnType("uuid")
@@ -2253,8 +2302,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasIndex("PatientId")
                         .HasDatabaseName("ix_therapy_plans_patient_id");
 
-                    b.HasIndex("TherapistId")
-                        .HasDatabaseName("ix_therapy_plans_therapist_id");
+                    b.HasIndex("TherapistId", "PatientId", "CreatedAt", "Id")
+                        .HasDatabaseName("ix_therapy_plans_therapist_id_patient_id_created_at_id");
 
                     b.ToTable("therapy_plans", (string)null);
                 });
@@ -2282,6 +2331,20 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("exercise_id");
 
+                    b.Property<string>("ExerciseName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("exercise_name");
+
+                    b.Property<string>("Frequency")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("frequency");
+
+                    b.Property<string>("Instructions")
+                        .HasColumnType("text")
+                        .HasColumnName("instructions");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text")
                         .HasColumnName("notes");
@@ -2290,7 +2353,7 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("order");
 
-                    b.Property<int>("Repetitions")
+                    b.Property<int?>("Repetitions")
                         .HasColumnType("integer")
                         .HasColumnName("repetitions");
 
@@ -2298,7 +2361,7 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("rest_seconds");
 
-                    b.Property<int>("Sets")
+                    b.Property<int?>("Sets")
                         .HasColumnType("integer")
                         .HasColumnName("sets");
 
@@ -2324,6 +2387,49 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasDatabaseName("ix_therapy_plan_exercises_therapy_plan_id");
 
                     b.ToTable("therapy_plan_exercises", (string)null);
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlanVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("activated_at");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_user_id");
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content_json");
+
+                    b.Property<string>("CorrectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("correction_reason");
+
+                    b.Property<Guid>("TherapyPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapy_plan_id");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_therapy_plan_versions");
+
+                    b.HasIndex("TherapyPlanId", "VersionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_therapy_plan_versions_plan_version");
+
+                    b.ToTable("therapy_plan_versions", (string)null);
                 });
 
             modelBuilder.Entity("PhysioFlow.Infrastructure.Identity.ApplicationRole", b =>
@@ -2624,7 +2730,7 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
                         .WithMany("Exercises")
                         .HasForeignKey("TherapistId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_exercises_therapists_therapist_id");
 
@@ -2788,14 +2894,14 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
                         .WithMany("TherapyPlans")
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_therapy_plans_patients_patient_id");
 
                     b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
                         .WithMany()
                         .HasForeignKey("TherapistId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_therapy_plans_therapists_therapist_id");
 
@@ -2809,18 +2915,30 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasOne("PhysioFlow.Domain.Entities.Exercise", "Exercise")
                         .WithMany("PlanAssignments")
                         .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_therapy_plan_exercises_exercises_exercise_id");
 
                     b.HasOne("PhysioFlow.Domain.Entities.TherapyPlan", "TherapyPlan")
                         .WithMany("Exercises")
                         .HasForeignKey("TherapyPlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_therapy_plan_exercises_therapy_plans_therapy_plan_id");
 
                     b.Navigation("Exercise");
+
+                    b.Navigation("TherapyPlan");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlanVersion", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapyPlan", "TherapyPlan")
+                        .WithMany("Versions")
+                        .HasForeignKey("TherapyPlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_therapy_plan_versions_therapy_plans_therapy_plan_id");
 
                     b.Navigation("TherapyPlan");
                 });
@@ -2880,6 +2998,8 @@ namespace PhysioFlow.Infrastructure.Migrations
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlan", b =>
                 {
                     b.Navigation("Exercises");
+
+                    b.Navigation("Versions");
                 });
 #pragma warning restore 612, 618
         }

@@ -59,6 +59,7 @@ npm run dev
 
 ## Dokumentacja
 
+- [Terapia — biblioteka ćwiczeń i wersjonowane plany pacjentów (kontrakt backendu)](docs/stage-2-therapy-api.md)
 - [Sprint 5.5 — profile terapeutów i zdjęcia (backend)](docs/sprint-5.5-therapist-profiles-api.md)
 - [Sprint 5.5 — publiczny katalog, filtry i ulubieni (backend)](docs/sprint-5.5-public-catalog-favorites-api.md)
 
