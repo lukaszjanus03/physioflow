@@ -1,11 +1,7 @@
 'use client';
 
 import * as Dialog from '@radix-ui/react-dialog';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -24,9 +20,7 @@ import type { AppointmentAction } from '@/lib/appointments-api';
 import { getCalendarError } from '@/lib/calendar-api';
 import type { CalendarSettings } from '@/lib/calendar-api';
 
-export type AppointmentSelection =
-  | { kind: 'new'; date: string }
-  | { kind: 'existing'; id: string };
+export type AppointmentSelection = { kind: 'new'; date: string } | { kind: 'existing'; id: string };
 
 const actionLabels: Record<AppointmentAction, string> = {
   cancel: 'Odwołaj wizytę',
@@ -53,26 +47,15 @@ export default function AppointmentDialog({
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [action, setAction] =
-    useState<AppointmentAction | null>(null);
+  const [action, setAction] = useState<AppointmentAction | null>(null);
 
-  const { confirmLeave, discardDialog } = useUnsavedChanges(
-    dirty,
-    busy,
-  );
+  const { confirmLeave, discardDialog } = useUnsavedChanges(dirty, busy);
 
-  const id =
-    selection.kind === 'existing' ? selection.id : '';
+  const id = selection.kind === 'existing' ? selection.id : '';
 
   const details = useQuery({
-    queryKey: [
-      'therapist-appointments',
-      accountId,
-      'details',
-      id,
-    ],
-    queryFn: ({ signal }) =>
-      appointmentsApi.details(id, signal),
+    queryKey: ['therapist-appointments', accountId, 'details', id],
+    queryFn: ({ signal }) => appointmentsApi.details(id, signal),
     enabled: selection.kind === 'existing',
     staleTime: 0,
     refetchOnWindowFocus: !editing && !busy,
@@ -90,12 +73,10 @@ export default function AppointmentDialog({
   }
 
   const statusMutation = useMutation({
-    mutationFn: (nextAction: AppointmentAction) =>
-      appointmentsApi.changeStatus(id, nextAction),
+    mutationFn: (nextAction: AppointmentAction) => appointmentsApi.changeStatus(id, nextAction),
     retry: false,
     onMutate: () => setBusy(true),
-    onSuccess: () =>
-      onSaved('Status wizyty został zaktualizowany.'),
+    onSuccess: () => onSaved('Status wizyty został zaktualizowany.'),
     onSettled: async () => {
       setBusy(false);
       await refresh();
@@ -104,13 +85,9 @@ export default function AppointmentDialog({
 
   const appointment = details.data;
 
-  const future = appointment
-    ? new Date(appointment.startsAt).getTime() > now
-    : false;
+  const future = appointment ? new Date(appointment.startsAt).getTime() > now : false;
 
-  const actionAllowed =
-    appointment?.status === 'Scheduled' &&
-    (action === 'cancel' ? future : !future);
+  const actionAllowed = appointment?.status === 'Scheduled' && (action === 'cancel' ? future : !future);
 
   function close() {
     confirmLeave(onClose);
@@ -139,9 +116,7 @@ export default function AppointmentDialog({
             }}
           >
             <Dialog.Title className="text-3xl">
-              {selection.kind === 'new'
-                ? 'Nowa wizyta'
-                : 'Szczegóły wizyty'}
+              {selection.kind === 'new' ? 'Nowa wizyta' : 'Szczegóły wizyty'}
             </Dialog.Title>
 
             <Dialog.Description className="mt-2 text-sm text-muted-foreground">
@@ -161,15 +136,10 @@ export default function AppointmentDialog({
                   onSaved={onSaved}
                 />
               ) : details.isPending ? (
-                <p role="status">
-                  Wczytywanie szczegółów…
-                </p>
+                <p role="status">Wczytywanie szczegółów…</p>
               ) : details.isError ? (
                 <div className="space-y-4">
-                  <p
-                    role="alert"
-                    className="text-sm text-destructive"
-                  >
+                  <p role="alert" className="text-sm text-destructive">
                     {getCalendarError(details.error)}
                   </p>
 
@@ -185,21 +155,16 @@ export default function AppointmentDialog({
               ) : appointment ? (
                 <div className="space-y-5">
                   <section className="rounded-xl border bg-primary/5 p-4">
-                    <h2 className="text-2xl">
-                      {appointment.patientName}
-                    </h2>
+                    <h2 className="text-2xl">{appointment.patientName}</h2>
 
                     <p className="mt-3 text-sm">
-                      {appointmentDateTime(
-                        appointment.startsAt,
-                      )}
+                      {appointmentDateTime(appointment.startsAt)}
                       {' – '}
                       {appointmentTime(appointment.endsAt)}
                     </p>
 
                     <p className="mt-2 text-sm text-muted-foreground">
-                      {appointment.durationMinutes} minut ·{' '}
-                      {APPOINTMENT_LABELS[appointment.status]}
+                      {appointment.durationMinutes} minut · {APPOINTMENT_LABELS[appointment.status]}
                     </p>
 
                     <Link
@@ -210,10 +175,21 @@ export default function AppointmentDialog({
                     </Link>
                   </section>
 
+                  <div className="mt-4">
+                    <Button asChild variant="outline" disabled={busy}>
+                      <Link
+                        prefetch={false}
+                        href={`/patients/${appointment.patientId}/documentation?${new URLSearchParams({
+                          appointmentId: appointment.id,
+                        })}`}
+                      >
+                        Dokumentacja wizyty
+                      </Link>
+                    </Button>
+                  </div>
+
                   <section className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                    <h2 className="text-2xl">
-                      Wiadomość pacjenta
-                    </h2>
+                    <h2 className="text-2xl">Wiadomość pacjenta</h2>
 
                     {appointment.patientMessage?.trim() ? (
                       <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
@@ -221,22 +197,18 @@ export default function AppointmentDialog({
                       </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Nie dodano wiadomości pacjenta
-                        przy rezerwacji.
+                        Nie dodano wiadomości pacjenta przy rezerwacji.
                       </p>
                     )}
                   </section>
 
-                  {editing &&
-                  appointment.status === 'Scheduled' ? (
+                  {editing && appointment.status === 'Scheduled' ? (
                     <>
                       <AppointmentEditor
                         accountId={accountId}
                         settings={settings}
                         appointment={appointment}
-                        initialDate={warsawDateKey(
-                          appointment.startsAt,
-                        )}
+                        initialDate={warsawDateKey(appointment.startsAt)}
                         now={now}
                         onDirtyChange={setDirty}
                         onBusyChange={setBusy}
@@ -260,9 +232,7 @@ export default function AppointmentDialog({
                     </>
                   ) : action ? (
                     <section className="space-y-4 rounded-xl border p-4">
-                      <h2 className="text-2xl">
-                        {actionLabels[action]}?
-                      </h2>
+                      <h2 className="text-2xl">{actionLabels[action]}?</h2>
 
                       <p className="text-sm text-muted-foreground">
                         {action === 'cancel'
@@ -271,41 +241,24 @@ export default function AppointmentDialog({
                       </p>
 
                       {!actionAllowed && (
-                        <p
-                          role="alert"
-                          className="text-sm text-destructive"
-                        >
-                          Operacja nie jest już dostępna
-                          dla aktualnego czasu lub statusu
-                          wizyty.
+                        <p role="alert" className="text-sm text-destructive">
+                          Operacja nie jest już dostępna dla aktualnego czasu lub statusu wizyty.
                         </p>
                       )}
 
                       {statusMutation.isError && (
-                        <p
-                          role="alert"
-                          className="text-sm text-destructive"
-                        >
-                          {getCalendarError(
-                            statusMutation.error,
-                          )}
+                        <p role="alert" className="text-sm text-destructive">
+                          {getCalendarError(statusMutation.error)}
                         </p>
                       )}
 
                       <div className="flex flex-wrap gap-3">
                         <Button
                           type="button"
-                          disabled={
-                            statusMutation.isPending ||
-                            !actionAllowed
-                          }
-                          onClick={() =>
-                            statusMutation.mutate(action)
-                          }
+                          disabled={statusMutation.isPending || !actionAllowed}
+                          onClick={() => statusMutation.mutate(action)}
                         >
-                          {statusMutation.isPending
-                            ? 'Zapisywanie…'
-                            : 'Potwierdź'}
+                          {statusMutation.isPending ? 'Zapisywanie…' : 'Potwierdź'}
                         </Button>
 
                         <Button
@@ -322,59 +275,43 @@ export default function AppointmentDialog({
                     <>
                       <div className="space-y-4 text-sm">
                         <div>
-                          <p className="font-medium">
-                            Powód wizyty
-                          </p>
+                          <p className="font-medium">Powód wizyty</p>
                           <p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground">
-                            {appointment.reason ||
-                              'Nie podano.'}
+                            {appointment.reason || 'Nie podano.'}
                           </p>
                         </div>
 
                         <div>
-                          <p className="font-medium">
-                            Notatka terapeuty
-                          </p>
+                          <p className="font-medium">Notatka terapeuty</p>
                           <p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground">
-                            {appointment.notes ||
-                              'Brak notatki.'}
+                            {appointment.notes || 'Brak notatki.'}
                           </p>
                         </div>
                       </div>
 
-                      {appointment.status ===
-                        'Scheduled' && (
+                      {appointment.status === 'Scheduled' && (
                         <div className="flex flex-wrap gap-3">
                           {future && (
-                            <Button
-                              type="button"
-                              onClick={() =>
-                                setEditing(true)
-                              }
-                            >
+                            <Button type="button" onClick={() => setEditing(true)}>
                               Edytuj wizytę
                             </Button>
                           )}
 
-                          {(future
-                            ? (['cancel'] as const)
-                            : ([
-                                'complete',
-                                'no-show',
-                              ] as const)
-                          ).map((nextAction) => (
-                            <Button
-                              key={nextAction}
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                statusMutation.reset();
-                                setAction(nextAction);
-                              }}
-                            >
-                              {actionLabels[nextAction]}
-                            </Button>
-                          ))}
+                          {(future ? (['cancel'] as const) : (['complete', 'no-show'] as const)).map(
+                            (nextAction) => (
+                              <Button
+                                key={nextAction}
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  statusMutation.reset();
+                                  setAction(nextAction);
+                                }}
+                              >
+                                {actionLabels[nextAction]}
+                              </Button>
+                            ),
+                          )}
                         </div>
                       )}
                     </>
@@ -384,12 +321,7 @@ export default function AppointmentDialog({
             </div>
 
             <div className="mt-6 border-t pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={close}
-              >
+              <Button type="button" variant="outline" disabled={busy} onClick={close}>
                 Zamknij
               </Button>
             </div>

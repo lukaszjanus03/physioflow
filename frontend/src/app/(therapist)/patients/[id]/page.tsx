@@ -39,13 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/primitives';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/primitives';
 import { patientsApi } from '@/lib/api';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
 import type { PatientDetail } from '@/types/api';
@@ -79,9 +73,9 @@ export default function PatientDetailPage() {
     },
     onError: (mutationError: AxiosError<{ detail?: string; title?: string }>) => {
       const message =
-        mutationError.response?.data?.detail
-        ?? mutationError.response?.data?.title
-        ?? 'Nie udało się zarchiwizować pacjenta';
+        mutationError.response?.data?.detail ??
+        mutationError.response?.data?.title ??
+        'Nie udało się zarchiwizować pacjenta';
 
       toast.error(message);
     },
@@ -99,37 +93,35 @@ export default function PatientDetailPage() {
     },
     onError: (mutationError: AxiosError<{ detail?: string; title?: string }>) => {
       const message =
-        mutationError.response?.data?.detail
-        ?? mutationError.response?.data?.title
-        ?? 'Nie udało się przywrócić pacjenta';
+        mutationError.response?.data?.detail ??
+        mutationError.response?.data?.title ??
+        'Nie udało się przywrócić pacjenta';
 
       toast.error(message);
     },
   });
 
   const exportPdfMutation = useMutation({
-  mutationFn: async () => {
-    if (!data) {
-      throw new Error('Brak danych pacjenta.');
-    }
+    mutationFn: async () => {
+      if (!data) {
+        throw new Error('Brak danych pacjenta.');
+      }
 
-    const patient = data;
+      const patient = data;
 
-    const { downloadPatientCardPdf } = await import(
-      '@/components/patients/PatientCardPdf'
-    );
+      const { downloadPatientCardPdf } = await import('@/components/patients/PatientCardPdf');
 
-    await downloadPatientCardPdf(patient);
-  },
-  onSuccess: () => {
-    toast.success('Przygotowano plik PDF do pobrania');
-  },
-  onError: () => {
-    toast.error(
-      'Nie udało się wygenerować PDF. Sprawdź, czy pliki czcionek są dostępne, i spróbuj ponownie.'
-    );
-  },
-});
+      await downloadPatientCardPdf(patient);
+    },
+    onSuccess: () => {
+      toast.success('Przygotowano plik PDF do pobrania');
+    },
+    onError: () => {
+      toast.error(
+        'Nie udało się wygenerować PDF. Sprawdź, czy pliki czcionek są dostępne, i spróbuj ponownie.',
+      );
+    },
+  });
 
   const isMutating = archiveMutation.isPending || unarchiveMutation.isPending;
 
@@ -149,10 +141,10 @@ export default function PatientDetailPage() {
   };
 
   const handleExportPdf = () => {
-  if (!data || exportPdfMutation.isPending) return;
+    if (!data || exportPdfMutation.isPending) return;
 
-  exportPdfMutation.mutate();
-};
+    exportPdfMutation.mutate();
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
@@ -232,8 +224,16 @@ export default function PatientDetailPage() {
                 icon={<IdCard className="h-5 w-5" />}
               >
                 <InfoRow icon={<IdCard className="h-4 w-4" />} label="PESEL" value={data.pesel} />
-                <InfoRow icon={<Cake className="h-4 w-4" />} label="Data urodzenia" value={formatNullableDate(data.dateOfBirth)} />
-                <InfoRow icon={<Clock className="h-4 w-4" />} label="Wiek" value={getAgeLabel(data.dateOfBirth)} />
+                <InfoRow
+                  icon={<Cake className="h-4 w-4" />}
+                  label="Data urodzenia"
+                  value={formatNullableDate(data.dateOfBirth)}
+                />
+                <InfoRow
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Wiek"
+                  value={getAgeLabel(data.dateOfBirth)}
+                />
               </InfoPanel>
 
               <InfoPanel
@@ -241,10 +241,20 @@ export default function PatientDetailPage() {
                 description="Informacje techniczne rekordu"
                 icon={<ShieldCheck className="h-5 w-5" />}
               >
-                <InfoRow icon={<Calendar className="h-4 w-4" />} label="Dodano" value={formatDateTime(data.createdAt)} />
-                <InfoRow icon={<Clock className="h-4 w-4" />} label="Aktualizacja" value={data.updatedAt ? formatDateTime(data.updatedAt) : null} />
                 <InfoRow
-                  icon={data.isArchived ? <Archive className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                  icon={<Calendar className="h-4 w-4" />}
+                  label="Dodano"
+                  value={formatDateTime(data.createdAt)}
+                />
+                <InfoRow
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Aktualizacja"
+                  value={data.updatedAt ? formatDateTime(data.updatedAt) : null}
+                />
+                <InfoRow
+                  icon={
+                    data.isArchived ? <Archive className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />
+                  }
                   label="Status"
                   value={data.isArchived ? 'Archiwalny' : 'Aktywny'}
                 />
@@ -312,12 +322,23 @@ export default function PatientDetailPage() {
                   description="Historia i nadchodzące spotkania"
                 />
 
-                <ModulePlaceholder
-                  icon={<FileText className="h-5 w-5 text-green-500" />}
-                  bg="bg-green-50 dark:bg-green-950"
-                  label="EDM"
-                  description="Dokumentacja medyczna i załączniki"
-                />
+                <Link
+                  href={`/patients/${data.id}/documentation`}
+                  prefetch={false}
+                  className="rounded-lg border p-4 transition-colors hover:bg-accent/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+
+                    <div>
+                      <div className="font-medium">Dokumentacja terapii</div>
+
+                      <p className="text-xs text-muted-foreground">Wpisy z wizyt i historia korekt</p>
+                    </div>
+                  </div>
+                </Link>
 
                 <ModulePlaceholder
                   icon={<Dumbbell className="h-5 w-5 text-purple-500" />}
@@ -346,13 +367,18 @@ export default function PatientDetailPage() {
                 <DialogTitle>Archiwizować pacjenta?</DialogTitle>
 
                 <DialogDescription>
-                  Pacjent <span className="font-medium text-foreground">{data.firstName} {data.lastName}</span> zostanie
-                  przeniesiony do archiwum. Nie zniknie z bazy danych i będzie można go później przywrócić.
+                  Pacjent{' '}
+                  <span className="font-medium text-foreground">
+                    {data.firstName} {data.lastName}
+                  </span>{' '}
+                  zostanie przeniesiony do archiwum. Nie zniknie z bazy danych i będzie można go później
+                  przywrócić.
                 </DialogDescription>
               </DialogHeader>
 
               <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
-                Po archiwizacji pacjent nie będzie widoczny na liście aktywnych pacjentów. Znajdziesz go w filtrze
+                Po archiwizacji pacjent nie będzie widoczny na liście aktywnych pacjentów. Znajdziesz go w
+                filtrze
                 <span className="font-medium text-foreground"> Archiwalni</span>.
               </div>
 
@@ -403,9 +429,7 @@ function PatientOverview({ patient }: { patient: PatientDetail }) {
                 <span
                   className={cn(
                     'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
-                    patient.isArchived
-                      ? 'bg-muted text-muted-foreground'
-                      : 'bg-emerald-50 text-emerald-700'
+                    patient.isArchived ? 'bg-muted text-muted-foreground' : 'bg-emerald-50 text-emerald-700',
                   )}
                 >
                   {patient.isArchived ? 'Archiwalny' : 'Aktywny'}
@@ -485,9 +509,7 @@ function InfoRow({
       <div className="min-w-0">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
         {value ? (
-          <p className={cn('mt-0.5 text-sm text-foreground', multiline && 'whitespace-pre-line')}>
-            {value}
-          </p>
+          <p className={cn('mt-0.5 text-sm text-foreground', multiline && 'whitespace-pre-line')}>{value}</p>
         ) : (
           <p className="mt-0.5 text-sm italic text-muted-foreground">brak</p>
         )}
@@ -496,15 +518,7 @@ function InfoRow({
   );
 }
 
-function MedicalNote({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string | null;
-}) {
+function MedicalNote({ icon, label, value }: { icon: ReactNode; label: string; value: string | null }) {
   return (
     <div className="rounded-lg border bg-muted/30 p-4">
       <div className="mb-3 flex items-center gap-2 text-primary">
