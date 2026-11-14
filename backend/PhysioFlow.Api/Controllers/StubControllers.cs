@@ -4,15 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace PhysioFlow.Api.Controllers;
 
 [Authorize(Roles = "Therapist")]
-public class MedicalRecordsController : ApiControllerBase
-{
-    // TODO: GetMedicalRecordsQuery (chronologiczna historia)
-    // TODO: CreateMedicalRecordCommand
-    // TODO: UploadAttachmentCommand (IStorageService -> R2)
-    // TODO: GetAttachmentPresignedUrlQuery
-}
-
-[Authorize(Roles = "Therapist")]
 public class ExercisesController : ApiControllerBase
 {
     // TODO: GetExerciseLibraryQuery (filtrowanie po MuscleGroup)

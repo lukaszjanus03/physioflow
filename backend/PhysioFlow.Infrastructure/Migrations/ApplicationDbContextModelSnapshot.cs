@@ -1413,6 +1413,11 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("appointment_id");
 
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1421,9 +1426,23 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_id");
 
+                    b.Property<int>("CurrentVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_version");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
+
+                    b.Property<string>("FunctionalAssessment")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("functional_assessment");
+
+                    b.Property<string>("Interview")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("interview");
 
                     b.Property<string>("InterviewForm")
                         .HasColumnType("jsonb")
@@ -1441,6 +1460,16 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("patient_id");
 
+                    b.Property<string>("PatientSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("patient_summary");
+
+                    b.Property<string>("PerformedActions")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("performed_actions");
+
                     b.Property<string>("PostVisitNoteHtml")
                         .HasColumnType("text")
                         .HasColumnName("post_visit_note_html");
@@ -1448,6 +1477,17 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Property<string>("PostVisitNoteText")
                         .HasColumnType("text")
                         .HasColumnName("post_visit_note_text");
+
+                    b.Property<string>("Recommendations")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("recommendations");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TherapistId")
                         .HasColumnType("uuid")
@@ -1475,6 +1515,73 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasDatabaseName("ix_medical_records_patient_id_created_at");
 
                     b.ToTable("medical_records", (string)null);
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.MedicalRecordVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_user_id");
+
+                    b.Property<string>("CorrectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("correction_reason");
+
+                    b.Property<string>("FunctionalAssessment")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("functional_assessment");
+
+                    b.Property<string>("Interview")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("interview");
+
+                    b.Property<Guid>("MedicalRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("medical_record_id");
+
+                    b.Property<string>("PatientSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("patient_summary");
+
+                    b.Property<string>("PerformedActions")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("performed_actions");
+
+                    b.Property<string>("Recommendations")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("recommendations");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_medical_record_versions");
+
+                    b.HasIndex("MedicalRecordId", "VersionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_medical_record_versions_record_version");
+
+                    b.ToTable("medical_record_versions", (string)null);
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Notification", b =>
@@ -2558,7 +2665,7 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.HasOne("PhysioFlow.Domain.Entities.Appointment", "Appointment")
                         .WithOne("MedicalRecord")
                         .HasForeignKey("PhysioFlow.Domain.Entities.MedicalRecord", "AppointmentId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_medical_records_appointments_appointment_id");
 
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
@@ -2580,6 +2687,18 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Therapist");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.MedicalRecordVersion", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.MedicalRecord", "MedicalRecord")
+                        .WithMany("Versions")
+                        .HasForeignKey("MedicalRecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_medical_record_versions_medical_records_medical_record_id");
+
+                    b.Navigation("MedicalRecord");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Notification", b =>
@@ -2726,6 +2845,8 @@ namespace PhysioFlow.Infrastructure.Migrations
             modelBuilder.Entity("PhysioFlow.Domain.Entities.MedicalRecord", b =>
                 {
                     b.Navigation("Attachments");
+
+                    b.Navigation("Versions");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.Patient", b =>

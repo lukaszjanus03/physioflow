@@ -38,6 +38,7 @@ public class ApplicationDbContext
     public DbSet<AnatomicalRegionInfo> AnatomicalRegionInfos =>
     Set<AnatomicalRegionInfo>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
+    public DbSet<MedicalRecordVersion> MedicalRecordVersions => Set<MedicalRecordVersion>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Exercise> Exercises => Set<Exercise>();
     public DbSet<ExerciseImage> ExerciseImages => Set<ExerciseImage>();
@@ -89,6 +90,9 @@ public class ApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        if (ChangeTracker.Entries<MedicalRecordVersion>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Approved documentation versions are immutable.");
+
         // Audit fields - auto uzupełnianie
         var now = DateTime.UtcNow;
         var userId = _currentUser?.UserId;
@@ -127,6 +131,16 @@ public class ApplicationDbContext
             { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: TherapistReviewConfiguration.UniquePairIndex })
         {
             throw new ConflictException("review_already_exists", "An opinion for this therapist already exists.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ix_medical_records_appointment_id" })
+        {
+            throw new ConflictException("medical_record_already_exists", "Documentation for this appointment already exists.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: MedicalRecordVersionConfiguration.UniqueVersionIndex })
+        {
+            throw new ConflictException("concurrent_modification", "Documentation changed. Reload it before saving.");
         }
     }
 }

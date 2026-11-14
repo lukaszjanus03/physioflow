@@ -21,6 +21,7 @@ public interface IApplicationDbContext
 
     DbSet<AnatomicalRegionInfo> AnatomicalRegionInfos { get; }
     DbSet<MedicalRecord> MedicalRecords { get; }
+    DbSet<MedicalRecordVersion> MedicalRecordVersions { get; }
     DbSet<Attachment> Attachments { get; }
     DbSet<Exercise> Exercises { get; }
     DbSet<ExerciseImage> ExerciseImages { get; }

@@ -111,15 +111,43 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
         b.Property(x => x.PostVisitNoteText).HasColumnType("text");
         b.Property(x => x.InterviewForm).HasColumnType("jsonb");
         b.Property(x => x.PainScale);
+        b.Property(x => x.Interview).HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.FunctionalAssessment).HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.PerformedActions).HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.Recommendations).HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.PatientSummary).HasMaxLength(MedicalRecord.PatientSummaryMaxLength);
+        b.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+        b.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
 
         b.HasOne(x => x.Patient).WithMany(p => p.MedicalRecords)
             .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Appointment).WithOne(a => a.MedicalRecord)
-            .HasForeignKey<MedicalRecord>(x => x.AppointmentId).OnDelete(DeleteBehavior.SetNull);
+            .HasForeignKey<MedicalRecord>(x => x.AppointmentId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Therapist).WithMany()
             .HasForeignKey(x => x.TherapistId).OnDelete(DeleteBehavior.Restrict);
 
         b.HasIndex(x => new { x.PatientId, x.CreatedAt });
+    }
+}
+
+public class MedicalRecordVersionConfiguration : IEntityTypeConfiguration<MedicalRecordVersion>
+{
+    public const string UniqueVersionIndex = "ix_medical_record_versions_record_version";
+
+    public void Configure(EntityTypeBuilder<MedicalRecordVersion> b)
+    {
+        b.ToTable("medical_record_versions");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Interview).IsRequired().HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.FunctionalAssessment).IsRequired().HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.PerformedActions).IsRequired().HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.Recommendations).IsRequired().HasMaxLength(MedicalRecord.ClinicalTextMaxLength);
+        b.Property(x => x.PatientSummary).HasMaxLength(MedicalRecord.PatientSummaryMaxLength);
+        b.Property(x => x.CorrectionReason).HasMaxLength(MedicalRecord.CorrectionReasonMaxLength);
+        b.HasIndex(x => new { x.MedicalRecordId, x.VersionNumber }).IsUnique().HasDatabaseName(UniqueVersionIndex);
+        b.HasOne(x => x.MedicalRecord).WithMany(x => x.Versions)
+            .HasForeignKey(x => x.MedicalRecordId).OnDelete(DeleteBehavior.Restrict);
+        b.HasQueryFilter(x => !x.MedicalRecord.IsDeleted);
     }
 }
 
