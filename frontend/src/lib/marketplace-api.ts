@@ -7,6 +7,8 @@ import type {
 import type { PaginatedList } from '@/types/api';
 
 export type PublicTherapist = TherapistEntry & {
+  averageRating: number | null;
+  reviewCount: number;
   marketplace: MarketplaceData;
   photoUrl: string | null;
 };
@@ -50,7 +52,7 @@ const baseUrl = (
 
 let publicRetryAt = 0;
 
-async function publicRequest(
+export async function publicRequest(
   path: string,
   signal?: AbortSignal,
 ) {
