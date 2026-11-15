@@ -1,8 +1,9 @@
+import ExerciseLibrary from '@/components/therapy/ExerciseLibrary';
+
 export default function ExercisesPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold">Biblioteka ćwiczeń</h1>
-      <p className="text-muted-foreground">TODO: lista ćwiczeń z filtrowaniem po MuscleGroup</p>
+    <div className="mx-auto max-w-6xl p-4 sm:p-6">
+      <ExerciseLibrary />
     </div>
   );
 }
