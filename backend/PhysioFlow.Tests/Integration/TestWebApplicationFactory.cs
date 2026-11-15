@@ -21,6 +21,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _databaseName = Guid.NewGuid().ToString();
 
     public FakeEmailService Email { get; } = new();
+    public FakeExerciseVideoStorage Videos { get; } = new();
 
     // TestServer nie ustawia IP klienta, więc wszystkie testy trafiają do jednej partycji limitera.
     protected virtual int PatientRegistrationPermitLimit => 10_000;
@@ -109,6 +110,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IEmailService>();
             services.AddSingleton<IEmailService>(Email);
+            services.RemoveAll<IExerciseVideoStorage>();
+            services.AddSingleton<IExerciseVideoStorage>(Videos);
 
             ConfigureTestServices(services);
         });

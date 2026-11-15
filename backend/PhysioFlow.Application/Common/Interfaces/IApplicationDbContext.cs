@@ -24,6 +24,7 @@ public interface IApplicationDbContext
     DbSet<MedicalRecordVersion> MedicalRecordVersions { get; }
     DbSet<Attachment> Attachments { get; }
     DbSet<Exercise> Exercises { get; }
+    DbSet<ExerciseVideo> ExerciseVideos { get; }
     DbSet<ExerciseImage> ExerciseImages { get; }
     DbSet<TherapyPlan> TherapyPlans { get; }
     DbSet<TherapyPlanVersion> TherapyPlanVersions { get; }

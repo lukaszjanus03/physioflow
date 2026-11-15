@@ -15,7 +15,7 @@ Wszystkie pola tekstowe są zwykłym tekstem: API nie interpretuje HTML ani Mark
 
 Pola tworzenia: `name` (wymagane, 1–200 znaków), `instructions` (wymagane, 1–10000), `category` (wymagana kategoria lub obszar ciała, 1–100), `notes` (opcjonalne, do 2000). Białe znaki nie spełniają wymogu niepustej wartości. Edycja dodatkowo wymaga `version`. Można edytować własne ćwiczenie również w archiwum.
 
-`ExerciseDto`: `id`, `name`, `instructions`, `category`, `notes`, `isArchived`, `version` (UUID). Brak danych konta, mediów i powiązań z pacjentami.
+`ExerciseDto`: `id`, `name`, `instructions`, `category`, `notes`, `isArchived`, `version` (UUID), opcjonalne `video`. Obsługę materiałów i ich kopii w pozycjach planów oraz historii opisuje [kontrakt Sprintu 6](sprint-6-exercise-videos-api.md).
 
 `search` (do 200 znaków) przeszukuje nazwę i instrukcję bez rozróżniania wielkości liter; `category` (do 100) jest dokładnym filtrem bez rozróżniania wielkości liter. `archived=false` domyślnie zwraca bieżące ćwiczenia, `true` tylko archiwalne, pusty parametr `archived=` oba rodzaje. Sortowanie: `name ASC, id ASC` przy kolacji bazy. Strony są numerowane od 1, rozmiar 1–100 (domyślnie 20); niepoprawny lub przepełniający offset daje 400. Stabilność dotyczy niezmienionego zbioru; zmiany pomiędzy żądaniami mogą przesunąć strony.
 

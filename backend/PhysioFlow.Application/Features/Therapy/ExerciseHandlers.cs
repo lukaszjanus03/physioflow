@@ -33,7 +33,7 @@ public class ExerciseHandlers(IApplicationDbContext db, ICurrentUserService user
     private async Task<Exercise> Find(Guid id, CancellationToken ct)
     {
         var owner = await TherapistId(ct);
-        return await db.Exercises.SingleOrDefaultAsync(e => e.Id == id && e.TherapistId == owner, ct)
+        return await db.Exercises.Include(e => e.Video).SingleOrDefaultAsync(e => e.Id == id && e.TherapistId == owner, ct)
             ?? throw new NotFoundException(nameof(Exercise), id);
     }
 
@@ -84,7 +84,7 @@ public class ExerciseHandlers(IApplicationDbContext db, ICurrentUserService user
         TherapyValidation.Page(request.PageNumber, request.PageSize);
         TherapyValidation.Require(request.Search?.Length is not > 200, "search", "Maximum search length is 200.");
         TherapyValidation.Require(request.Category?.Length is not > Exercise.CategoryMaxLength, "category", "Maximum category length is 100.");
-        var query = db.Exercises.AsNoTracking().Where(e => e.TherapistId == owner);
+        var query = db.Exercises.AsNoTracking().Include(e => e.Video).Where(e => e.TherapistId == owner);
         if (request.Archived.HasValue) query = query.Where(e => e.IsArchived == request.Archived.Value);
         if (TherapyValidation.Clean(request.Category) is { } category)
             query = query.Where(e => e.Category != null && e.Category.ToLower() == category.ToLower());
@@ -108,6 +108,6 @@ public class ExerciseHandlers(IApplicationDbContext db, ICurrentUserService user
         exercise.Notes = TherapyValidation.Clean(content.Notes);
     }
 
-    private static ExerciseDto ToDto(Exercise exercise) => new(exercise.Id, exercise.Name, exercise.Instructions,
-        exercise.Category, exercise.Notes, exercise.IsArchived, exercise.ConcurrencyStamp);
+    internal static ExerciseDto ToDto(Exercise exercise) => new(exercise.Id, exercise.Name, exercise.Instructions,
+        exercise.Category, exercise.Notes, exercise.IsArchived, exercise.ConcurrencyStamp, ExerciseVideoMapping.ToDto(exercise.Video));
 }

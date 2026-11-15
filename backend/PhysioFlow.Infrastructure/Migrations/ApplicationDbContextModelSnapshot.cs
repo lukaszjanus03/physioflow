@@ -1341,12 +1341,19 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by_id");
 
+                    b.Property<Guid?>("VideoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("video_id");
+
                     b.Property<string>("YoutubeUrl")
                         .HasColumnType("text")
                         .HasColumnName("youtube_url");
 
                     b.HasKey("Id")
                         .HasName("pk_exercises");
+
+                    b.HasIndex("VideoId")
+                        .HasDatabaseName("ix_exercises_video_id");
 
                     b.HasIndex("TherapistId", "IsArchived", "Name", "Id")
                         .HasDatabaseName("ix_exercises_therapist_id_is_archived_name_id");
@@ -1397,6 +1404,70 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasDatabaseName("ix_exercise_images_exercise_id");
 
                     b.ToTable("exercise_images", (string)null);
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ExerciseVideo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("storage_key");
+
+                    b.Property<Guid>("TherapistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapist_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.Property<string>("YoutubeVideoId")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("youtube_video_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_exercise_videos");
+
+                    b.HasIndex("TherapistId", "Id")
+                        .HasDatabaseName("ix_exercise_videos_therapist_id_id");
+
+                    b.ToTable("exercise_videos", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_exercise_videos_source", "(source = 'YouTube' AND youtube_video_id IS NOT NULL AND storage_key IS NULL AND content_type IS NULL AND size_bytes IS NULL) OR (source = 'Upload' AND youtube_video_id IS NULL AND storage_key IS NOT NULL AND content_type IS NOT NULL AND size_bytes IS NOT NULL AND size_bytes > 0 AND size_bytes <= 104857600)");
+                        });
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.FavoriteTherapist", b =>
@@ -2377,6 +2448,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by_id");
 
+                    b.Property<Guid?>("VideoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("video_id");
+
                     b.HasKey("Id")
                         .HasName("pk_therapy_plan_exercises");
 
@@ -2385,6 +2460,9 @@ namespace PhysioFlow.Infrastructure.Migrations
 
                     b.HasIndex("TherapyPlanId")
                         .HasDatabaseName("ix_therapy_plan_exercises_therapy_plan_id");
+
+                    b.HasIndex("VideoId")
+                        .HasDatabaseName("ix_therapy_plan_exercises_video_id");
 
                     b.ToTable("therapy_plan_exercises", (string)null);
                 });
@@ -2734,7 +2812,15 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_exercises_therapists_therapist_id");
 
+                    b.HasOne("PhysioFlow.Domain.Entities.ExerciseVideo", "Video")
+                        .WithMany()
+                        .HasForeignKey("VideoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_exercises_exercise_videos_video_id");
+
                     b.Navigation("Therapist");
+
+                    b.Navigation("Video");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.ExerciseImage", b =>
@@ -2747,6 +2833,18 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasConstraintName("fk_exercise_images_exercises_exercise_id");
 
                     b.Navigation("Exercise");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ExerciseVideo", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
+                        .WithMany()
+                        .HasForeignKey("TherapistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_exercise_videos_therapists_therapist_id");
+
+                    b.Navigation("Therapist");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.FavoriteTherapist", b =>
@@ -2926,9 +3024,17 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_therapy_plan_exercises_therapy_plans_therapy_plan_id");
 
+                    b.HasOne("PhysioFlow.Domain.Entities.ExerciseVideo", "Video")
+                        .WithMany()
+                        .HasForeignKey("VideoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_therapy_plan_exercises_exercise_videos_video_id");
+
                     b.Navigation("Exercise");
 
                     b.Navigation("TherapyPlan");
+
+                    b.Navigation("Video");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapyPlanVersion", b =>

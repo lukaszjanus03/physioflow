@@ -44,4 +44,34 @@ public class ExercisesController : ApiControllerBase
     [ProducesResponseType(typeof(ExerciseDto), 200)]
     public async Task<IActionResult> Restore(Guid id, [FromBody] TherapyVersionRequest body, CancellationToken ct) =>
         Ok(await Mediator.Send(new SetExerciseArchiveCommand(id, body.Version, false), ct));
+
+    [HttpPost("{id:guid}/video/upload")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(ExerciseVideoFile.MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = ExerciseVideoFile.MaxRequestBytes)]
+    [ProducesResponseType(typeof(ExerciseDto), 200)]
+    public async Task<IActionResult> UploadVideo(Guid id, [FromForm] UploadExerciseVideoForm body, CancellationToken ct)
+    {
+        if (body.File is null)
+            throw new FluentValidation.ValidationException([new("file", "A video file is required.")]);
+        await using var content = body.File.OpenReadStream();
+        return Ok(await Mediator.Send(new UploadExerciseVideoCommand(id, body.Version, content, body.File.Length,
+            body.File.FileName, body.File.ContentType), ct));
+    }
+
+    [HttpPut("{id:guid}/video/youtube")]
+    [ProducesResponseType(typeof(ExerciseDto), 200)]
+    public async Task<IActionResult> SetYoutubeVideo(Guid id, [FromBody] SetYoutubeVideoRequest body, CancellationToken ct) =>
+        Ok(await Mediator.Send(new SetYoutubeVideoCommand(id, body), ct));
+
+    [HttpDelete("{id:guid}/video")]
+    [ProducesResponseType(typeof(ExerciseDto), 200)]
+    public async Task<IActionResult> DetachVideo(Guid id, [FromBody] TherapyVersionRequest body, CancellationToken ct) =>
+        Ok(await Mediator.Send(new DetachExerciseVideoCommand(id, body.Version), ct));
+}
+
+public class UploadExerciseVideoForm
+{
+    public Guid Version { get; set; }
+    public IFormFile? File { get; set; }
 }

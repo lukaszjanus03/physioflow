@@ -71,8 +71,10 @@ public static class DependencyInjection
         var r2SecretKey = config["R2:SecretKey"];
         var r2BucketName = config["R2:BucketName"];
 
-        if (!string.IsNullOrWhiteSpace(r2AccountId) && !string.IsNullOrWhiteSpace(r2AccessKey)
-            && !string.IsNullOrWhiteSpace(r2SecretKey) && !string.IsNullOrWhiteSpace(r2BucketName))
+        var r2VideoBucketName = config["R2:VideoBucketName"];
+        var hasR2Credentials = !string.IsNullOrWhiteSpace(r2AccountId) && !string.IsNullOrWhiteSpace(r2AccessKey)
+            && !string.IsNullOrWhiteSpace(r2SecretKey);
+        if (hasR2Credentials)
         {
             services.AddSingleton<IAmazonS3>(_ =>
             {
@@ -84,12 +86,18 @@ public static class DependencyInjection
                 };
                 return new AmazonS3Client(new BasicAWSCredentials(r2AccessKey, r2SecretKey), s3Config);
             });
+        }
+        if (hasR2Credentials && !string.IsNullOrWhiteSpace(r2BucketName))
             services.AddScoped<IStorageService, R2StorageService>();
-        }
         else
-        {
             services.AddScoped<IStorageService, UnconfiguredStorageService>();
-        }
+
+        // A separate bucket prevents public profile photo configuration from exposing recordings.
+        if (hasR2Credentials && !string.IsNullOrWhiteSpace(r2VideoBucketName)
+            && !string.Equals(r2VideoBucketName, r2BucketName, StringComparison.OrdinalIgnoreCase))
+            services.AddScoped<IExerciseVideoStorage, R2ExerciseVideoStorage>();
+        else
+            services.AddScoped<IExerciseVideoStorage, UnconfiguredStorageService>();
 
         // --- Resend (email)
         services.AddOptions<AppointmentReminderOptions>()

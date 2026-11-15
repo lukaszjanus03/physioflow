@@ -44,7 +44,7 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
     private async Task<TherapyPlan> Find(Guid id, CancellationToken ct)
     {
         var owner = await TherapistId(ct);
-        return await db.TherapyPlans.Include(p => p.Exercises).Include(p => p.Patient)
+        return await db.TherapyPlans.Include(p => p.Exercises).ThenInclude(e => e.Video).Include(p => p.Patient)
             .SingleOrDefaultAsync(p => p.Id == id && p.TherapistId == owner
                 && p.Patient.TherapistId == owner && !p.Patient.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(TherapyPlan), id);
@@ -167,7 +167,7 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
     {
         var existing = plan.Exercises.ToDictionary(e => e.Id);
         var newIds = content.Exercises.Where(i => i.Id == null).Select(i => i.ExerciseId).Distinct().ToArray();
-        var library = await db.Exercises.AsNoTracking().Where(e => newIds.Contains(e.Id)
+        var library = await db.Exercises.Include(e => e.Video).Where(e => newIds.Contains(e.Id)
             && e.TherapistId == plan.TherapistId).ToDictionaryAsync(e => e.Id, ct);
         var positions = new List<TherapyPlanExercise>();
         foreach (var (item, order) in content.Exercises.Select((item, index) => (item, index)))
@@ -185,7 +185,8 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
                 if (exercise.IsArchived)
                     throw new ConflictException("exercise_archived", "Archived exercises cannot be added to plans.");
                 position = new TherapyPlanExercise { TherapyPlanId = plan.Id, ExerciseId = exercise.Id,
-                    ExerciseName = exercise.Name, Instructions = exercise.Instructions };
+                    ExerciseName = exercise.Name, Instructions = exercise.Instructions,
+                    VideoId = exercise.VideoId, Video = exercise.Video };
                 // Added explicitly: positions have client-generated Guid keys, including on tracked plans.
                 db.TherapyPlanExercises.Add(position);
             }
@@ -240,7 +241,7 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
     private static TherapyPlanSnapshot Snapshot(TherapyPlan plan) => new(plan.Name, plan.Goal, plan.StartDate,
         plan.EndDate, plan.GeneralRecommendations, plan.Exercises.OrderBy(e => e.Order).Select(e => new TherapyPlanItemDto(
             e.Id, e.ExerciseId, e.Order, e.ExerciseName, e.Instructions, e.Sets, e.Repetitions,
-            e.DurationSeconds, e.Frequency, e.Notes)).ToList());
+            e.DurationSeconds, e.Frequency, e.Notes, ExerciseVideoMapping.ToDto(e.Video))).ToList());
 
     private static TherapyPlanDto ToDto(TherapyPlan plan) => new(plan.Id, plan.PatientId, plan.Status,
         plan.CurrentVersion, plan.ConcurrencyStamp, plan.CreatedAt, plan.UpdatedAt, Snapshot(plan));

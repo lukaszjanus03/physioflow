@@ -15,6 +15,8 @@ public class Exercise : SoftDeletableEntity
     public string? Description { get; set; }
     public MuscleGroup MuscleGroup { get; set; }
     public string? YoutubeUrl { get; set; }
+    public Guid? VideoId { get; set; }
+    public ExerciseVideo? Video { get; set; }
     public string? ThumbnailStorageKey { get; set; }  // R2
     public string? Instructions { get; set; }
     public string? Category { get; set; }
@@ -69,6 +71,8 @@ public class TherapyPlanExercise : BaseEntity
 
     public string ExerciseName { get; set; } = null!;
     public string? Instructions { get; set; }
+    public Guid? VideoId { get; set; }
+    public ExerciseVideo? Video { get; set; }
     public int? Sets { get; set; }
     public int? Repetitions { get; set; }
     public int? DurationSeconds { get; set; }

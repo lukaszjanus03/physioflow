@@ -4,7 +4,7 @@ using PhysioFlow.Application.Common.Interfaces;
 namespace PhysioFlow.Infrastructure.Storage;
 
 /// <summary>Profile editing remains available when optional R2 configuration is absent.</summary>
-public class UnconfiguredStorageService : IStorageService
+public class UnconfiguredStorageService : IStorageService, IExerciseVideoStorage
 {
     public Task<string> UploadAsync(Stream content, string fileName, string contentType, CancellationToken ct = default)
         => throw new StorageUnavailableException();

@@ -20,10 +20,14 @@ public class R2StorageService : IStorageService
         IConfiguration configuration,
         IAmazonS3 s3,
         ILogger<R2StorageService> logger)
+        : this(configuration["R2:BucketName"] ?? throw new InvalidOperationException("R2:BucketName not configured"), s3, logger)
+    {
+    }
+
+    protected R2StorageService(string bucketName, IAmazonS3 s3, ILogger<R2StorageService> logger)
     {
         _s3 = s3;
-        _bucketName = configuration["R2:BucketName"]
-            ?? throw new InvalidOperationException("R2:BucketName not configured");
+        _bucketName = bucketName;
         _logger = logger;
     }
 
@@ -37,7 +41,9 @@ public class R2StorageService : IStorageService
             Key = key,
             InputStream = content,
             ContentType = contentType,
-            DisablePayloadSigning = true  // wymagane dla R2
+            DisablePayloadSigning = true,
+            DisableDefaultChecksumValidation = true,
+            AutoCloseStream = false
         };
 
         await _s3.PutObjectAsync(req, ct);

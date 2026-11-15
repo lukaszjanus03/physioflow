@@ -17,7 +17,12 @@ public record SaveExerciseRequest : ExerciseContent
 
 public record TherapyVersionRequest(Guid Version);
 public record ExerciseDto(Guid Id, string Name, string? Instructions, string? Category, string? Notes,
-    bool IsArchived, Guid Version);
+    bool IsArchived, Guid Version, ExerciseVideoDto? Video = null);
+
+public record ExerciseVideoDto(Guid Id, ExerciseVideoSource Source, string? YoutubeUrl,
+    string? ContentType, long? SizeBytes);
+public record SetYoutubeVideoRequest(Guid Version, string? Url);
+public record ExerciseVideoPlaybackDto(string Url, DateTime ExpiresAt);
 
 public record TherapyPlanContent
 {
@@ -53,7 +58,7 @@ public record TherapyPlanItemRequest
 }
 
 public record TherapyPlanItemDto(Guid Id, Guid ExerciseId, int Order, string Name, string? Instructions,
-    int? Sets, int? Repetitions, int? DurationSeconds, string? Frequency, string? Notes);
+    int? Sets, int? Repetitions, int? DurationSeconds, string? Frequency, string? Notes, ExerciseVideoDto? Video = null);
 
 public record TherapyPlanSnapshot(string? Name, string? Goal, DateOnly? StartDate, DateOnly? EndDate,
     string? GeneralRecommendations, IReadOnlyList<TherapyPlanItemDto> Exercises);

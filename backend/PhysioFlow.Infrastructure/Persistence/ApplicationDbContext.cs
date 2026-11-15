@@ -41,6 +41,7 @@ public class ApplicationDbContext
     public DbSet<MedicalRecordVersion> MedicalRecordVersions => Set<MedicalRecordVersion>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Exercise> Exercises => Set<Exercise>();
+    public DbSet<ExerciseVideo> ExerciseVideos => Set<ExerciseVideo>();
     public DbSet<ExerciseImage> ExerciseImages => Set<ExerciseImage>();
     public DbSet<TherapyPlan> TherapyPlans => Set<TherapyPlan>();
     public DbSet<TherapyPlanVersion> TherapyPlanVersions => Set<TherapyPlanVersion>();
@@ -91,6 +92,8 @@ public class ApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        if (ChangeTracker.Entries<ExerciseVideo>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Exercise video materials are immutable and retained for plan history.");
         if (ChangeTracker.Entries<MedicalRecordVersion>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Approved documentation versions are immutable.");
         if (ChangeTracker.Entries<TherapyPlanVersion>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))

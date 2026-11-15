@@ -11,6 +11,7 @@ public class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
         b.Property(e => e.Category).HasMaxLength(Exercise.CategoryMaxLength);
         b.Property(e => e.Notes).HasMaxLength(Exercise.NotesMaxLength);
         b.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
+        b.HasOne(e => e.Video).WithMany().HasForeignKey(e => e.VideoId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(e => new { e.TherapistId, e.IsArchived, e.Name, e.Id });
         b.HasOne(e => e.Therapist).WithMany(t => t.Exercises).HasForeignKey(e => e.TherapistId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -35,8 +36,26 @@ public class TherapyPlanExerciseConfiguration : IEntityTypeConfiguration<Therapy
     public void Configure(EntityTypeBuilder<TherapyPlanExercise> b)
     {
         b.Property(e => e.Frequency).HasMaxLength(200);
+        b.HasOne(e => e.Video).WithMany().HasForeignKey(e => e.VideoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(e => e.Exercise).WithMany(e => e.PlanAssignments).HasForeignKey(e => e.ExerciseId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(e => e.TherapyPlan).WithMany(p => p.Exercises).HasForeignKey(e => e.TherapyPlanId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public class ExerciseVideoConfiguration : IEntityTypeConfiguration<ExerciseVideo>
+{
+    public void Configure(EntityTypeBuilder<ExerciseVideo> b)
+    {
+        b.Property(v => v.Source).HasConversion<string>().HasMaxLength(20);
+        b.Property(v => v.YoutubeVideoId).HasMaxLength(11);
+        b.Property(v => v.StorageKey).HasMaxLength(500);
+        b.Property(v => v.ContentType).HasMaxLength(50);
+        b.HasOne(v => v.Therapist).WithMany().HasForeignKey(v => v.TherapistId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(v => new { v.TherapistId, v.Id });
+        b.HasQueryFilter(v => !v.Therapist.IsDeleted);
+        b.ToTable(t => t.HasCheckConstraint("ck_exercise_videos_source",
+            "(source = 'YouTube' AND youtube_video_id IS NOT NULL AND storage_key IS NULL AND content_type IS NULL AND size_bytes IS NULL) OR " +
+            "(source = 'Upload' AND youtube_video_id IS NULL AND storage_key IS NOT NULL AND content_type IS NOT NULL AND size_bytes IS NOT NULL AND size_bytes > 0 AND size_bytes <= 104857600)"));
     }
 }
 

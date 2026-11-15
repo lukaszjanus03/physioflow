@@ -4,7 +4,7 @@ namespace PhysioFlow.Application.Common.Exceptions;
 public class StorageUnavailableException : Exception
 {
     public StorageUnavailableException(Exception? inner = null)
-        : base("Przechowywanie zdjęć jest chwilowo niedostępne.", inner) { }
+        : base("Przechowywanie plików jest chwilowo niedostępne.", inner) { }
 }
 
 public class NotFoundException : Exception
