@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Bebas_Neue, Merriweather } from 'next/font/google';
+import { Bebas_Neue, Manrope } from 'next/font/google';
 
 import { Providers } from '@/lib/providers';
 import './globals.css';
 
-const merriweather = Merriweather({
+const manrope = Manrope({
   subsets: ['latin', 'latin-ext'],
-  style: ['normal', 'italic'],
   display: 'swap',
 });
 
@@ -30,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl" suppressHydrationWarning>
-      <body className={`${merriweather.className} ${bebasNeue.variable}`}>
+      <body className={`${manrope.className} ${bebasNeue.variable}`}>
         <Providers>{children}</Providers>
       </body>
     </html>
