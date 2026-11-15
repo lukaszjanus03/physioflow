@@ -2,6 +2,14 @@ import { isAxiosError } from 'axios';
 import { apiClient } from '@/lib/api-client';
 import type { PaginatedList } from '@/types/api';
 
+export type ExerciseVideo = {
+  id: string;
+  source: 'Upload' | 'YouTube';
+  youtubeUrl: string | null;
+  contentType: string | null;
+  sizeBytes: number | null;
+};
+
 export type Exercise = {
   id: string;
   name: string;
@@ -10,6 +18,7 @@ export type Exercise = {
   notes: string | null;
   isArchived: boolean;
   version: string;
+  video?: ExerciseVideo | null;
 };
 
 export type ExerciseBody = {
@@ -34,6 +43,7 @@ export type PlanItem = {
   order: number;
   name: string;
   instructions: string | null;
+  video?: ExerciseVideo | null;
   sets: number | null;
   repetitions: number | null;
   durationSeconds: number | null;
@@ -61,10 +71,8 @@ export type TherapyPlan = {
   content: PlanContent;
 };
 
-export type PlanListItem = Omit<
-  TherapyPlan,
-  'patientId' | 'version' | 'content'
-> & Pick<PlanContent, 'name' | 'startDate' | 'endDate'>;
+export type PlanListItem = Omit<TherapyPlan, 'patientId' | 'version' | 'content'> &
+  Pick<PlanContent, 'name' | 'startDate' | 'endDate'>;
 
 export type PlanVersion = {
   versionNumber: number;
@@ -132,18 +140,13 @@ export const therapyApi = {
       .then((response) => response.data),
 
   saveExercise: (base: Exercise | null, body: ExerciseBody) =>
-    (
-      base
-        ? apiClient.put<Exercise>(
-            `/api/exercises/${base.id}`,
-            { ...body, version: base.version },
-            { timeout: 15000 },
-          )
-        : apiClient.post<Exercise>(
-            '/api/exercises',
-            body,
-            { timeout: 15000 },
-          )
+    (base
+      ? apiClient.put<Exercise>(
+          `/api/exercises/${base.id}`,
+          { ...body, version: base.version },
+          { timeout: 15000 },
+        )
+      : apiClient.post<Exercise>('/api/exercises', body, { timeout: 15000 })
     ).then((response) => response.data),
 
   archiveExercise: (base: Exercise) =>
@@ -155,25 +158,17 @@ export const therapyApi = {
       )
       .then((response) => response.data),
 
-  plans: (
-    patientId: string,
-    status: string,
-    page: number,
-    signal?: AbortSignal,
-  ) =>
+  plans: (patientId: string, status: string, page: number, signal?: AbortSignal) =>
     apiClient
-      .get<PaginatedList<PlanListItem>>(
-        `/api/patients/${patientId}/therapy-plans`,
-        {
-          params: {
-            ...(status ? { status } : {}),
-            pageNumber: page,
-            pageSize: 10,
-          },
-          signal,
-          timeout: 15000,
+      .get<PaginatedList<PlanListItem>>(`/api/patients/${patientId}/therapy-plans`, {
+        params: {
+          ...(status ? { status } : {}),
+          pageNumber: page,
+          pageSize: 10,
         },
-      )
+        signal,
+        timeout: 15000,
+      })
       .then((response) => response.data),
 
   createPlan: (patientId: string) =>
@@ -193,33 +188,25 @@ export const therapyApi = {
       })
       .then((response) => response.data),
 
-  writePlan: (
-    base: TherapyPlan,
-    body: PlanBody,
-    reason?: string,
-  ) =>
-    (
-      reason === undefined
-        ? apiClient.put<TherapyPlan>(
-            `/api/therapy-plans/${base.id}`,
-            { ...body, version: base.version },
-            { timeout: 15000 },
-          )
-        : apiClient.post<TherapyPlan>(
-            `/api/therapy-plans/${base.id}/corrections`,
-            {
-              ...body,
-              version: base.version,
-              correctionReason: reason,
-            },
-            { timeout: 15000 },
-          )
+  writePlan: (base: TherapyPlan, body: PlanBody, reason?: string) =>
+    (reason === undefined
+      ? apiClient.put<TherapyPlan>(
+          `/api/therapy-plans/${base.id}`,
+          { ...body, version: base.version },
+          { timeout: 15000 },
+        )
+      : apiClient.post<TherapyPlan>(
+          `/api/therapy-plans/${base.id}/corrections`,
+          {
+            ...body,
+            version: base.version,
+            correctionReason: reason,
+          },
+          { timeout: 15000 },
+        )
     ).then((response) => response.data),
 
-  transition: (
-    base: TherapyPlan,
-    action: 'activate' | 'complete' | 'archive',
-  ) =>
+  transition: (base: TherapyPlan, action: 'activate' | 'complete' | 'archive') =>
     apiClient
       .post<TherapyPlan>(
         `/api/therapy-plans/${base.id}/${action}`,
@@ -230,26 +217,17 @@ export const therapyApi = {
 
   versions: (id: string, signal?: AbortSignal) =>
     apiClient
-      .get<PlanVersion[]>(
-        `/api/therapy-plans/${id}/versions`,
-        { signal, timeout: 15000 },
-      )
+      .get<PlanVersion[]>(`/api/therapy-plans/${id}/versions`, { signal, timeout: 15000 })
       .then((response) => response.data),
 };
 
 export function therapyStatus(error: unknown) {
-  return isAxiosError(error)
-    ? error.response?.status
-    : undefined;
+  return isAxiosError(error) ? error.response?.status : undefined;
 }
 
 export function therapyError(error: unknown) {
   const code = isAxiosError(error)
-    ? (
-        error.response?.data as
-          | { code?: string }
-          | undefined
-      )?.code
+    ? (error.response?.data as { code?: string } | undefined)?.code
     : undefined;
 
   const messages: Record<string, string> = {
@@ -257,10 +235,8 @@ export function therapyError(error: unknown) {
       'Dane zostały zmienione. Twoja treść pozostaje lokalnie. Pobierz aktualny stan i porównaj zmiany.',
     exercise_archived:
       'Nowa pozycja wskazuje zarchiwizowane ćwiczenie. Usuń ją lub przywróć ćwiczenie w bibliotece.',
-    invalid_plan_transition:
-      'Status planu nie pozwala na tę operację. Pobierz aktualne dane.',
-    patient_archived:
-      'Karta pacjenta jest archiwalna. Zmiany planów są zablokowane.',
+    invalid_plan_transition: 'Status planu nie pozwala na tę operację. Pobierz aktualne dane.',
+    patient_archived: 'Karta pacjenta jest archiwalna. Zmiany planów są zablokowane.',
   };
 
   if (code && messages[code]) return messages[code];
@@ -284,11 +260,7 @@ export function therapyError(error: unknown) {
 export function therapyFieldErrors(error: unknown) {
   if (!isAxiosError(error)) return {};
 
-  const errors = (
-    error.response?.data as
-      | { errors?: Record<string, unknown> }
-      | undefined
-  )?.errors;
+  const errors = (error.response?.data as { errors?: Record<string, unknown> } | undefined)?.errors;
 
   return Object.fromEntries(
     Object.keys(errors ?? {}).map((key) => [
@@ -302,6 +274,4 @@ export const therapyId = (value: string) =>
   /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
 
 export const therapyDate = (value: string | null) =>
-  value
-    ? value.split('-').reverse().join('.')
-    : 'Nie ustalono';
+  value ? value.split('-').reverse().join('.') : 'Nie ustalono';
