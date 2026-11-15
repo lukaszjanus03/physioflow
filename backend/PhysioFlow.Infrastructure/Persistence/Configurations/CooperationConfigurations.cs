@@ -41,6 +41,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
     public void Configure(EntityTypeBuilder<Patient> b)
     {
         b.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
+        b.Property(x => x.AccountLinkVersion).HasDefaultValueSql("gen_random_uuid()");
 
         // Jedna karta danego konta u jednego terapeuty.
         b.HasIndex(x => new { x.TherapistId, x.UserId })

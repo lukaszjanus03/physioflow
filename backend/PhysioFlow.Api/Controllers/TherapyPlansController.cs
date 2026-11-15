@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Therapy;
+using PhysioFlow.Application.Features.PatientSharing;
 using PhysioFlow.Domain.Entities;
 
 namespace PhysioFlow.Api.Controllers;
@@ -12,6 +13,16 @@ namespace PhysioFlow.Api.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class TherapyPlansController : ApiControllerBase
 {
+    [HttpPost("{id:guid}/publish")]
+    [ProducesResponseType(typeof(TherapyPlanDto), 200)]
+    public async Task<IActionResult> Publish(Guid id, [FromBody] PublishPatientContentRequest body, CancellationToken ct) =>
+        Ok(await Mediator.Send(new PublishTherapyPlanCommand(id, body), ct));
+
+    [HttpPost("{id:guid}/revoke")]
+    [ProducesResponseType(typeof(TherapyPlanDto), 200)]
+    public async Task<IActionResult> Revoke(Guid id, [FromBody] TherapyVersionRequest body, CancellationToken ct) =>
+        Ok(await Mediator.Send(new RevokeTherapyPlanCommand(id, body.Version), ct));
+
     [HttpGet("/api/patients/{patientId:guid}/therapy-plans")]
     [ProducesResponseType(typeof(PaginatedList<TherapyPlanListItemDto>), 200)]
     public async Task<IActionResult> List(Guid patientId, [FromQuery] TherapyPlanStatus? status = null,

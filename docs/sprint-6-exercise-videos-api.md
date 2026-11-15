@@ -4,7 +4,7 @@ Backend obsługuje jedno opcjonalne źródło wideo na ćwiczenie. Terapeuta prz
 
 ## Uwierzytelnianie i dostęp
 
-Wszystkie nowe endpointy wymagają JWT z rolą `Therapist`. Właściciel jest ustalany z sesji. Obce ćwiczenia i materiały zwracają 404, konto pacjenta i sama rola administratora zwracają 403, brak sesji zwraca 401. Konto pacjenta powiązane z kartą również nie otrzymuje dostępu do wideo.
+Opisane tutaj endpointy biblioteki i odtwarzania terapeuty wymagają JWT z rolą `Therapist`. Właściciel jest ustalany z sesji. Obce ćwiczenia i materiały zwracają 404, konto pacjenta i sama rola administratora zwracają 403, brak sesji zwraca 401. Samo powiązanie konta z kartą nie udostępnia wideo. [Etap 3](stage-3-patient-sharing-api.md) dodaje osobne odtwarzanie pacjenta ograniczone do pozycji jawnie udostępnionej wersji planu, bez dostępu do biblioteki.
 
 Serwer sprawdza właściciela przed przesłaniem obiektu i przed wygenerowaniem linku do odtwarzania. Klient przekazuje identyfikator materiału otrzymany z biblioteki, pozycji planu lub historii. Klucze obiektów, nazwy bucketów i dane dostępu do R2 nie występują w tych kontraktach.
 

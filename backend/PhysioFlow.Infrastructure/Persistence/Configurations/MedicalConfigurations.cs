@@ -119,6 +119,9 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
         b.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
 
+        b.HasOne(x => x.PublishedVersion).WithMany().HasForeignKey(x => x.PublishedVersionId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.PublishedToUserId, x.PublishedAt, x.Id });
+
         b.HasOne(x => x.Patient).WithMany(p => p.MedicalRecords)
             .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Appointment).WithOne(a => a.MedicalRecord)

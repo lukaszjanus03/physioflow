@@ -1,6 +1,6 @@
 # Terapia — kontrakt backendu do integracji frontendowej
 
-API wymaga JWT z rolą `Therapist`. Właścicielem jest profil terapeuty ustalany z sesji. Klient nie przekazuje `therapistId`, `authorUserId`, statusu, numeru zatwierdzonej wersji ani treści kopii ćwiczeń. Obce ćwiczenia, plany, pozycje i karty zwracają 404. Sama rola `Admin` nie daje dostępu. Konta pacjentów nie mają dostępu, także po aktywacji planu i po powiązaniu konta z kartą. Karta bez konta jest obsługiwana.
+Opisane tutaj API terapeuty wymaga JWT z rolą `Therapist`. Właścicielem jest profil terapeuty ustalany z sesji. Klient nie przekazuje `therapistId`, `authorUserId`, statusu, numeru zatwierdzonej wersji ani treści kopii ćwiczeń. Obce ćwiczenia, plany, pozycje i karty zwracają 404. Sama rola `Admin` nie daje dostępu. Konta pacjentów nie mają dostępu do tych endpointów; aktywacja i powiązanie konta z kartą nie publikują planu. Jawne udostępnianie wybranej wersji i osobne endpointy pacjenta opisuje [etap 3](stage-3-patient-sharing-api.md). Karta bez konta jest obsługiwana.
 
 Wszystkie pola tekstowe są zwykłym tekstem: API nie interpretuje HTML ani Markdown, zachowuje znaczniki jako tekst i usuwa jedynie skrajne białe znaki. Frontend renderuje je jako tekst, bez `innerHTML`. Puste opcjonalne teksty stają się `null`. Żądania i odpowiedzi nie są logowane; log operacji zawiera jej nazwę. Odpowiedzi biblioteki oraz odczyty planów i historii mają `Cache-Control: no-store`.
 

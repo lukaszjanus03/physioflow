@@ -31,11 +31,13 @@ public record ApproveMedicalRecordRequest(Guid Version);
 public record MedicalRecordDto(
     Guid Id, Guid PatientId, Guid? AppointmentId, Guid TherapistId,
     MedicalRecordStatus Status, int CurrentVersion, Guid Version,
-    DateTime CreatedAt, DateTime? UpdatedAt, MedicalRecordContent Content);
+    DateTime CreatedAt, DateTime? UpdatedAt, MedicalRecordContent Content,
+    PatientPublicationDto? Publication = null);
 
 public record MedicalRecordListItemDto(
     Guid Id, Guid? AppointmentId, DateTime? AppointmentStartsAt,
-    MedicalRecordStatus Status, int CurrentVersion, DateTime CreatedAt, DateTime? UpdatedAt);
+    MedicalRecordStatus Status, int CurrentVersion, DateTime CreatedAt, DateTime? UpdatedAt,
+    PatientPublicationDto? Publication = null);
 
 public record MedicalRecordVersionDto(
     int VersionNumber, Guid AuthorUserId, DateTime RecordedAt,

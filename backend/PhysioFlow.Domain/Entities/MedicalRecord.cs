@@ -8,7 +8,7 @@ namespace PhysioFlow.Domain.Entities;
 /// New visit content is plain text with immutable approved versions.
 /// Legacy HTML, JSON interview forms and pain scale are preserved independently.
 /// </summary>
-public class MedicalRecord : SoftDeletableEntity
+public class MedicalRecord : SoftDeletableEntity, IPatientPublication
 {
     public const int ClinicalTextMaxLength = 10000;
     public const int PatientSummaryMaxLength = 2000;
@@ -33,6 +33,11 @@ public class MedicalRecord : SoftDeletableEntity
     public int CurrentVersion { get; set; }
     public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
     public ICollection<MedicalRecordVersion> Versions { get; set; } = new List<MedicalRecordVersion>();
+    public Guid? PublishedVersionId { get; set; }
+    public MedicalRecordVersion? PublishedVersion { get; set; }
+    public Guid? PublishedToUserId { get; set; }
+    public Guid? PublishedForLinkVersion { get; set; }
+    public DateTime? PublishedAt { get; set; }
 
     public Patient Patient { get; set; } = null!;
     public Appointment? Appointment { get; set; }

@@ -6,6 +6,7 @@ using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Cooperation;
+using PhysioFlow.Application.Features.PatientSharing;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Enums;
 
@@ -45,7 +46,8 @@ public class MedicalRecordHandlers(IApplicationDbContext db, ICurrentUserService
     private async Task<MedicalRecord> Find(Guid id, CancellationToken ct)
     {
         var therapistId = await TherapistId(ct);
-        return await db.MedicalRecords.FirstOrDefaultAsync(r => r.Id == id && r.TherapistId == therapistId
+        return await db.MedicalRecords.Include(r => r.Patient).Include(r => r.PublishedVersion)
+            .FirstOrDefaultAsync(r => r.Id == id && r.TherapistId == therapistId
             && r.Patient.TherapistId == therapistId && !r.Patient.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(MedicalRecord), id);
     }
@@ -156,7 +158,10 @@ public class MedicalRecordHandlers(IApplicationDbContext db, ICurrentUserService
         var items = await query.OrderByDescending(r => r.Appointment == null ? r.CreatedAt : r.Appointment.StartsAt)
             .ThenByDescending(r => r.Id).Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize)
             .Select(r => new MedicalRecordListItemDto(r.Id, r.AppointmentId,
-                r.Appointment == null ? null : r.Appointment.StartsAt, r.Status, r.CurrentVersion, r.CreatedAt, r.UpdatedAt))
+                r.Appointment == null ? null : r.Appointment.StartsAt, r.Status, r.CurrentVersion, r.CreatedAt, r.UpdatedAt,
+                r.PublishedVersion == null ? null : new PatientPublicationDto(r.PublishedVersion.VersionNumber,
+                    r.PublishedToUserId!.Value, r.PublishedAt!.Value, r.Patient.UserId == r.PublishedToUserId
+                    && r.Patient.AccountLinkVersion == r.PublishedForLinkVersion)))
             .ToListAsync(ct);
         return new(items, total, request.PageNumber, request.PageSize);
     }
@@ -190,7 +195,8 @@ public class MedicalRecordHandlers(IApplicationDbContext db, ICurrentUserService
         PerformedActions = record.PerformedActions, Recommendations = record.Recommendations, PatientSummary = record.PatientSummary
     };
 
-    private static MedicalRecordDto ToDto(MedicalRecord record) => new(record.Id, record.PatientId, record.AppointmentId,
+    internal static MedicalRecordDto ToDto(MedicalRecord record) => new(record.Id, record.PatientId, record.AppointmentId,
         record.TherapistId, record.Status, record.CurrentVersion, record.ConcurrencyStamp,
-        record.CreatedAt, record.UpdatedAt, Content(record));
+        record.CreatedAt, record.UpdatedAt, Content(record),
+        PublicationPolicy.ToDto(record, record.PublishedVersion?.VersionNumber, record.Patient));
 }

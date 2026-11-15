@@ -38,7 +38,7 @@ public class ExerciseImage : BaseEntity
     public Exercise Exercise { get; set; } = null!;
 }
 
-public class TherapyPlan : SoftDeletableEntity
+public class TherapyPlan : SoftDeletableEntity, IPatientPublication
 {
     public const int NameMaxLength = 200;
     public const int TextMaxLength = 10000;
@@ -58,6 +58,11 @@ public class TherapyPlan : SoftDeletableEntity
     public int CurrentVersion { get; set; }
     public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
     public ICollection<TherapyPlanVersion> Versions { get; set; } = new List<TherapyPlanVersion>();
+    public Guid? PublishedVersionId { get; set; }
+    public TherapyPlanVersion? PublishedVersion { get; set; }
+    public Guid? PublishedToUserId { get; set; }
+    public Guid? PublishedForLinkVersion { get; set; }
+    public DateTime? PublishedAt { get; set; }
 
     public Patient Patient { get; set; } = null!;
     public TherapistProfile Therapist { get; set; } = null!;

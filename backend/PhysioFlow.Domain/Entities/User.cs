@@ -71,6 +71,8 @@ public class TherapistProfile : SoftDeletableEntity
 
 public class Patient : SoftDeletableEntity
 {
+    // Rotated on every change of UserId, including unlink/relink to the same account.
+    public Guid AccountLinkVersion { get; set; } = Guid.NewGuid();
     public Guid? UserId { get; set; }       // opcjonalny - pacjent może nie mieć konta w portalu
     public Guid TherapistId { get; set; }
 

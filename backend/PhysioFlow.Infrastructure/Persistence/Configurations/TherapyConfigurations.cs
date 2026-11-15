@@ -25,6 +25,8 @@ public class TherapyPlanConfiguration : IEntityTypeConfiguration<TherapyPlan>
         b.Property(p => p.GeneralRecommendations).HasMaxLength(TherapyPlan.TextMaxLength);
         b.Property(p => p.Status).HasConversion<string>().HasMaxLength(20).HasDefaultValue(TherapyPlanStatus.Draft);
         b.Property(p => p.ConcurrencyStamp).IsConcurrencyToken();
+        b.HasOne(p => p.PublishedVersion).WithMany().HasForeignKey(p => p.PublishedVersionId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(p => new { p.PublishedToUserId, p.PublishedAt, p.Id });
         b.HasIndex(p => new { p.TherapistId, p.PatientId, p.CreatedAt, p.Id });
         b.HasOne(p => p.Patient).WithMany(p => p.TherapyPlans).HasForeignKey(p => p.PatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(p => p.Therapist).WithMany().HasForeignKey(p => p.TherapistId).OnDelete(DeleteBehavior.Restrict);

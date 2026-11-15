@@ -1,6 +1,6 @@
 # Etap 1 — dokumentacja terapii: kontrakt backendu
 
-Wszystkie endpointy wymagają JWT z rolą `Therapist` i dotyczą wyłącznie własnych kart pacjentów zalogowanego terapeuty. Rola `Admin` nie przyznaje dostępu. Obcy identyfikator pacjenta, wizyty lub dokumentacji zwraca `404`; nie ujawniamy istnienia cudzego zasobu.
+Wszystkie opisane tutaj endpointy wymagają JWT z rolą `Therapist` i dotyczą wyłącznie własnych kart pacjentów zalogowanego terapeuty. Rola `Admin` nie przyznaje dostępu. Obcy identyfikator pacjenta, wizyty lub dokumentacji zwraca `404`; nie ujawniamy istnienia cudzego zasobu. Jawne publikowanie wyłącznie podsumowania i osobne odczyty pacjenta dodaje [kontrakt etapu 3](stage-3-patient-sharing-api.md); pełna dokumentacja i jej historia pozostają prywatne.
 
 ## Model i zasady
 
@@ -12,7 +12,7 @@ Wszystkie endpointy wymagają JWT z rolą `Therapist` i dotyczą wyłącznie wł
 - Zatwierdzonego wpisu nie można edytować przez endpoint szkicu. Korekta zapisuje pełny nowy stan oraz niezmienną wersję w jednej transakcji `SaveChanges`. Poprzednie wersje pozostają dostępne.
 - API nie udostępnia usuwania dokumentacji ani jej wersji. EF odrzuca modyfikację i usuwanie zapisanych wersji; klucze obce blokują fizyczne usunięcie dokumentacji mającej historię.
 - Archiwizacja karty pacjenta zachowuje wpisy i historię. Właściciel może nadal czytać dokumentację i wprowadzać korekty.
-- Podsumowanie dla pacjenta jest osobnym polem. Ten etap nie publikuje go w portalu. Konto pacjenta nie otrzymuje żadnej treści dokumentacji, nawet gdy karta ma ustawioną dotychczasową flagę udostępniania.
+- Podsumowanie dla pacjenta jest osobnym polem. Samo zatwierdzenie ani dotychczasowa flaga udostępniania karty nie publikują go w portalu. [Etap 3](stage-3-patient-sharing-api.md) pozwala jawnie opublikować podsumowanie wybranej zatwierdzonej wersji, bez dostępu do pełnej dokumentacji.
 - Istniejące notatki wizyty, wywiady JSON, HTML, mapy bólu i wiadomości rezerwacyjne pozostają w dotychczasowych polach. Nie kopiujemy ich do podsumowania ani do nowych pól. Nowe DTO nie serializują encji ani starych wewnętrznych notatek.
 - Pola treści są zwykłym tekstem. Frontend powinien wyświetlać je jako tekst, bez interpretowania HTML.
 

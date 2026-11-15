@@ -92,6 +92,12 @@ public class ApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        foreach (var entry in ChangeTracker.Entries<Patient>().Where(e => e.State == EntityState.Modified
+            && e.Property(p => p.UserId).IsModified))
+        {
+            entry.Entity.AccountLinkVersion = Guid.NewGuid();
+            entry.Entity.ConcurrencyStamp = Guid.NewGuid();
+        }
         if (ChangeTracker.Entries<ExerciseVideo>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Exercise video materials are immutable and retained for plan history.");
         if (ChangeTracker.Entries<MedicalRecordVersion>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))

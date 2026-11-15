@@ -64,10 +64,12 @@ public record TherapyPlanSnapshot(string? Name, string? Goal, DateOnly? StartDat
     string? GeneralRecommendations, IReadOnlyList<TherapyPlanItemDto> Exercises);
 
 public record TherapyPlanDto(Guid Id, Guid PatientId, TherapyPlanStatus Status, int CurrentVersion,
-    Guid Version, DateTime CreatedAt, DateTime? UpdatedAt, TherapyPlanSnapshot Content);
+    Guid Version, DateTime CreatedAt, DateTime? UpdatedAt, TherapyPlanSnapshot Content,
+    PatientPublicationDto? Publication = null);
 
 public record TherapyPlanListItemDto(Guid Id, string? Name, TherapyPlanStatus Status, int CurrentVersion,
-    DateOnly? StartDate, DateOnly? EndDate, DateTime CreatedAt, DateTime? UpdatedAt);
+    DateOnly? StartDate, DateOnly? EndDate, DateTime CreatedAt, DateTime? UpdatedAt,
+    PatientPublicationDto? Publication = null);
 
 public record TherapyPlanVersionDto(int VersionNumber, Guid AuthorUserId, DateTime ActivatedAt,
     string? CorrectionReason, TherapyPlanSnapshot Content);

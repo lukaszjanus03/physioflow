@@ -1572,6 +1572,22 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("post_visit_note_text");
 
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedForLinkVersion")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_for_link_version");
+
+                    b.Property<Guid?>("PublishedToUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_to_user_id");
+
+                    b.Property<Guid?>("PublishedVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_version_id");
+
                     b.Property<string>("Recommendations")
                         .HasMaxLength(10000)
                         .HasColumnType("character varying(10000)")
@@ -1602,11 +1618,17 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_medical_records_appointment_id");
 
+                    b.HasIndex("PublishedVersionId")
+                        .HasDatabaseName("ix_medical_records_published_version_id");
+
                     b.HasIndex("TherapistId")
                         .HasDatabaseName("ix_medical_records_therapist_id");
 
                     b.HasIndex("PatientId", "CreatedAt")
                         .HasDatabaseName("ix_medical_records_patient_id_created_at");
+
+                    b.HasIndex("PublishedToUserId", "PublishedAt", "Id")
+                        .HasDatabaseName("ix_medical_records_published_to_user_id_published_at_id");
 
                     b.ToTable("medical_records", (string)null);
                 });
@@ -1815,6 +1837,12 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<Guid>("AccountLinkVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_link_version")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<string>("Address")
                         .HasColumnType("text")
@@ -2343,6 +2371,22 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("patient_id");
 
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedForLinkVersion")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_for_link_version");
+
+                    b.Property<Guid?>("PublishedToUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_to_user_id");
+
+                    b.Property<Guid?>("PublishedVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_version_id");
+
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date")
                         .HasColumnName("start_date");
@@ -2372,6 +2416,12 @@ namespace PhysioFlow.Infrastructure.Migrations
 
                     b.HasIndex("PatientId")
                         .HasDatabaseName("ix_therapy_plans_patient_id");
+
+                    b.HasIndex("PublishedVersionId")
+                        .HasDatabaseName("ix_therapy_plans_published_version_id");
+
+                    b.HasIndex("PublishedToUserId", "PublishedAt", "Id")
+                        .HasDatabaseName("ix_therapy_plans_published_to_user_id_published_at_id");
 
                     b.HasIndex("TherapistId", "PatientId", "CreatedAt", "Id")
                         .HasDatabaseName("ix_therapy_plans_therapist_id_patient_id_created_at_id");
@@ -2879,6 +2929,12 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_medical_records_patients_patient_id");
 
+                    b.HasOne("PhysioFlow.Domain.Entities.MedicalRecordVersion", "PublishedVersion")
+                        .WithMany()
+                        .HasForeignKey("PublishedVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_medical_records_medical_record_versions_published_version_id");
+
                     b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
                         .WithMany()
                         .HasForeignKey("TherapistId")
@@ -2889,6 +2945,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("PublishedVersion");
 
                     b.Navigation("Therapist");
                 });
@@ -2996,6 +3054,12 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_therapy_plans_patients_patient_id");
 
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapyPlanVersion", "PublishedVersion")
+                        .WithMany()
+                        .HasForeignKey("PublishedVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_therapy_plans_therapy_plan_versions_published_version_id");
+
                     b.HasOne("PhysioFlow.Domain.Entities.TherapistProfile", "Therapist")
                         .WithMany()
                         .HasForeignKey("TherapistId")
@@ -3004,6 +3068,8 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasConstraintName("fk_therapy_plans_therapists_therapist_id");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("PublishedVersion");
 
                     b.Navigation("Therapist");
                 });

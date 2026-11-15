@@ -7,6 +7,7 @@ using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.Cooperation;
+using PhysioFlow.Application.Features.PatientSharing;
 using PhysioFlow.Domain.Entities;
 
 namespace PhysioFlow.Application.Features.Therapy;
@@ -45,6 +46,7 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
     {
         var owner = await TherapistId(ct);
         return await db.TherapyPlans.Include(p => p.Exercises).ThenInclude(e => e.Video).Include(p => p.Patient)
+            .Include(p => p.PublishedVersion)
             .SingleOrDefaultAsync(p => p.Id == id && p.TherapistId == owner
                 && p.Patient.TherapistId == owner && !p.Patient.IsDeleted, ct)
             ?? throw new NotFoundException(nameof(TherapyPlan), id);
@@ -150,7 +152,10 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
         var items = await query.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id)
             .Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize)
             .Select(p => new TherapyPlanListItemDto(p.Id, p.Name, p.Status, p.CurrentVersion,
-                p.StartDate, p.EndDate, p.CreatedAt, p.UpdatedAt)).ToListAsync(ct);
+                p.StartDate, p.EndDate, p.CreatedAt, p.UpdatedAt,
+                p.PublishedVersion == null ? null : new PatientPublicationDto(p.PublishedVersion.VersionNumber,
+                    p.PublishedToUserId!.Value, p.PublishedAt!.Value, p.Patient.UserId == p.PublishedToUserId
+                    && p.Patient.AccountLinkVersion == p.PublishedForLinkVersion))).ToListAsync(ct);
         return new(items, total, request.PageNumber, request.PageSize);
     }
 
@@ -206,7 +211,6 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
         plan.StartDate = content.StartDate;
         plan.EndDate = content.EndDate;
         plan.GeneralRecommendations = TherapyValidation.Clean(content.GeneralRecommendations);
-        plan.IsPublished = false;
     }
 
     private static async Task ValidateComplete(TherapyPlan plan, CancellationToken ct)
@@ -230,7 +234,6 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
         plan.Status = TherapyPlanStatus.Active;
         plan.CurrentVersion++;
         plan.ConcurrencyStamp = Guid.NewGuid();
-        plan.IsPublished = false;
         db.TherapyPlanVersions.Add(new TherapyPlanVersion
         {
             TherapyPlanId = plan.Id, VersionNumber = plan.CurrentVersion, AuthorUserId = user.RequireUserId(),
@@ -243,6 +246,7 @@ public class TherapyPlanHandlers(IApplicationDbContext db, ICurrentUserService u
             e.Id, e.ExerciseId, e.Order, e.ExerciseName, e.Instructions, e.Sets, e.Repetitions,
             e.DurationSeconds, e.Frequency, e.Notes, ExerciseVideoMapping.ToDto(e.Video))).ToList());
 
-    private static TherapyPlanDto ToDto(TherapyPlan plan) => new(plan.Id, plan.PatientId, plan.Status,
-        plan.CurrentVersion, plan.ConcurrencyStamp, plan.CreatedAt, plan.UpdatedAt, Snapshot(plan));
+    internal static TherapyPlanDto ToDto(TherapyPlan plan) => new(plan.Id, plan.PatientId, plan.Status,
+        plan.CurrentVersion, plan.ConcurrencyStamp, plan.CreatedAt, plan.UpdatedAt, Snapshot(plan),
+        PublicationPolicy.ToDto(plan, plan.PublishedVersion?.VersionNumber, plan.Patient));
 }

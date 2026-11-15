@@ -21,6 +21,7 @@ public class FakeExerciseVideoStorage : IExerciseVideoStorage
     public ConcurrentQueue<string> Deleted { get; } = new();
     public bool FailUploads { get; set; }
     public bool FailPlayback { get; set; }
+    public Func<Task>? BeforePlayback { get; set; }
 
     public async Task<string> UploadAsync(Stream content, string fileName, string contentType, CancellationToken ct = default)
     {
@@ -42,11 +43,12 @@ public class FakeExerciseVideoStorage : IExerciseVideoStorage
         return Task.CompletedTask;
     }
 
-    public Task<string> GetPresignedUrlAsync(string storageKey, TimeSpan expiry, CancellationToken ct = default)
+    public async Task<string> GetPresignedUrlAsync(string storageKey, TimeSpan expiry, CancellationToken ct = default)
     {
+        if (BeforePlayback is { } before) await before();
         if (FailPlayback) throw new InvalidOperationException("PROVIDER_SECRET");
         Signed.Enqueue((storageKey, expiry));
-        return Task.FromResult($"https://private.r2.test/{storageKey}?signature={Guid.NewGuid():N}");
+        return $"https://private.r2.test/{storageKey}?signature={Guid.NewGuid():N}";
     }
 }
 
