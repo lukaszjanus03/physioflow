@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Search,
   SlidersHorizontal,
+  Video,
   X,
 } from 'lucide-react';
 import { Manrope } from 'next/font/google';
@@ -41,6 +42,8 @@ import {
 import type { Exercise, ExerciseBody } from '@/lib/therapy-api';
 import { useAuthStore } from '@/stores/auth-store';
 
+import ExerciseVideoPlayer from '@/components/therapy/ExerciseVideoPlayer';
+import ExerciseVideoEditor from '@/components/therapy/ExerciseVideoEditor';
 import styles from './ExerciseLibrary.module.css';
 
 const libraryFont = Manrope({
@@ -70,10 +73,9 @@ export default function ExerciseLibrary({
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [searchForm, setSearchForm] = useState(EMPTY_SEARCH);
   const [selection, setSelection] = useState<string | null>(null);
+  const [videoSelection, setVideoSelection] = useState<string | null>(null);
 
-  const hasFilters = Boolean(
-    filters.search || filters.category || filters.archived !== 'false',
-  );
+  const hasFilters = Boolean(filters.search || filters.category || filters.archived !== 'false');
 
   const query = useQuery({
     queryKey: ['therapy-exercises', accountId, filters],
@@ -98,9 +100,7 @@ export default function ExerciseLibrary({
             Materiały terapeutyczne
           </div>
 
-          <h1 className={styles.title}>
-            {onPick ? 'Wybierz ćwiczenie' : 'Biblioteka ćwiczeń'}
-          </h1>
+          <h1 className={styles.title}>{onPick ? 'Wybierz ćwiczenie' : 'Biblioteka ćwiczeń'}</h1>
 
           <p className={styles.intro}>
             {onPick
@@ -110,11 +110,7 @@ export default function ExerciseLibrary({
         </div>
 
         {!onPick && (
-          <Button
-            type="button"
-            className={styles.mainAction}
-            onClick={() => setSelection('new')}
-          >
+          <Button type="button" className={styles.mainAction} onClick={() => setSelection('new')}>
             <Plus aria-hidden="true" size={17} />
             Dodaj ćwiczenie
           </Button>
@@ -138,7 +134,6 @@ export default function ExerciseLibrary({
       >
         <label className={styles.filterLabel}>
           Nazwa lub instrukcja
-
           <span className={styles.searchBox}>
             <Search aria-hidden="true" size={17} />
 
@@ -161,7 +156,6 @@ export default function ExerciseLibrary({
 
         <label className={styles.filterLabel}>
           Pełna nazwa kategorii
-
           <Input
             name="category"
             className={styles.textInput}
@@ -180,7 +174,6 @@ export default function ExerciseLibrary({
         {!onPick && (
           <label className={styles.filterLabel}>
             Widok
-
             <select
               name="archived"
               className={styles.select}
@@ -200,20 +193,12 @@ export default function ExerciseLibrary({
         )}
 
         <div className={styles.filterActions}>
-          <Button
-            type="submit"
-            variant="secondary"
-            disabled={query.isFetching}
-          >
+          <Button type="submit" variant="secondary" disabled={query.isFetching}>
             <SlidersHorizontal aria-hidden="true" size={15} />
             Zastosuj
           </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={clearFilters}
-          >
+          <Button type="button" variant="ghost" onClick={clearFilters}>
             <X aria-hidden="true" size={15} />
             Wyczyść
           </Button>
@@ -226,11 +211,7 @@ export default function ExerciseLibrary({
             {hasFilters ? 'Wyniki wyszukiwania' : 'Twoje ćwiczenia'}
           </h2>
 
-          <span
-            className={styles.resultCount}
-            aria-live="polite"
-            aria-atomic="true"
-          >
+          <span className={styles.resultCount} aria-live="polite" aria-atomic="true">
             {query.isError ? '—' : (query.data?.totalCount ?? '…')}
           </span>
         </div>
@@ -246,11 +227,7 @@ export default function ExerciseLibrary({
           <RefreshCw
             aria-hidden="true"
             size={15}
-            className={
-              query.isFetching
-                ? 'animate-spin motion-reduce:animate-none'
-                : ''
-            }
+            className={query.isFetching ? 'animate-spin motion-reduce:animate-none' : ''}
           />
           Odśwież
         </Button>
@@ -258,10 +235,7 @@ export default function ExerciseLibrary({
 
       <div aria-busy={query.isFetching}>
         {query.isError ? (
-          <TherapyError
-            error={query.error}
-            retry={() => void query.refetch()}
-          />
+          <TherapyError error={query.error} retry={() => void query.refetch()} />
         ) : query.isPending ? (
           <LoadingState title="Pobieranie ćwiczeń…" />
         ) : (
@@ -292,18 +266,11 @@ export default function ExerciseLibrary({
 
                 {filters.page === 1 &&
                   (hasFilters ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={clearFilters}
-                    >
+                    <Button type="button" variant="outline" onClick={clearFilters}>
                       Wyczyść filtry
                     </Button>
                   ) : !onPick ? (
-                    <Button
-                      type="button"
-                      onClick={() => setSelection('new')}
-                    >
+                    <Button type="button" onClick={() => setSelection('new')}>
                       <Plus aria-hidden="true" size={16} />
                       Dodaj pierwsze ćwiczenie
                     </Button>
@@ -313,10 +280,7 @@ export default function ExerciseLibrary({
 
             <div className={styles.cards}>
               {query.data.items.map((exercise) => (
-                <article
-                  key={exercise.id}
-                  className={styles.card}
-                >
+                <article key={exercise.id} className={styles.card}>
                   <div className={styles.cardBody}>
                     <div className={styles.cardMeta}>
                       <span className={styles.category}>
@@ -329,22 +293,20 @@ export default function ExerciseLibrary({
                           Archiwalne
                         </span>
                       ) : (
-                        <Dumbbell
-                          aria-hidden="true"
-                          size={21}
-                          className={styles.cardIcon}
-                        />
+                        <Dumbbell aria-hidden="true" size={21} className={styles.cardIcon} />
                       )}
                     </div>
 
-                    <h2 className={styles.cardTitle}>
-                      {exercise.name}
-                    </h2>
+                    <h2 className={styles.cardTitle}>{exercise.name}</h2>
 
-                    <p className={styles.preview}>
-                      {instructionPreview(exercise.instructions)}
-                    </p>
+                    <p className={styles.preview}>{instructionPreview(exercise.instructions)}</p>
 
+                    {exercise.video && (
+                      <p className="mt-3 flex items-center gap-2 text-xs text-primary">
+                        <Video size={14} aria-hidden="true" />
+                        {exercise.video.source === 'YouTube' ? 'Film YouTube' : 'Własne nagranie'}
+                      </p>
+                    )}
                     <details className={styles.instructions}>
                       <summary>
                         <BookOpen aria-hidden="true" size={15} />
@@ -356,7 +318,18 @@ export default function ExerciseLibrary({
                     </details>
                   </div>
 
-                  <div className={styles.cardFooter}>
+                  <div className={`${styles.cardFooter} flex-wrap gap-2`}>
+                    {!onPick && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className={styles.cardAction}
+                        onClick={() => setVideoSelection(exercise.id)}
+                      >
+                        <Video size={16} aria-hidden="true" />
+                        {exercise.video ? 'Zmień wideo' : 'Dodaj wideo'}
+                      </Button>
+                    )}
                     {onPick ? (
                       <Button
                         type="button"
@@ -411,12 +384,18 @@ export default function ExerciseLibrary({
         </summary>
 
         <p>
-          Dodanie ćwiczenia do planu zapisuje kopię jego nazwy i instrukcji.
-          Późniejsza edycja lub archiwizacja w bibliotece nie zmienia wcześniej
-          zapisanych planów.
+          Dodanie ćwiczenia do planu zapisuje kopię jego nazwy i instrukcji. Późniejsza edycja lub
+          archiwizacja w bibliotece nie zmienia wcześniej zapisanych planów.
         </p>
       </details>
 
+      {videoSelection && (
+        <ExerciseVideoEditor
+          key={`${accountId}:${videoSelection}`}
+          exerciseId={videoSelection}
+          onClose={() => setVideoSelection(null)}
+        />
+      )}
       {selection && (
         <ExerciseLoader
           key={`${accountId}:${selection}`}
@@ -434,19 +413,14 @@ function instructionPreview(instructions: string | null) {
 
   if (!text) return 'Brak instrukcji wykonania.';
 
-  return text.length > 190
-    ? `${text.slice(0, 190).trimEnd()}…`
-    : text;
+  return text.length > 190 ? `${text.slice(0, 190).trimEnd()}…` : text;
 }
 
-function ExerciseView({
-  exercise,
-}: {
-  exercise: Exercise | ExerciseBody;
-}) {
+function ExerciseView({ exercise }: { exercise: Exercise | ExerciseBody }) {
   return (
     <div className={styles.fullInstructions}>
       <p>{exercise.instructions || 'Brak instrukcji.'}</p>
+      {'video' in exercise && <ExerciseVideoPlayer video={exercise.video} title={exercise.name} />}
 
       {exercise.notes && (
         <div className={styles.notes}>
@@ -475,28 +449,15 @@ function ExerciseLoader({
   });
 
   if (exerciseId === 'new') {
-    return (
-      <ExerciseEditor
-        initial={null}
-        accountId={accountId}
-        onClose={onClose}
-      />
-    );
+    return <ExerciseEditor initial={null} accountId={accountId} onClose={onClose} />;
   }
 
   if (query.isError) {
     return (
       <div className="space-y-3">
-        <TherapyError
-          error={query.error}
-          retry={() => void query.refetch()}
-        />
+        <TherapyError error={query.error} retry={() => void query.refetch()} />
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-        >
+        <Button type="button" variant="outline" onClick={onClose}>
           Zamknij edytor
         </Button>
       </div>
@@ -507,13 +468,7 @@ function ExerciseLoader({
     return <LoadingState title="Pobieranie ćwiczenia…" />;
   }
 
-  return (
-    <ExerciseEditor
-      initial={query.data}
-      accountId={accountId}
-      onClose={onClose}
-    />
-  );
+  return <ExerciseEditor initial={query.data} accountId={accountId} onClose={onClose} />;
 }
 
 function exerciseForm(exercise: Exercise | null): ExerciseBody {
@@ -547,8 +502,7 @@ function ExerciseEditor({
 
   const lock = useRef(false);
 
-  const dirty =
-    JSON.stringify(form) !== JSON.stringify(exerciseForm(base));
+  const dirty = JSON.stringify(form) !== JSON.stringify(exerciseForm(base));
 
   async function readLatest() {
     if (!base) return;
@@ -567,9 +521,7 @@ function ExerciseEditor({
 
   const mutation = useMutation({
     mutationFn: (archive: boolean) =>
-      archive && base
-        ? therapyApi.archiveExercise(base)
-        : therapyApi.saveExercise(base, form),
+      archive && base ? therapyApi.archiveExercise(base) : therapyApi.saveExercise(base, form),
     retry: false,
     onSuccess: async () => {
       await client.invalidateQueries({
@@ -647,29 +599,25 @@ function ExerciseEditor({
           }
         }}
       >
-        <DialogContent
-          className={`${libraryFont.className} ${styles.dialog}`}
-        >
+        <DialogContent className={`${libraryFont.className} ${styles.dialog}`}>
           <DialogHeader className={styles.editorHeader}>
             <DialogTitle className={styles.editorTitle}>
               {base ? 'Ćwiczenie w bibliotece' : 'Nowe ćwiczenie'}
             </DialogTitle>
 
             <DialogDescription>
-              Instrukcja jest prywatną częścią biblioteki terapeuty.
-              Jej zmiana nie aktualizuje istniejących planów.
+              Instrukcja jest prywatną częścią biblioteki terapeuty. Jej zmiana nie aktualizuje
+              istniejących planów. Po zapisaniu ćwiczenia możesz osobno dodać film przyciskiem
+              „Dodaj wideo” na jego karcie.
             </DialogDescription>
           </DialogHeader>
 
           {remote && (
             <section className="space-y-3 rounded-xl border border-amber-300 p-4">
-              <h3 className="text-2xl">
-                Aktualna wersja serwera
-              </h3>
+              <h3 className="text-2xl">Aktualna wersja serwera</h3>
 
               <p>
-                {remote.name} ·{' '}
-                {remote.isArchived ? 'Archiwalne' : 'Bieżące'}
+                {remote.name} · {remote.isArchived ? 'Archiwalne' : 'Bieżące'}
               </p>
 
               <ExerciseView exercise={remote} />
@@ -678,38 +626,26 @@ function ExerciseEditor({
                 <input
                   type="checkbox"
                   checked={compared}
-                  onChange={(event) =>
-                    setCompared(event.target.checked)
-                  }
+                  onChange={(event) => setCompared(event.target.checked)}
                 />
-
-                Porównałem treść i świadomie wybieram lokalny formularz
-                jako pełny zamiennik.
+                Porównałem treść i świadomie wybieram lokalny formularz jako pełny zamiennik.
               </label>
 
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() =>
-                    guard.confirmLeave(() => accept(false))
-                  }
+                  onClick={() => guard.confirmLeave(() => accept(false))}
                 >
                   Przyjmij dane serwera
                 </Button>
 
-                <Button
-                  type="button"
-                  disabled={!compared}
-                  onClick={() => accept(true)}
-                >
+                <Button type="button" disabled={!compared} onClick={() => accept(true)}>
                   Zachowaj lokalne zmiany
                 </Button>
               </div>
 
-              <p className="text-xs text-muted-foreground">
-                Wybór nie zapisuje automatycznie.
-              </p>
+              <p className="text-xs text-muted-foreground">Wybór nie zapisuje automatycznie.</p>
             </section>
           )}
 
@@ -721,10 +657,7 @@ function ExerciseEditor({
               send(false);
             }}
           >
-            <fieldset
-              disabled={busy}
-              className={styles.editorFields}
-            >
+            <fieldset disabled={busy} className={styles.editorFields}>
               <Field
                 label="Nazwa *"
                 value={form.name}
@@ -781,19 +714,13 @@ function ExerciseEditor({
             </fieldset>
 
             {message && (
-              <p
-                role="alert"
-                className="text-sm text-destructive"
-              >
+              <p role="alert" className="text-sm text-destructive">
                 {message}
               </p>
             )}
 
             <div className={styles.editorActions}>
-              <Button
-                type="submit"
-                disabled={busy || blocked || Boolean(remote)}
-              >
+              <Button type="submit" disabled={busy || blocked || Boolean(remote)}>
                 {busy ? 'Zapisywanie…' : 'Zapisz ćwiczenie'}
               </Button>
 
@@ -801,14 +728,10 @@ function ExerciseEditor({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={
-                    busy || dirty || blocked || Boolean(remote)
-                  }
+                  disabled={busy || dirty || blocked || Boolean(remote)}
                   onClick={() => setConfirm(true)}
                 >
-                  {base.isArchived
-                    ? 'Przywróć ćwiczenie'
-                    : 'Archiwizuj ćwiczenie'}
+                  {base.isArchived ? 'Przywróć ćwiczenie' : 'Archiwizuj ćwiczenie'}
                 </Button>
               )}
 
@@ -840,11 +763,7 @@ function ExerciseEditor({
 
       {confirm && (
         <Confirm
-          title={
-            base?.isArchived
-              ? 'Przywrócić ćwiczenie?'
-              : 'Archiwizować ćwiczenie?'
-          }
+          title={base?.isArchived ? 'Przywrócić ćwiczenie?' : 'Archiwizować ćwiczenie?'}
           text="Istniejące plany zachowają własne kopie instrukcji. Ćwiczenia archiwalne nie są dostępne do dodawania jako nowe pozycje."
           busy={busy}
           onClose={() => setConfirm(false)}
