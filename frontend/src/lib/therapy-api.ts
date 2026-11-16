@@ -1,3 +1,4 @@
+import type { PatientPublication } from '@/lib/patient-sharing-api';
 import { isAxiosError } from 'axios';
 import { apiClient } from '@/lib/api-client';
 import type { PaginatedList } from '@/types/api';
@@ -61,6 +62,7 @@ export type PlanContent = {
 };
 
 export type TherapyPlan = {
+  publication?: PatientPublication | null;
   id: string;
   patientId: string;
   status: PlanStatus;
