@@ -47,6 +47,7 @@ public class ApplicationDbContext
     public DbSet<TherapyPlanVersion> TherapyPlanVersions => Set<TherapyPlanVersion>();
     public DbSet<TherapyPlanExercise> TherapyPlanExercises => Set<TherapyPlanExercise>();
     public DbSet<PatientDiaryEntry> PatientDiaryEntries => Set<PatientDiaryEntry>();
+    public DbSet<ExerciseJournalEntry> ExerciseJournalEntries => Set<ExerciseJournalEntry>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<CooperationRequest> CooperationRequests => Set<CooperationRequest>();
 
@@ -138,6 +139,11 @@ public class ApplicationDbContext
         try
         {
             return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: ExerciseJournalConfiguration.RequestIndex })
+        {
+            throw new ConflictException("journal_request_exists", "A report with this request ID already exists.");
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
             { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: TherapistReviewConfiguration.UniquePairIndex })

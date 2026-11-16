@@ -1406,6 +1406,148 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("exercise_images", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ExerciseJournalEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("ActualDurationSeconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("actual_duration_seconds");
+
+                    b.Property<int?>("ActualRepetitions")
+                        .HasColumnType("integer")
+                        .HasColumnName("actual_repetitions");
+
+                    b.Property<int?>("ActualSets")
+                        .HasColumnType("integer")
+                        .HasColumnName("actual_sets");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("comment");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("ExerciseSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("exercise_snapshot_json");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("OriginalRequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("original_request_hash");
+
+                    b.Property<int?>("PainLevel")
+                        .HasColumnType("integer")
+                        .HasColumnName("pain_level");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_id");
+
+                    b.Property<Guid>("PatientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_user_id");
+
+                    b.Property<DateOnly>("PerformedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("performed_on");
+
+                    b.Property<Guid>("PlanItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("plan_item_id");
+
+                    b.Property<string>("PlanName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("plan_name");
+
+                    b.Property<int>("PlanVersionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("plan_version_number");
+
+                    b.Property<Guid>("PublicationLinkVersion")
+                        .HasColumnType("uuid")
+                        .HasColumnName("publication_link_version");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("request_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TherapyPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapy_plan_id");
+
+                    b.Property<Guid>("TherapyPlanVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapy_plan_version_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_exercise_journal_entries");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("ix_exercise_journal_entries_patient_id");
+
+                    b.HasIndex("TherapyPlanVersionId")
+                        .HasDatabaseName("ix_exercise_journal_entries_therapy_plan_version_id");
+
+                    b.HasIndex("PatientUserId", "RequestId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_exercise_journal_entries_account_request");
+
+                    b.HasIndex("PatientUserId", "TherapyPlanId", "PerformedOn")
+                        .HasDatabaseName("ix_exercise_journal_entries_patient_user_id_therapy_plan_id_pe");
+
+                    b.HasIndex("PatientUserId", "PerformedOn", "CreatedAt", "Id")
+                        .HasDatabaseName("ix_exercise_journal_entries_patient_user_id_performed_on_creat");
+
+                    b.ToTable("exercise_journal_entries", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_exercise_journal_date", "performed_on >= DATE '1900-01-01'");
+
+                            t.HasCheckConstraint("ck_exercise_journal_dose", "(actual_sets IS NULL OR actual_sets BETWEEN 1 AND 100) AND (actual_repetitions IS NULL OR actual_repetitions BETWEEN 1 AND 1000) AND (actual_duration_seconds IS NULL OR actual_duration_seconds BETWEEN 1 AND 86400) AND (actual_repetitions IS NULL OR actual_duration_seconds IS NULL) AND (status <> 'Skipped' OR (actual_sets IS NULL AND actual_repetitions IS NULL AND actual_duration_seconds IS NULL))");
+
+                            t.HasCheckConstraint("ck_exercise_journal_pain", "pain_level IS NULL OR pain_level BETWEEN 0 AND 10");
+
+                            t.HasCheckConstraint("ck_exercise_journal_status", "status IN ('Completed', 'Partial', 'Skipped')");
+                        });
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.ExerciseVideo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2883,6 +3025,23 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasConstraintName("fk_exercise_images_exercises_exercise_id");
 
                     b.Navigation("Exercise");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ExerciseJournalEntry", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_exercise_journal_entries_patients_patient_id");
+
+                    b.HasOne("PhysioFlow.Domain.Entities.TherapyPlanVersion", null)
+                        .WithMany()
+                        .HasForeignKey("TherapyPlanVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_exercise_journal_entries_therapy_plan_versions_therapy_plan");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.ExerciseVideo", b =>

@@ -30,6 +30,7 @@ public interface IApplicationDbContext
     DbSet<TherapyPlanVersion> TherapyPlanVersions { get; }
     DbSet<TherapyPlanExercise> TherapyPlanExercises { get; }
     DbSet<PatientDiaryEntry> PatientDiaryEntries { get; }
+    DbSet<ExerciseJournalEntry> ExerciseJournalEntries { get; }
     DbSet<ChatMessage> ChatMessages { get; }
     DbSet<CooperationRequest> CooperationRequests { get; }
 
