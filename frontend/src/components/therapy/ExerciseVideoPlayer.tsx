@@ -9,22 +9,47 @@ import {
   videoError,
   youtubeVideoId,
 } from '@/lib/exercise-videos-api';
+import { patientSharingApi, accessDenied, sharingStatus } from '@/lib/patient-sharing-api';
 import type { ExerciseVideo } from '@/lib/therapy-api';
 import { useAuthStore } from '@/stores/auth-store';
+
+type PatientScope = {
+  planId: string;
+  itemId: string;
+  versionNumber: number;
+  onAccessLost: (error?: unknown) => void;
+};
 
 export default function ExerciseVideoPlayer({
   video,
   title,
+  patientScope,
 }: {
   video?: ExerciseVideo | null;
   title: string;
+  patientScope?: PatientScope;
 }) {
   const owner = useAuthStore((state) => state.userId);
   if (!video || !owner) return null;
-  return <Player key={`${owner}:${video.id}`} video={video} title={title} />;
+  return (
+    <Player
+      key={`${owner}:${video.id}:${patientScope?.planId ?? 'therapist'}:${patientScope?.versionNumber ?? 0}`}
+      video={video}
+      title={title}
+      patientScope={patientScope}
+    />
+  );
 }
 
-function Player({ video, title }: { video: ExerciseVideo; title: string }) {
+function Player({
+  video,
+  title,
+  patientScope,
+}: {
+  video: ExerciseVideo;
+  title: string;
+  patientScope?: PatientScope;
+}) {
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [playback, setPlayback] = useState<{ url: string; expires: number } | null>(null);
@@ -66,7 +91,13 @@ function Player({ video, title }: { video: ExerciseVideo; title: string }) {
     setLoading(true);
     setPlayback(null);
     try {
-      const result = await exerciseVideosApi.playback(video.id, controller.signal);
+      const result = patientScope
+        ? await patientSharingApi.playback(
+            patientScope.planId,
+            patientScope.itemId,
+            controller.signal,
+          )
+        : await exerciseVideosApi.playback(video.id, controller.signal);
       const url = new URL(result.url);
       const expires = Date.parse(result.expiresAt);
       if (
@@ -79,7 +110,13 @@ function Player({ video, title }: { video: ExerciseVideo; title: string }) {
         throw new Error('invalid-playback');
       if (request.current === controller) setPlayback({ url: result.url, expires });
     } catch (error) {
-      if (!controller.signal.aborted) setMessage(videoError(error));
+      if (!controller.signal.aborted) {
+        setMessage(videoError(error));
+        if (patientScope && (accessDenied(error) || sharingStatus(error) === 409)) {
+          setPlayback(null);
+          patientScope.onAccessLost(error);
+        }
+      }
     } finally {
       if (request.current === controller) {
         request.current = null;

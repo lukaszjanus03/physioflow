@@ -1,3 +1,4 @@
+import type { PatientPublication } from '@/lib/patient-sharing-api';
 import { isAxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api-client';
@@ -31,17 +32,14 @@ export const recordFields = [
   },
 ] as const;
 
-export type ContentKey =
-  (typeof recordFields)[number]['key'];
+export type ContentKey = (typeof recordFields)[number]['key'];
 
-export type RecordContent = Record<
-  ContentKey,
-  string | null
->;
+export type RecordContent = Record<ContentKey, string | null>;
 
 export type ContentForm = Record<ContentKey, string>;
 
 export type MedicalRecord = {
+  publication?: PatientPublication | null;
   id: string;
   patientId: string;
   appointmentId: string | null;
@@ -56,12 +54,7 @@ export type MedicalRecord = {
 
 export type RecordItem = Pick<
   MedicalRecord,
-  | 'id'
-  | 'appointmentId'
-  | 'status'
-  | 'currentVersion'
-  | 'createdAt'
-  | 'updatedAt'
+  'id' | 'appointmentId' | 'status' | 'currentVersion' | 'createdAt' | 'updatedAt' | 'publication'
 > & {
   appointmentStartsAt: string | null;
 };
@@ -83,74 +76,47 @@ export const recordOptions = {
 } as const;
 
 export const isRecordId = (value: string) =>
-  /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+  /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
 
 const root = '/api/medical-records';
 
-const patientRoot = (id: string) =>
-  `/api/patients/${encodeURIComponent(id)}/medical-records`;
+const patientRoot = (id: string) => `/api/patients/${encodeURIComponent(id)}/medical-records`;
 
 export const recordsApi = {
-  list: (
-    patientId: string,
-    page: number,
-    signal?: AbortSignal,
-    pageSize = 10,
-  ) =>
+  list: (patientId: string, page: number, signal?: AbortSignal, pageSize = 10) =>
     apiClient
-      .get<PaginatedList<RecordItem>>(
-        patientRoot(patientId),
-        {
-          params: {
-            pageNumber: page,
-            pageSize,
-          },
-          signal,
-          timeout: 15000,
+      .get<PaginatedList<RecordItem>>(patientRoot(patientId), {
+        params: {
+          pageNumber: page,
+          pageSize,
         },
-      )
+        signal,
+        timeout: 15000,
+      })
       .then((response) => response.data),
 
   details: (id: string, signal?: AbortSignal) =>
     apiClient
-      .get<MedicalRecord>(
-        `${root}/${encodeURIComponent(id)}`,
-        {
-          signal,
-          timeout: 15000,
-        },
-      )
+      .get<MedicalRecord>(`${root}/${encodeURIComponent(id)}`, {
+        signal,
+        timeout: 15000,
+      })
       .then((response) => response.data),
 
   history: (id: string, signal?: AbortSignal) =>
     apiClient
-      .get<RecordVersion[]>(
-        `${root}/${encodeURIComponent(id)}/versions`,
-        {
-          signal,
-          timeout: 15000,
-        },
-      )
+      .get<RecordVersion[]>(`${root}/${encodeURIComponent(id)}/versions`, {
+        signal,
+        timeout: 15000,
+      })
       .then((response) => response.data),
 
-  create: (
-    patientId: string,
-    appointmentId: string,
-  ) =>
+  create: (patientId: string, appointmentId: string) =>
     apiClient
-      .post<MedicalRecord>(
-        patientRoot(patientId),
-        { appointmentId },
-        { timeout: 15000 },
-      )
+      .post<MedicalRecord>(patientRoot(patientId), { appointmentId }, { timeout: 15000 })
       .then((response) => response.data),
 
-  save: (
-    record: MedicalRecord,
-    content: ContentForm,
-  ) =>
+  save: (record: MedicalRecord, content: ContentForm) =>
     apiClient
       .put<MedicalRecord>(
         `${root}/${record.id}`,
@@ -171,11 +137,7 @@ export const recordsApi = {
       )
       .then((response) => response.data),
 
-  correct: (
-    record: MedicalRecord,
-    content: ContentForm,
-    correctionReason: string,
-  ) =>
+  correct: (record: MedicalRecord, content: ContentForm, correctionReason: string) =>
     apiClient
       .post<MedicalRecord>(
         `${root}/${record.id}/corrections`,
@@ -188,23 +150,11 @@ export const recordsApi = {
       )
       .then((response) => response.data),
 
-  findForAppointment: async (
-    patientId: string,
-    appointmentId: string,
-    signal: AbortSignal,
-  ) => {
+  findForAppointment: async (patientId: string, appointmentId: string, signal: AbortSignal) => {
     for (let page = 1; ; page += 1) {
-      const result = await recordsApi.list(
-        patientId,
-        page,
-        signal,
-        100,
-      );
+      const result = await recordsApi.list(patientId, page, signal, 100);
 
-      const match = result.items.find(
-        (item) =>
-          item.appointmentId === appointmentId,
-      );
+      const match = result.items.find((item) => item.appointmentId === appointmentId);
 
       if (match) return match;
       if (!result.hasNext) return null;
@@ -212,56 +162,36 @@ export const recordsApi = {
   },
 };
 
-export function contentForm(
-  content: RecordContent,
-): ContentForm {
+export function contentForm(content: RecordContent): ContentForm {
   return {
     interview: content.interview ?? '',
-    functionalAssessment:
-      content.functionalAssessment ?? '',
-    performedActions:
-      content.performedActions ?? '',
-    recommendations:
-      content.recommendations ?? '',
+    functionalAssessment: content.functionalAssessment ?? '',
+    performedActions: content.performedActions ?? '',
+    recommendations: content.recommendations ?? '',
     patientSummary: content.patientSummary ?? '',
   };
 }
 
-export function validateContent(
-  content: ContentForm,
-  complete: boolean,
-  reason?: string,
-) {
+export function validateContent(content: ContentForm, complete: boolean, reason?: string) {
   const errors: Record<string, string> = {};
 
   for (const field of recordFields) {
     if (content[field.key].length > field.limit) {
-      errors[field.key] =
-        `Maksymalnie ${field.limit} znaków.`;
-    } else if (
-      complete &&
-      field.key !== 'patientSummary' &&
-      !content[field.key].trim()
-    ) {
+      errors[field.key] = `Maksymalnie ${field.limit} znaków.`;
+    } else if (complete && field.key !== 'patientSummary' && !content[field.key].trim()) {
       errors[field.key] = 'Uzupełnij to pole.';
     }
   }
 
-  if (
-    reason !== undefined &&
-    (!reason.trim() || reason.length > 1000)
-  ) {
-    errors.correctionReason =
-      'Wpisz powód korekty: od 1 do 1000 znaków.';
+  if (reason !== undefined && (!reason.trim() || reason.length > 1000)) {
+    errors.correctionReason = 'Wpisz powód korekty: od 1 do 1000 znaków.';
   }
 
   return errors;
 }
 
 export function recordStatus(error: unknown) {
-  return isAxiosError(error)
-    ? error.response?.status
-    : undefined;
+  return isAxiosError(error) ? error.response?.status : undefined;
 }
 
 export function recordError(error: unknown) {
@@ -269,19 +199,14 @@ export function recordError(error: unknown) {
     return 'Nie udało się pobrać lub zapisać danych. Sprawdź połączenie.';
   }
 
-  const body = error.response?.data as
-    | { code?: string }
-    | undefined;
+  const body = error.response?.data as { code?: string } | undefined;
 
   const messages: Record<string, string> = {
     medical_record_already_exists:
       'Dokumentacja tej wizyty już istnieje. Odśwież dane i otwórz istniejący wpis.',
-    medical_record_correction_required:
-      'Wpis jest zatwierdzony. Zmiana wymaga korekty.',
-    medical_record_already_approved:
-      'Dokumentacja została już zatwierdzona.',
-    medical_record_not_approved:
-      'Nie można korygować szkicu.',
+    medical_record_correction_required: 'Wpis jest zatwierdzony. Zmiana wymaga korekty.',
+    medical_record_already_approved: 'Dokumentacja została już zatwierdzona.',
+    medical_record_not_approved: 'Nie można korygować szkicu.',
     medical_record_completed_appointment_required:
       'Zatwierdzenie lub korekta wymagają wizyty oznaczonej jako odbyta.',
     concurrent_modification:

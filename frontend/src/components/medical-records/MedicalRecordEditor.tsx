@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -20,6 +16,7 @@ import {
   UserRound,
 } from 'lucide-react';
 
+import PatientPublicationPanel from '@/components/patient-sharing/PatientPublication';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/primitives';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -31,10 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  RecordContentView,
-  RecordFailure,
-} from '@/components/medical-records/MedicalRecordUI';
+import { RecordContentView, RecordFailure } from '@/components/medical-records/MedicalRecordUI';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { APPOINTMENT_LABELS } from '@/lib/appointment-display';
 import { appointmentsApi } from '@/lib/appointments-api';
@@ -50,9 +44,7 @@ import {
   recordStatus,
   validateContent,
 } from '@/lib/medical-records-api';
-import type {
-  MedicalRecord,
-} from '@/lib/medical-records-api';
+import type { MedicalRecord } from '@/lib/medical-records-api';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function MedicalRecordEditor({
@@ -62,32 +54,20 @@ export default function MedicalRecordEditor({
   patientId: string;
   recordId: string;
 }) {
-  const accountId = useAuthStore(
-    (state) => state.userId,
-  );
+  const accountId = useAuthStore((state) => state.userId);
 
-  const valid =
-    isRecordId(patientId) &&
-    isRecordId(recordId);
+  const valid = isRecordId(patientId) && isRecordId(recordId);
 
   const query = useQuery({
-    queryKey: [
-      'medical-record',
-      accountId,
-      recordId,
-    ],
+    queryKey: ['medical-record', accountId, recordId],
     queryFn: async ({ signal }) => {
-      const record = await recordsApi.details(
-        recordId,
-        signal,
-      );
+      const record = await recordsApi.details(recordId, signal);
 
       if (record.patientId !== patientId) {
         throw new Error('invalid-patient');
       }
 
-      const patient =
-        await patientsApi.getById(patientId);
+      const patient = await patientsApi.getById(patientId);
 
       return { record, patient };
     },
@@ -96,26 +76,15 @@ export default function MedicalRecordEditor({
   });
 
   if (!valid) {
-    return (
-      <p role="alert">
-        Nieprawidłowy adres dokumentacji.
-      </p>
-    );
+    return <p role="alert">Nieprawidłowy adres dokumentacji.</p>;
   }
 
   if (query.isError) {
-    return (
-      <RecordFailure
-        error={query.error}
-        retry={() => void query.refetch()}
-      />
-    );
+    return <RecordFailure error={query.error} retry={() => void query.refetch()} />;
   }
 
   if (query.isPending) {
-    return (
-      <LoadingState title="Pobieranie dokumentacji…" />
-    );
+    return <LoadingState title="Pobieranie dokumentacji…" />;
   }
 
   return (
@@ -144,68 +113,43 @@ function Editor({
   const lock = useRef(false);
 
   const [base, setBase] = useState(initial);
-  const [form, setForm] = useState(() =>
-    contentForm(initial.content),
-  );
-  const [correcting, setCorrecting] =
-    useState(false);
+  const [sharingBusy, setSharingBusy] = useState(false);
+  const [form, setForm] = useState(() => contentForm(initial.content));
+  const [correcting, setCorrecting] = useState(false);
   const [reason, setReason] = useState('');
-  const [errors, setErrors] =
-    useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState('');
   const [conflict, setConflict] = useState(false);
-  const [remote, setRemote] =
-    useState<MedicalRecord | null>(null);
-  const [loadingRemote, setLoadingRemote] =
-    useState(false);
+  const [remote, setRemote] = useState<MedicalRecord | null>(null);
+  const [loadingRemote, setLoadingRemote] = useState(false);
   const [compared, setCompared] = useState(false);
-  const [confirmation, setConfirmation] =
-    useState<'approve' | 'correct' | null>(null);
-  const [showHistory, setShowHistory] =
-    useState(false);
+  const [confirmation, setConfirmation] = useState<'approve' | 'correct' | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
-  const editable =
-    Boolean(base.appointmentId) &&
-    (base.status === 'Draft' || correcting);
+  const editable = Boolean(base.appointmentId) && (base.status === 'Draft' || correcting);
 
   const baseline = contentForm(base.content);
 
   const dirty =
-    editable &&
-    (recordFields.some(
-      (field) =>
-        form[field.key] !== baseline[field.key],
-    ) ||
-      reason.length > 0);
+    editable && (recordFields.some((field) => form[field.key] !== baseline[field.key]) || reason.length > 0);
 
   const appointment = useQuery({
-    queryKey: [
-      'record-appointment',
-      accountId,
-      base.appointmentId,
-    ],
-    queryFn: ({ signal }) =>
-      appointmentsApi.details(
-        base.appointmentId!,
-        signal,
-      ),
+    queryKey: ['record-appointment', accountId, base.appointmentId],
+    queryFn: ({ signal }) => appointmentsApi.details(base.appointmentId!, signal),
     enabled: Boolean(base.appointmentId),
     ...recordOptions,
     refetchOnWindowFocus: true,
   });
 
-  const completed =
-    !appointment.isError &&
-    appointment.data?.status === 'Completed';
+  const completed = !appointment.isError && appointment.data?.status === 'Completed';
 
   async function fetchCurrent() {
     setLoadingRemote(true);
     setCompared(false);
 
     try {
-      const current =
-        await recordsApi.details(base.id);
+      const current = await recordsApi.details(base.id);
 
       if (current.patientId !== base.patientId) {
         throw new Error('invalid-patient');
@@ -225,11 +169,7 @@ function Editor({
         ? recordsApi.save(base, form)
         : operation === 'approve'
           ? recordsApi.approve(base)
-          : recordsApi.correct(
-              base,
-              form,
-              reason,
-            ),
+          : recordsApi.correct(base, form, reason),
     retry: false,
     onSuccess: async (record, operation) => {
       setBase(record);
@@ -252,25 +192,13 @@ function Editor({
 
       await Promise.all([
         client.invalidateQueries({
-          queryKey: [
-            'medical-records',
-            accountId,
-            record.patientId,
-          ],
+          queryKey: ['medical-records', accountId, record.patientId],
         }),
         client.invalidateQueries({
-          queryKey: [
-            'medical-record-history',
-            accountId,
-            record.id,
-          ],
+          queryKey: ['medical-record-history', accountId, record.id],
         }),
         client.invalidateQueries({
-          queryKey: [
-            'appointment-documentation',
-            accountId,
-            record.patientId,
-          ],
+          queryKey: ['appointment-documentation', accountId, record.patientId],
         }),
       ]);
     },
@@ -288,46 +216,27 @@ function Editor({
     },
   });
 
-  const busy =
-    mutation.isPending || loadingRemote;
+  const busy = mutation.isPending || loadingRemote || sharingBusy;
 
-  const guard = useUnsavedChanges(
-    dirty,
-    busy,
-  );
+  const guard = useUnsavedChanges(dirty, busy);
 
   function validate(operation: Operation) {
-    const next = validateContent(
-      form,
-      operation !== 'save',
-      operation === 'correct'
-        ? reason
-        : undefined,
-    );
+    const next = validateContent(form, operation !== 'save', operation === 'correct' ? reason : undefined);
 
     setErrors(next);
 
     if (Object.keys(next).length) {
-      setMessage(
-        'Sprawdź zaznaczone pola formularza.',
-      );
+      setMessage('Sprawdź zaznaczone pola formularza.');
       return false;
     }
 
     if (operation === 'approve' && dirty) {
-      setMessage(
-        'Najpierw zapisz szkic. Zatwierdzenie dotyczy wyłącznie treści zapisanej na serwerze.',
-      );
+      setMessage('Najpierw zapisz szkic. Zatwierdzenie dotyczy wyłącznie treści zapisanej na serwerze.');
       return false;
     }
 
-    if (
-      operation !== 'save' &&
-      !completed
-    ) {
-      setMessage(
-        'Oznacz wizytę jako odbytą i odśwież jej status.',
-      );
+    if (operation !== 'save' && !completed) {
+      setMessage('Oznacz wizytę jako odbytą i odśwież jej status.');
       return false;
     }
 
@@ -335,14 +244,7 @@ function Editor({
   }
 
   function send(operation: Operation) {
-    if (
-      lock.current ||
-      busy ||
-      conflict ||
-      remote ||
-      !base.appointmentId ||
-      !validate(operation)
-    ) {
+    if (lock.current || busy || conflict || remote || !base.appointmentId || !validate(operation)) {
       return;
     }
 
@@ -352,25 +254,14 @@ function Editor({
     mutation.mutate(operation);
   }
 
-  function requestConfirmation(
-    operation: 'approve' | 'correct',
-  ) {
-    if (
-      !busy &&
-      !conflict &&
-      !remote &&
-      validate(operation)
-    ) {
+  function requestConfirmation(operation: 'approve' | 'correct') {
+    if (!busy && !conflict && !remote && validate(operation)) {
       setConfirmation(operation);
     }
   }
 
   function acceptRemote(keepLocal: boolean) {
-    if (
-      !remote ||
-      busy ||
-      (keepLocal && !compared)
-    ) {
+    if (!remote || busy || (keepLocal && !compared)) {
       return;
     }
 
@@ -379,9 +270,7 @@ function Editor({
       setReason('');
       setCorrecting(false);
     } else {
-      setCorrecting(
-        remote.status === 'Approved',
-      );
+      setCorrecting(remote.status === 'Approved');
     }
 
     setBase(remote);
@@ -398,19 +287,11 @@ function Editor({
 
       <div className="flex flex-wrap gap-3">
         <Button asChild variant="outline">
-          <Link
-            href={`/patients/${base.patientId}/documentation`}
-          >
-            Historia dokumentacji
-          </Link>
+          <Link href={`/patients/${base.patientId}/documentation`}>Historia dokumentacji</Link>
         </Button>
 
         <Button asChild variant="ghost">
-          <Link
-            href={`/patients/${base.patientId}`}
-          >
-            Karta pacjenta
-          </Link>
+          <Link href={`/patients/${base.patientId}`}>Karta pacjenta</Link>
         </Button>
       </div>
 
@@ -419,10 +300,7 @@ function Editor({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <FileText
-                  aria-hidden="true"
-                  className="h-6 w-6"
-                />
+                <FileText aria-hidden="true" className="h-6 w-6" />
               </span>
 
               <div>
@@ -430,30 +308,19 @@ function Editor({
                   Dokumentacja terapii
                 </p>
 
-                <h1 className="text-3xl sm:text-4xl">
-                  Dokumentacja wizyty
-                </h1>
+                <h1 className="text-3xl sm:text-4xl">Dokumentacja wizyty</h1>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <span
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-                  base.status === 'Approved'
-                    ? 'bg-emerald-50 text-emerald-800'
-                    : 'bg-amber-50 text-amber-800'
+                  base.status === 'Approved' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'
                 }`}
               >
-                {base.status === 'Approved' && (
-                  <ShieldCheck
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5"
-                  />
-                )}
+                {base.status === 'Approved' && <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />}
 
-                {base.status === 'Draft'
-                  ? 'Szkic'
-                  : 'Zatwierdzona'}
+                {base.status === 'Draft' ? 'Szkic' : 'Zatwierdzona'}
               </span>
 
               {base.currentVersion > 0 && (
@@ -473,24 +340,16 @@ function Editor({
           <dl className="mt-6 grid gap-5 sm:grid-cols-3">
             <div>
               <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-                <UserRound
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                />
+                <UserRound aria-hidden="true" className="h-4 w-4" />
                 Pacjent
               </dt>
 
-              <dd className="mt-2 break-words font-medium">
-                {patientName}
-              </dd>
+              <dd className="mt-2 break-words font-medium">{patientName}</dd>
             </div>
 
             <div>
               <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Calendar
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                />
+                <Calendar aria-hidden="true" className="h-4 w-4" />
                 Termin wizyty
               </dt>
 
@@ -500,68 +359,43 @@ function Editor({
                   : appointment.isError
                     ? 'Nie udało się pobrać wizyty'
                     : appointment.data
-                      ? recordDate(
-                          appointment.data.startsAt,
-                        )
+                      ? recordDate(appointment.data.startsAt)
                       : 'Wczytywanie…'}
               </dd>
 
-              {base.appointmentId &&
-                !appointment.isError &&
-                appointment.data && (
-                  <dd className="mt-1 text-xs text-muted-foreground">
-                    {
-                      APPOINTMENT_LABELS[
-                        appointment.data.status
-                      ]
-                    }
-                  </dd>
-                )}
+              {base.appointmentId && !appointment.isError && appointment.data && (
+                <dd className="mt-1 text-xs text-muted-foreground">
+                  {APPOINTMENT_LABELS[appointment.data.status]}
+                </dd>
+              )}
             </div>
 
             <div>
               <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                />
+                <Clock aria-hidden="true" className="h-4 w-4" />
                 Ostatnia aktualizacja
               </dt>
 
-              <dd className="mt-2 text-sm">
-                {recordDate(
-                  base.updatedAt ?? base.createdAt,
-                )}
-              </dd>
+              <dd className="mt-2 text-sm">{recordDate(base.updatedAt ?? base.createdAt)}</dd>
             </div>
           </dl>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 px-5 py-4 sm:px-7">
-          {!editable &&
-            base.appointmentId &&
-            base.status === 'Approved' && (
-              <Button
-                type="button"
-                disabled={
-                  busy ||
-                  !completed ||
-                  conflict ||
-                  Boolean(remote)
-                }
-                onClick={() => {
-                  setCorrecting(true);
-                  setMessage('');
-                  setSuccess('');
-                }}
-              >
-                <Pencil
-                  aria-hidden="true"
-                  className="mr-2 h-4 w-4"
-                />
-                Wprowadź korektę
-              </Button>
-            )}
+          {!editable && base.appointmentId && base.status === 'Approved' && (
+            <Button
+              type="button"
+              disabled={busy || !completed || conflict || Boolean(remote)}
+              onClick={() => {
+                setCorrecting(true);
+                setMessage('');
+                setSuccess('');
+              }}
+            >
+              <Pencil aria-hidden="true" className="mr-2 h-4 w-4" />
+              Wprowadź korektę
+            </Button>
+          )}
 
           <Button
             type="button"
@@ -569,30 +403,16 @@ function Editor({
             aria-expanded={showHistory}
             aria-controls={`${id}-history`}
             disabled={busy}
-            onClick={() =>
-              setShowHistory((value) => !value)
-            }
+            onClick={() => setShowHistory((value) => !value)}
           >
-            <HistoryIcon
-              aria-hidden="true"
-              className="mr-2 h-4 w-4"
-            />
-            {showHistory
-              ? 'Ukryj historię wersji'
-              : 'Historia wersji'}
+            <HistoryIcon aria-hidden="true" className="mr-2 h-4 w-4" />
+            {showHistory ? 'Ukryj historię wersji' : 'Historia wersji'}
           </Button>
 
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={busy}
-              >
-                <MoreHorizontal
-                  aria-hidden="true"
-                  className="mr-2 h-4 w-4"
-                />
+              <Button type="button" variant="ghost" disabled={busy}>
+                <MoreHorizontal aria-hidden="true" className="mr-2 h-4 w-4" />
                 Więcej działań
               </Button>
             </DropdownMenu.Trigger>
@@ -601,37 +421,24 @@ function Editor({
               <DropdownMenu.Content
                 align="start"
                 sideOffset={8}
-                className="z-[60] w-72 max-w-[calc(100vw-2rem)] rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-lg"
+                className="bg-popover text-popover-foreground z-[60] w-72 max-w-[calc(100vw-2rem)] rounded-xl border p-1.5 shadow-lg"
               >
                 <DropdownMenu.Item
                   disabled={busy}
-                  onSelect={() =>
-                    void fetchCurrent()
-                  }
+                  onSelect={() => void fetchCurrent()}
                   className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-3 text-sm outline-none focus:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                 >
-                  <FileText
-                    aria-hidden="true"
-                    className="h-4 w-4 shrink-0"
-                  />
+                  <FileText aria-hidden="true" className="h-4 w-4 shrink-0" />
                   Porównaj z aktualnym wpisem
                 </DropdownMenu.Item>
 
                 {base.appointmentId && (
                   <DropdownMenu.Item
-                    disabled={
-                      busy ||
-                      appointment.isFetching
-                    }
-                    onSelect={() =>
-                      void appointment.refetch()
-                    }
+                    disabled={busy || appointment.isFetching}
+                    onSelect={() => void appointment.refetch()}
                     className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-3 text-sm outline-none focus:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                   >
-                    <RefreshCw
-                      aria-hidden="true"
-                      className="h-4 w-4 shrink-0"
-                    />
+                    <RefreshCw aria-hidden="true" className="h-4 w-4 shrink-0" />
                     Odśwież status wizyty
                   </DropdownMenu.Item>
                 )}
@@ -640,10 +447,7 @@ function Editor({
           </DropdownMenu.Root>
 
           {editable && (
-            <p
-              role="status"
-              className="w-full text-xs text-muted-foreground"
-            >
+            <p role="status" className="w-full text-xs text-muted-foreground">
               {dirty
                 ? 'Niezapisane zmiany. Zapis jest ręczny.'
                 : 'Brak niezapisanych zmian. Zapis jest ręczny.'}
@@ -652,69 +456,63 @@ function Editor({
         </div>
       </header>
 
+      <PatientPublicationPanel
+        key={`${accountId}:${base.id}:${base.version}`}
+        kind="record"
+        entity={base}
+        busy={busy}
+        locked={dirty || correcting || conflict || Boolean(remote)}
+        canPublish={base.status === 'Approved' && completed}
+        onBusyChange={setSharingBusy}
+        onUpdated={(value) => {
+          setBase(value);
+          setForm(contentForm(value.content));
+          setMessage('');
+          setSuccess('');
+        }}
+        onConflict={() => {
+          setConflict(true);
+          void fetchCurrent();
+        }}
+      />
       {!base.appointmentId && (
         <p className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
-          Starszy wpis bez powiązanej wizyty.
-          Dostępny wyłącznie do odczytu.
+          Starszy wpis bez powiązanej wizyty. Dostępny wyłącznie do odczytu.
         </p>
       )}
 
-      {base.appointmentId &&
-        appointment.isError && (
-          <RecordFailure
-            error={appointment.error}
-            retry={() =>
-              void appointment.refetch()
-            }
-          />
-        )}
+      {base.appointmentId && appointment.isError && (
+        <RecordFailure error={appointment.error} retry={() => void appointment.refetch()} />
+      )}
 
-      {base.appointmentId &&
-        !appointment.isError &&
-        appointment.data &&
-        !completed && (
-          <p className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-sm">
-            Zatwierdzenie i korekta wymagają wizyty
-            oznaczonej jako odbyta. Status możesz
-            odświeżyć w menu „Więcej działań”.
-          </p>
-        )}
+      {base.appointmentId && !appointment.isError && appointment.data && !completed && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-sm">
+          Zatwierdzenie i korekta wymagają wizyty oznaczonej jako odbyta. Status możesz odświeżyć w menu
+          „Więcej działań”.
+        </p>
+      )}
 
       {loadingRemote && (
-        <p
-          role="status"
-          className="text-sm text-muted-foreground"
-        >
+        <p role="status" className="text-sm text-muted-foreground">
           Pobieranie aktualnego wpisu do porównania…
         </p>
       )}
 
       {remote && (
         <section className="space-y-4 rounded-2xl border border-amber-400 bg-amber-50/40 p-5">
-          <h2 className="text-3xl">
-            Porównaj z aktualnym wpisem
-          </h2>
+          <h2 className="text-3xl">Porównaj z aktualnym wpisem</h2>
 
           <p className="text-sm">
-            Poniżej jest aktualna treść serwera.
-            Twoja lokalna treść pozostała
-            w formularzu pod porównaniem.
+            Poniżej jest aktualna treść serwera. Twoja lokalna treść pozostała w formularzu pod porównaniem.
             Status serwera:{' '}
-            {remote.status === 'Draft'
-              ? 'Szkic'
-              : `Zatwierdzona, wersja ${remote.currentVersion}`}
-            .
+            {remote.status === 'Draft' ? 'Szkic' : `Zatwierdzona, wersja ${remote.currentVersion}`}.
           </p>
 
           <details>
-            <summary className="cursor-pointer font-medium">
-              Pokaż pełną aktualną treść serwera
-            </summary>
+            <summary className="cursor-pointer font-medium">Pokaż pełną aktualną treść serwera</summary>
 
             <div className="mt-4">
-              <RecordContentView
-                content={remote.content}
-              />
+              <RecordContentView content={remote.content} />
             </div>
           </details>
 
@@ -722,14 +520,11 @@ function Editor({
             <input
               type="checkbox"
               checked={compared}
-              onChange={(event) =>
-                setCompared(event.target.checked)
-              }
+              onChange={(event) => setCompared(event.target.checked)}
               className="mt-1"
             />
-            Porównałem obie treści. Świadomie
-            wybieram lokalną treść jako pełny
-            zamiennik aktualnej treści serwera.
+            Porównałem obie treści. Świadomie wybieram lokalną treść jako pełny zamiennik aktualnej treści
+            serwera.
           </label>
 
           <div className="flex flex-wrap gap-3">
@@ -737,34 +532,21 @@ function Editor({
               type="button"
               variant="outline"
               disabled={busy}
-              onClick={() =>
-                guard.confirmLeave(() =>
-                  acceptRemote(false),
-                )
-              }
+              onClick={() => guard.confirmLeave(() => acceptRemote(false))}
             >
-              Przyjmij treść serwera i odrzuć
-              lokalne zmiany
+              Przyjmij treść serwera i odrzuć lokalne zmiany
             </Button>
 
             {remote.appointmentId && (
-              <Button
-                type="button"
-                disabled={busy || !compared}
-                onClick={() =>
-                  acceptRemote(true)
-                }
-              >
+              <Button type="button" disabled={busy || !compared} onClick={() => acceptRemote(true)}>
                 Zachowaj lokalną treść do dalszej edycji
               </Button>
             )}
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Żaden przycisk nie zapisuje automatycznie.
-            Jeśli wpis jest już zatwierdzony,
-            dalszy zapis lokalnej treści wymaga
-            korekty i uzasadnienia.
+            Żaden przycisk nie zapisuje automatycznie. Jeśli wpis jest już zatwierdzony, dalszy zapis lokalnej
+            treści wymaga korekty i uzasadnienia.
           </p>
         </section>
       )}
@@ -788,20 +570,12 @@ function Editor({
               <section
                 key={field.key}
                 className={`space-y-3 rounded-xl border bg-card p-5 ${
-                  field.key === 'patientSummary'
-                    ? 'border-primary/30 lg:col-span-2'
-                    : ''
+                  field.key === 'patientSummary' ? 'border-primary/30 lg:col-span-2' : ''
                 }`}
               >
-                <label
-                  htmlFor={`${id}-${field.key}`}
-                  className="font-medium"
-                >
+                <label htmlFor={`${id}-${field.key}`} className="font-medium">
                   {field.label}
-                  {correcting &&
-                  field.key !== 'patientSummary'
-                    ? ' *'
-                    : ''}
+                  {correcting && field.key !== 'patientSummary' ? ' *' : ''}
                 </label>
 
                 <Textarea
@@ -810,13 +584,10 @@ function Editor({
                   maxLength={field.limit}
                   rows={7}
                   disabled={busy}
-                  aria-invalid={Boolean(
-                    errors[field.key],
-                  )}
+                  aria-invalid={Boolean(errors[field.key])}
                   aria-describedby={`${id}-${field.key}-help`}
                   onChange={(event) => {
-                    const value =
-                      event.target.value;
+                    const value = event.target.value;
 
                     setForm((old) => ({
                       ...old,
@@ -829,23 +600,15 @@ function Editor({
 
                 <p
                   id={`${id}-${field.key}-help`}
-                  className={`text-xs ${
-                    errors[field.key]
-                      ? 'text-destructive'
-                      : 'text-muted-foreground'
-                  }`}
+                  className={`text-xs ${errors[field.key] ? 'text-destructive' : 'text-muted-foreground'}`}
                 >
-                  {errors[field.key] ||
-                    `${form[field.key].length}/${field.limit}`}
+                  {errors[field.key] || `${form[field.key].length}/${field.limit}`}
                 </p>
 
-                {field.key ===
-                  'patientSummary' && (
+                {field.key === 'patientSummary' && (
                   <p className="text-xs text-muted-foreground">
-                    Opcjonalne. Nie jest obecnie
-                    udostępniane pacjentowi.
-                    Pozostałe pola są wewnętrzną
-                    dokumentacją terapeuty.
+                    Opcjonalne. Pacjent zobaczy je dopiero po świadomym opublikowaniu wybranej zatwierdzonej
+                    wersji. Pozostałe pola są wewnętrzną dokumentacją terapeuty.
                   </p>
                 )}
               </section>
@@ -854,10 +617,7 @@ function Editor({
 
           {correcting && (
             <section className="space-y-3 rounded-xl border bg-card p-5">
-              <label
-                htmlFor={`${id}-reason`}
-                className="font-medium"
-              >
+              <label htmlFor={`${id}-reason`} className="font-medium">
                 Powód korekty *
               </label>
 
@@ -866,21 +626,15 @@ function Editor({
                 value={reason}
                 maxLength={1000}
                 disabled={busy}
-                aria-invalid={Boolean(
-                  errors.correctionReason,
-                )}
+                aria-invalid={Boolean(errors.correctionReason)}
                 aria-describedby={`${id}-reason-help`}
-                onChange={(event) =>
-                  setReason(event.target.value)
-                }
+                onChange={(event) => setReason(event.target.value)}
               />
 
               <p
                 id={`${id}-reason-help`}
                 className={`text-xs ${
-                  errors.correctionReason
-                    ? 'text-destructive'
-                    : 'text-muted-foreground'
+                  errors.correctionReason ? 'text-destructive' : 'text-muted-foreground'
                 }`}
               >
                 {errors.correctionReason ||
@@ -892,18 +646,9 @@ function Editor({
           <div className="flex flex-wrap gap-3">
             <Button
               type="submit"
-              disabled={
-                busy ||
-                conflict ||
-                Boolean(remote) ||
-                (correcting && !completed)
-              }
+              disabled={busy || conflict || Boolean(remote) || (correcting && !completed)}
             >
-              {busy
-                ? 'Zapisywanie…'
-                : correcting
-                  ? 'Zapisz korektę jako nową wersję'
-                  : 'Zapisz szkic'}
+              {busy ? 'Zapisywanie…' : correcting ? 'Zapisz korektę jako nową wersję' : 'Zapisz szkic'}
             </Button>
 
             {correcting ? (
@@ -913,9 +658,7 @@ function Editor({
                 disabled={busy}
                 onClick={() =>
                   guard.confirmLeave(() => {
-                    setForm(
-                      contentForm(base.content),
-                    );
+                    setForm(contentForm(base.content));
                     setReason('');
                     setCorrecting(false);
                     setErrors({});
@@ -928,16 +671,8 @@ function Editor({
               <Button
                 type="button"
                 variant="outline"
-                disabled={
-                  busy ||
-                  dirty ||
-                  !completed ||
-                  conflict ||
-                  Boolean(remote)
-                }
-                onClick={() =>
-                  requestConfirmation('approve')
-                }
+                disabled={busy || dirty || !completed || conflict || Boolean(remote)}
+                onClick={() => requestConfirmation('approve')}
               >
                 Zatwierdź zapisany szkic
               </Button>
@@ -945,58 +680,36 @@ function Editor({
           </div>
 
           {!correcting && dirty && (
-            <p className="text-sm text-muted-foreground">
-              Przed zatwierdzeniem zapisz szkic.
-            </p>
+            <p className="text-sm text-muted-foreground">Przed zatwierdzeniem zapisz szkic.</p>
           )}
         </form>
       ) : (
-        <RecordContentView
-          content={base.content}
-        />
+        <RecordContentView content={base.content} />
       )}
 
       {message && (
-        <p
-          role="alert"
-          className="whitespace-pre-wrap text-sm text-destructive"
-        >
+        <p role="alert" className="whitespace-pre-wrap text-sm text-destructive">
           {message}
         </p>
       )}
 
       {success && (
-        <p
-          role="status"
-          className="text-sm text-primary"
-        >
+        <p role="status" className="text-sm text-primary">
           {success}
         </p>
       )}
 
       {conflict && !remote && !busy && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void fetchCurrent()}
-        >
+        <Button type="button" variant="outline" onClick={() => void fetchCurrent()}>
           Pobierz aktualny wpis po konflikcie
         </Button>
       )}
 
       {showHistory && (
-        <section
-          id={`${id}-history`}
-          className="space-y-4 border-t pt-6"
-        >
-          <h2 className="text-3xl">
-            Historia zatwierdzonych wersji
-          </h2>
+        <section id={`${id}-history`} className="space-y-4 border-t pt-6">
+          <h2 className="text-3xl">Historia zatwierdzonych wersji</h2>
 
-          <History
-            accountId={accountId}
-            recordId={base.id}
-          />
+          <History accountId={accountId} recordId={base.id} />
         </section>
       )}
 
@@ -1011,9 +724,7 @@ function Editor({
         <DialogContent className="w-[calc(100%-2rem)] rounded-2xl">
           <DialogHeader>
             <DialogTitle>
-              {confirmation === 'approve'
-                ? 'Zatwierdzić zapisany szkic?'
-                : 'Zapisać korektę dokumentacji?'}
+              {confirmation === 'approve' ? 'Zatwierdzić zapisany szkic?' : 'Zapisać korektę dokumentacji?'}
             </DialogTitle>
 
             <DialogDescription>
@@ -1024,14 +735,7 @@ function Editor({
           </DialogHeader>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() =>
-                setConfirmation(null)
-              }
-            >
+            <Button type="button" variant="outline" disabled={busy} onClick={() => setConfirmation(null)}>
               Anuluj
             </Button>
 
@@ -1044,9 +748,7 @@ function Editor({
                 }
               }}
             >
-              {busy
-                ? 'Zapisywanie…'
-                : 'Potwierdź'}
+              {busy ? 'Zapisywanie…' : 'Potwierdź'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1055,73 +757,41 @@ function Editor({
   );
 }
 
-function History({
-  accountId,
-  recordId,
-}: {
-  accountId: string;
-  recordId: string;
-}) {
-  const [selected, setSelected] =
-    useState<number | null>(null);
+function History({ accountId, recordId }: { accountId: string; recordId: string }) {
+  const [selected, setSelected] = useState<number | null>(null);
 
   const query = useQuery({
-    queryKey: [
-      'medical-record-history',
-      accountId,
-      recordId,
-    ],
-    queryFn: ({ signal }) =>
-      recordsApi.history(recordId, signal),
+    queryKey: ['medical-record-history', accountId, recordId],
+    queryFn: ({ signal }) => recordsApi.history(recordId, signal),
     ...recordOptions,
   });
 
   if (query.isError) {
-    return (
-      <RecordFailure
-        error={query.error}
-        retry={() => void query.refetch()}
-      />
-    );
+    return <RecordFailure error={query.error} retry={() => void query.refetch()} />;
   }
 
   if (query.isPending) {
-    return (
-      <LoadingState title="Pobieranie historii wersji…" />
-    );
+    return <LoadingState title="Pobieranie historii wersji…" />;
   }
 
-  const version = query.data.find(
-    (item) => item.versionNumber === selected,
-  );
+  const version = query.data.find((item) => item.versionNumber === selected);
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Historia zawiera wersje zatwierdzone.
-        Kolejne zapisy szkicu nie tworzą tu wpisów.
+        Historia zawiera wersje zatwierdzone. Kolejne zapisy szkicu nie tworzą tu wpisów.
       </p>
 
-      {!query.data.length && (
-        <p>Brak zatwierdzonych wersji.</p>
-      )}
+      {!query.data.length && <p>Brak zatwierdzonych wersji.</p>}
 
       <div className="flex flex-wrap gap-3">
         {query.data.map((item) => (
           <Button
             key={item.versionNumber}
             type="button"
-            variant={
-              selected === item.versionNumber
-                ? 'default'
-                : 'outline'
-            }
-            aria-pressed={
-              selected === item.versionNumber
-            }
-            onClick={() =>
-              setSelected(item.versionNumber)
-            }
+            variant={selected === item.versionNumber ? 'default' : 'outline'}
+            aria-pressed={selected === item.versionNumber}
+            onClick={() => setSelected(item.versionNumber)}
           >
             Wersja {item.versionNumber}
           </Button>
@@ -1130,20 +800,12 @@ function History({
 
       {version && (
         <article className="space-y-4 rounded-xl border bg-card p-5">
-          <h2 className="text-3xl">
-            Wersja {version.versionNumber}
-          </h2>
+          <h2 className="text-3xl">Wersja {version.versionNumber}</h2>
 
-          <p className="text-sm">
-            Zapisano:{' '}
-            {recordDate(version.recordedAt)}
-          </p>
+          <p className="text-sm">Zapisano: {recordDate(version.recordedAt)}</p>
 
           <p className="break-all text-xs text-muted-foreground">
-            Autor:{' '}
-            {version.authorUserId === accountId
-              ? 'Twoje konto'
-              : version.authorUserId}
+            Autor: {version.authorUserId === accountId ? 'Twoje konto' : version.authorUserId}
           </p>
 
           <p className="whitespace-pre-wrap break-words text-sm">
@@ -1152,9 +814,7 @@ function History({
               : 'Pierwsze zatwierdzenie dokumentacji.'}
           </p>
 
-          <RecordContentView
-            content={version.content}
-          />
+          <RecordContentView content={version.content} />
         </article>
       )}
     </div>

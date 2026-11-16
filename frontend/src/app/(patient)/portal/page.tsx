@@ -3,6 +3,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
+  ClipboardList,
+  FileText,
   ChevronRight,
   Heart,
   HeartPulse,
@@ -16,13 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Suspense,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { MarketplaceFavorites } from '@/components/marketplace/Marketplace';
@@ -34,6 +30,7 @@ import {
   MyCooperationRequests,
   MyTherapists,
 } from '@/components/patient-portal/PatientCooperation';
+import PatientSharedContent from '@/components/patient-portal/PatientSharedContent';
 import TherapistCatalog from '@/components/patient-portal/TherapistCatalog';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -59,7 +56,9 @@ type PortalView =
   | 'favorites'
   | 'catalog'
   | 'requests'
-  | 'therapists';
+  | 'therapists'
+  | 'plans'
+  | 'summaries';
 
 const navigation: {
   id: PortalView;
@@ -67,6 +66,8 @@ const navigation: {
 }[] = [
   { id: 'account', label: 'Moje konto' },
   { id: 'appointments', label: 'Moje wizyty' },
+  { id: 'plans', label: 'Moje plany' },
+  { id: 'summaries', label: 'Podsumowania wizyt' },
   { id: 'catalog', label: 'Znajdź terapeutę' },
   { id: 'favorites', label: 'Ulubieni' },
   { id: 'requests', label: 'Moje prośby' },
@@ -76,6 +77,8 @@ const navigation: {
 const navigationIcons = {
   account: User,
   appointments: CalendarDays,
+  plans: ClipboardList,
+  summaries: FileText,
   catalog: Search,
   favorites: Heart,
   requests: Send,
@@ -138,12 +141,8 @@ function PortalAccountPanel({
         </div>
 
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">
-            {name || 'Pacjent'}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {email || 'Konto pacjenta'}
-          </p>
+          <p className="truncate text-sm font-medium">{name || 'Pacjent'}</p>
+          <p className="truncate text-xs text-muted-foreground">{email || 'Konto pacjenta'}</p>
         </div>
       </div>
 
@@ -162,11 +161,7 @@ function PortalAccountPanel({
 
 export default function PatientPortalPage() {
   return (
-    <Suspense
-      fallback={
-        <LoadingState title="Przygotowywanie portalu…" />
-      }
-    >
+    <Suspense fallback={<LoadingState title="Przygotowywanie portalu…" />}>
       <AuthenticatedPatientPortal />
     </Suspense>
   );
@@ -178,16 +173,9 @@ function AuthenticatedPatientPortal() {
   const { isAuthenticated, roles, userId, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const ready = useSyncExternalStore(
-    subscribeToClientReady,
-    getClientSnapshot,
-    getServerSnapshot,
-  );
+  const ready = useSyncExternalStore(subscribeToClientReady, getClientSnapshot, getServerSnapshot);
 
-  const allowed =
-    isAuthenticated &&
-    roles.includes('Patient') &&
-    Boolean(userId);
+  const allowed = isAuthenticated && roles.includes('Patient') && Boolean(userId);
 
   useEffect(() => {
     if (!ready || allowed || isLoggingOut) return;
@@ -214,21 +202,13 @@ function AuthenticatedPatientPortal() {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p role="status" className="text-sm text-muted-foreground">
-          {isLoggingOut
-            ? 'Wylogowywanie…'
-            : 'Sprawdzanie sesji…'}
+          {isLoggingOut ? 'Wylogowywanie…' : 'Sprawdzanie sesji…'}
         </p>
       </main>
     );
   }
 
-  return (
-    <PatientPortal
-      key={userId}
-      accountId={userId}
-      onLogout={handleLogout}
-    />
-  );
+  return <PatientPortal key={userId} accountId={userId} onLogout={handleLogout} />;
 }
 
 function PatientPortal({
@@ -243,15 +223,11 @@ function PatientPortal({
   const params = useSearchParams();
 
   const view: PortalView =
-    navigation.find(
-      (item) => item.id === params.get('view'),
-    )?.id ?? 'account';
+    navigation.find((item) => item.id === params.get('view'))?.id ?? 'account';
 
-  const [appointmentId, setAppointmentId] =
-    useState<string | null>(null);
+  const [appointmentId, setAppointmentId] = useState<string | null>(null);
 
-  const [mobileMenuOpen, setMobileMenuOpen] =
-    useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const mainRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -267,29 +243,17 @@ function PatientPortal({
     refetchOnWindowFocus: true,
   });
 
-  const fullName = [
-    query.data?.firstName,
-    query.data?.lastName,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const fullName = [query.data?.firstName, query.data?.lastName].filter(Boolean).join(' ');
 
   const initials =
     `${query.data?.firstName?.trim().charAt(0) ?? ''}${
       query.data?.lastName?.trim().charAt(0) ?? ''
     }`.toUpperCase() || 'PA';
 
-  const activeLabel =
-    navigation.find((item) => item.id === view)?.label ??
-    'Moje konto';
+  const activeLabel = navigation.find((item) => item.id === view)?.label ?? 'Moje konto';
 
   function navigate(next: PortalView) {
-    router.push(
-      next === 'account'
-        ? '/portal'
-        : '/portal?view=' + next,
-      { scroll: false },
-    );
+    router.push(next === 'account' ? '/portal' : '/portal?view=' + next, { scroll: false });
 
     setMobileMenuOpen(false);
 
@@ -319,12 +283,8 @@ function PatientPortal({
             </span>
 
             <span className="min-w-0">
-              <span className="block text-lg font-bold leading-tight">
-                PhysioFlow
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Portal pacjenta
-              </span>
+              <span className="block text-lg font-bold leading-tight">PhysioFlow</span>
+              <span className="text-xs text-muted-foreground">Portal pacjenta</span>
             </span>
           </Link>
         </div>
@@ -334,11 +294,7 @@ function PatientPortal({
             Twoja przestrzeń
           </p>
 
-          <PortalNavigation
-            view={view}
-            onNavigate={navigate}
-            label="Panel pacjenta"
-          />
+          <PortalNavigation view={view} onNavigate={navigate} label="Panel pacjenta" />
         </div>
 
         <div className="border-t p-3">
@@ -363,24 +319,15 @@ function PatientPortal({
             </span>
 
             <span>
-              <span className="block text-sm font-semibold">
-                PhysioFlow
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Portal pacjenta
-              </span>
+              <span className="block text-sm font-semibold">PhysioFlow</span>
+              <span className="text-xs text-muted-foreground">Portal pacjenta</span>
             </span>
           </Link>
 
           <div className="hidden items-center gap-2 text-sm md:flex">
-            <span className="text-muted-foreground">
-              Portal pacjenta
-            </span>
+            <span className="text-muted-foreground">Portal pacjenta</span>
 
-            <ChevronRight
-              aria-hidden="true"
-              className="h-4 w-4 text-muted-foreground"
-            />
+            <ChevronRight aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
 
             <span className="font-medium">{activeLabel}</span>
           </div>
@@ -395,9 +342,7 @@ function PatientPortal({
               className="gap-2 md:hidden"
               aria-expanded={mobileMenuOpen}
               aria-controls="patient-mobile-navigation"
-              onClick={() =>
-                setMobileMenuOpen((current) => !current)
-              }
+              onClick={() => setMobileMenuOpen((current) => !current)}
             >
               {mobileMenuOpen ? (
                 <X aria-hidden="true" className="h-4 w-4" />
@@ -422,11 +367,7 @@ function PatientPortal({
             }
           }}
         >
-          <PortalNavigation
-            view={view}
-            onNavigate={navigate}
-            label="Mobilny panel pacjenta"
-          />
+          <PortalNavigation view={view} onNavigate={navigate} label="Mobilny panel pacjenta" />
 
           <div className="mt-3 border-t pt-3">
             <PortalAccountPanel
@@ -452,9 +393,7 @@ function PatientPortal({
           />
         ) : query.isError ? (
           <section className="space-y-4 rounded-xl border bg-card p-6">
-            <h1 className="text-3xl">
-              Nie udało się wczytać konta
-            </h1>
+            <h1 className="text-3xl">Nie udało się wczytać konta</h1>
 
             <p role="alert" className="text-sm text-destructive">
               {getApiMessage(query.error)}
@@ -471,6 +410,13 @@ function PatientPortal({
           </section>
         ) : (
           <>
+            {(view === 'plans' || view === 'summaries') && (
+              <PatientSharedContent
+                key={`${accountId}:${view}`}
+                kind={view}
+                accountId={accountId}
+              />
+            )}
             {view === 'appointments' && (
               <PatientAppointments
                 accountId={accountId}
@@ -480,17 +426,11 @@ function PatientPortal({
 
             {view === 'favorites' && <MarketplaceFavorites />}
 
-            {view === 'catalog' && (
-              <TherapistCatalog accountId={accountId} />
-            )}
+            {view === 'catalog' && <TherapistCatalog accountId={accountId} />}
 
-            {view === 'requests' && (
-              <MyCooperationRequests accountId={accountId} />
-            )}
+            {view === 'requests' && <MyCooperationRequests accountId={accountId} />}
 
-            {view === 'therapists' && (
-              <MyTherapists accountId={accountId} />
-            )}
+            {view === 'therapists' && <MyTherapists accountId={accountId} />}
 
             {view === 'account' && (
               <>
@@ -501,29 +441,19 @@ function PatientPortal({
 
                   <h1 className="mt-3 text-4xl sm:text-5xl">
                     Witaj
-                    {query.data.firstName
-                      ? `, ${query.data.firstName}`
-                      : ''}
+                    {query.data.firstName ? `, ${query.data.firstName}` : ''}
                   </h1>
 
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Rezerwuj wizyty, sprawdzaj terminy i zarządzaj
-                    współpracą ze swoimi terapeutami.
+                    Rezerwuj wizyty, sprawdzaj terminy i zarządzaj współpracą ze swoimi terapeutami.
                   </p>
 
                   <div className="mt-5 flex flex-wrap gap-3">
-                    <Button
-                      type="button"
-                      onClick={() => navigate('appointments')}
-                    >
+                    <Button type="button" onClick={() => navigate('appointments')}>
                       Moje wizyty
                     </Button>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => navigate('catalog')}
-                    >
+                    <Button type="button" variant="outline" onClick={() => navigate('catalog')}>
                       Znajdź terapeutę
                     </Button>
                   </div>
@@ -545,26 +475,19 @@ function PatientPortal({
                       ['E-mail', query.data.email],
                       [
                         'Potwierdzenie e-maila',
-                        query.data.emailConfirmed
-                          ? 'Potwierdzony'
-                          : 'Niepotwierdzony',
+                        query.data.emailConfirmed ? 'Potwierdzony' : 'Niepotwierdzony',
                       ],
                     ].map(([label, value]) => (
                       <div key={label} className="rounded-xl border p-4">
-                        <dt className="text-xs text-muted-foreground">
-                          {label}
-                        </dt>
-                        <dd className="mt-2 break-words text-sm font-medium">
-                          {value}
-                        </dd>
+                        <dt className="text-xs text-muted-foreground">{label}</dt>
+                        <dd className="mt-2 break-words text-sm font-medium">{value}</dd>
                       </div>
                     ))}
                   </dl>
                 </section>
 
                 <aside className="rounded-xl border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
-                  Rezerwacje i współpraca nie udostępniają
-                  automatycznie wewnętrznych notatek ani
+                  Rezerwacje i współpraca nie udostępniają automatycznie wewnętrznych notatek ani
                   dokumentacji medycznej terapeuty.
                 </aside>
               </>
