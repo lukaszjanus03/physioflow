@@ -6,9 +6,13 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint src",
+    "lint": "eslint src tests e2e vitest.config.mts playwright.config.ts",
     "type-check": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "6.0.1",
@@ -33,7 +37,7 @@
     "date-fns": "^4.1.0",
     "konva": "9.3.22",
     "lucide-react": "^0.460.0",
-    "next": "16.4.3",
+    "next": "16.4.6",
     "react": "19.3.1",
     "react-big-calendar": "^1.15.0",
     "react-dom": "19.3.1",
@@ -47,17 +51,26 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.12",
     "@types/node": "^22.9.0",
     "@types/react": "19.3.0",
     "@types/react-big-calendar": "^1.15.0",
     "@types/react-dom": "19.3.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "autoprefixer": "^10.4.20",
     "eslint": "10.13.0",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "16.4.6",
+    "jsdom": "^29.1.1",
+    "msw": "^3.0.6",
     "postcss": "^8.4.49",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.8",
     "tailwindcss": "^3.4.14",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^5.1.0"
   }
 }

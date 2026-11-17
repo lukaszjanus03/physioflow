@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { accessDenied } from '@/lib/patient-sharing-api';
 
 // Clinical payloads live only in the mounted view, never in a persistent cache.
-export function usePatientContent<T>(load: (signal: AbortSignal) => Promise<T>) {
+export function usePatientContent<T>(load: (signal: AbortSignal) => Promise<T>, pauseRefresh = false) {
+  const paused = useRef(pauseRefresh);
+  useEffect(() => {
+    paused.current = pauseRefresh;
+  }, [pauseRefresh]);
   const [nonce, setNonce] = useState(0);
   const [denied, setDenied] = useState(false);
   const [state, setState] = useState<{
@@ -17,15 +21,16 @@ export function usePatientContent<T>(load: (signal: AbortSignal) => Promise<T>) 
     if (denied) return;
     let stopped = false;
     let request: AbortController | null = null;
-    async function read() {
-      if (request) return;
+    async function read(initial = false) {
+      if (request || (!initial && paused.current)) return;
       const controller = new AbortController();
       request = controller;
       try {
         const data = await load(controller.signal);
-        if (!stopped) setState({ data, error: null, generation: nonce, loader: load });
+        if (!stopped && (initial || !paused.current))
+          setState({ data, error: null, generation: nonce, loader: load });
       } catch (error) {
-        if (!stopped && !controller.signal.aborted) {
+        if (!stopped && !controller.signal.aborted && (initial || !paused.current)) {
           setState({ data: null, error, generation: nonce, loader: load });
           if (accessDenied(error)) setDenied(true);
         }
@@ -33,7 +38,7 @@ export function usePatientContent<T>(load: (signal: AbortSignal) => Promise<T>) 
         if (request === controller) request = null;
       }
     }
-    void read();
+    void read(true);
     const timer = window.setInterval(() => {
       if (!document.hidden) void read();
     }, 30000);

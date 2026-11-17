@@ -1,0 +1,31 @@
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  test: {
+    environment: 'jsdom',
+    environmentOptions: { jsdom: { url: 'http://localhost:5000' } },
+    setupFiles: ['./tests/setup.ts'],
+    include: ['tests/**/*.test.{ts,tsx}'],
+    clearMocks: true,
+    restoreMocks: true,
+    maxWorkers: 2,
+    env: { NEXT_PUBLIC_API_URL: 'http://localhost:5000' },
+    coverage: {
+      provider: 'v8',
+      include: [
+        'src/lib/patient-sharing-api.ts',
+        'src/hooks/use-patient-content.ts',
+        'src/components/patient-sharing/PatientPublication.tsx',
+        'src/components/patient-portal/PatientSharedContent.tsx',
+        'src/lib/exercise-journal-api.ts',
+        'src/lib/exercise-journal-form.ts',
+        'src/components/patient-journal/**/*.{ts,tsx}',
+      ],
+      reporter: ['text', 'html', 'lcov'],
+    },
+  },
+});
