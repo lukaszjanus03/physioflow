@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
   ClipboardList,
+  BookCheck,
   FileText,
   ChevronRight,
   Heart,
@@ -21,15 +22,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import NotificationBell from '@/components/notifications/NotificationBell';
+import PatientJournal from '@/components/patient-journal/PatientJournal';
+import {
+  JournalNavigationProvider,
+  useJournalNavigation,
+} from '@/components/patient-journal/JournalNavigation';
 import { MarketplaceFavorites } from '@/components/marketplace/Marketplace';
 import PatientAppointments, {
   PatientAppointmentDetails,
   PatientNextAppointment,
 } from '@/components/patient-portal/PatientAppointments';
-import {
-  MyCooperationRequests,
-  MyTherapists,
-} from '@/components/patient-portal/PatientCooperation';
+import { MyCooperationRequests, MyTherapists } from '@/components/patient-portal/PatientCooperation';
 import PatientSharedContent from '@/components/patient-portal/PatientSharedContent';
 import TherapistCatalog from '@/components/patient-portal/TherapistCatalog';
 import { Button } from '@/components/ui/button';
@@ -58,7 +61,8 @@ type PortalView =
   | 'requests'
   | 'therapists'
   | 'plans'
-  | 'summaries';
+  | 'summaries'
+  | 'journal';
 
 const navigation: {
   id: PortalView;
@@ -67,6 +71,7 @@ const navigation: {
   { id: 'account', label: 'Moje konto' },
   { id: 'appointments', label: 'Moje wizyty' },
   { id: 'plans', label: 'Moje plany' },
+  { id: 'journal', label: 'Mój dziennik' },
   { id: 'summaries', label: 'Podsumowania wizyt' },
   { id: 'catalog', label: 'Znajdź terapeutę' },
   { id: 'favorites', label: 'Ulubieni' },
@@ -78,6 +83,7 @@ const navigationIcons = {
   account: User,
   appointments: CalendarDays,
   plans: ClipboardList,
+  journal: BookCheck,
   summaries: FileText,
   catalog: Search,
   favorites: Heart,
@@ -208,22 +214,20 @@ function AuthenticatedPatientPortal() {
     );
   }
 
-  return <PatientPortal key={userId} accountId={userId} onLogout={handleLogout} />;
+  return (
+    <JournalNavigationProvider key={userId}>
+      <PatientPortal accountId={userId} onLogout={handleLogout} />
+    </JournalNavigationProvider>
+  );
 }
 
-function PatientPortal({
-  accountId,
-  onLogout,
-}: {
-  accountId: string;
-  onLogout: () => Promise<void>;
-}) {
+function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: () => Promise<void> }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const params = useSearchParams();
+  const { confirmLeave } = useJournalNavigation();
 
-  const view: PortalView =
-    navigation.find((item) => item.id === params.get('view'))?.id ?? 'account';
+  const view: PortalView = navigation.find((item) => item.id === params.get('view'))?.id ?? 'account';
 
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
 
@@ -235,10 +239,7 @@ function PatientPortal({
   const query = useQuery({
     queryKey: ['patient-account', accountId],
     queryFn: ({ signal, queryKey }) =>
-      withMinimumLoading(
-        () => portalApi.me(signal),
-        queryClient.getQueryData(queryKey) === undefined,
-      ),
+      withMinimumLoading(() => portalApi.me(signal), queryClient.getQueryData(queryKey) === undefined),
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
@@ -253,13 +254,18 @@ function PatientPortal({
   const activeLabel = navigation.find((item) => item.id === view)?.label ?? 'Moje konto';
 
   function navigate(next: PortalView) {
-    router.push(next === 'account' ? '/portal' : '/portal?view=' + next, { scroll: false });
+    confirmLeave(() => {
+      router.push(next === 'account' ? '/portal' : '/portal?view=' + next, { scroll: false });
 
-    setMobileMenuOpen(false);
+      setMobileMenuOpen(false);
 
-    window.requestAnimationFrame(() => {
-      mainRef.current?.focus();
+      window.requestAnimationFrame(() => {
+        mainRef.current?.focus();
+      });
     });
+  }
+  async function guardedLogout() {
+    confirmLeave(() => void onLogout());
   }
 
   return (
@@ -302,7 +308,7 @@ function PatientPortal({
             name={fullName}
             email={query.data?.email}
             initials={initials}
-            onLogout={onLogout}
+            onLogout={guardedLogout}
           />
         </div>
       </aside>
@@ -374,7 +380,7 @@ function PatientPortal({
               name={fullName}
               email={query.data?.email}
               initials={initials}
-              onLogout={onLogout}
+              onLogout={guardedLogout}
             />
           </div>
         </div>
@@ -411,19 +417,13 @@ function PatientPortal({
         ) : (
           <>
             {(view === 'plans' || view === 'summaries') && (
-              <PatientSharedContent
-                key={`${accountId}:${view}`}
-                kind={view}
-                accountId={accountId}
-              />
+              <PatientSharedContent key={`${accountId}:${view}`} kind={view} accountId={accountId} />
             )}
             {view === 'appointments' && (
-              <PatientAppointments
-                accountId={accountId}
-                onFindTherapist={() => navigate('catalog')}
-              />
+              <PatientAppointments accountId={accountId} onFindTherapist={() => navigate('catalog')} />
             )}
 
+            {view === 'journal' && <PatientJournal accountId={accountId} />}
             {view === 'favorites' && <MarketplaceFavorites />}
 
             {view === 'catalog' && <TherapistCatalog accountId={accountId} />}
@@ -487,8 +487,8 @@ function PatientPortal({
                 </section>
 
                 <aside className="rounded-xl border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
-                  Rezerwacje i współpraca nie udostępniają automatycznie wewnętrznych notatek ani
-                  dokumentacji medycznej terapeuty.
+                  Rezerwacje i współpraca nie udostępniają automatycznie wewnętrznych notatek ani dokumentacji
+                  medycznej terapeuty.
                 </aside>
               </>
             )}

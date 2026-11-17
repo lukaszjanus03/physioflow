@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { JournalAction, JournalPlanHistory } from '@/components/patient-journal/JournalAction';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -202,8 +203,9 @@ function ContentList({
 }
 
 function PlanDetails({ id, therapistName }: { id: string; therapistName: (id: string) => string }) {
+  const [journalOpen, setJournalOpen] = useState(false);
   const load = useCallback((signal: AbortSignal) => patientSharingApi.plan(id, signal), [id]);
-  const query = usePatientContent(load);
+  const query = usePatientContent(load, journalOpen);
   if (query.loading) return <LoadingState title="Pobieranie planu…" />;
   if (query.error) return <Failure error={query.error} retry={query.reload} />;
   const plan = query.data;
@@ -215,11 +217,12 @@ function PlanDetails({ id, therapistName }: { id: string; therapistName: (id: st
           <p className="text-sm text-muted-foreground">
             {therapistName(plan.therapistId)} · udostępniona wersja {plan.versionNumber}
           </p>
-          <Button type="button" variant="outline" size="sm" onClick={query.reload}>
+          <Button type="button" variant="outline" size="sm" disabled={journalOpen} onClick={query.reload}>
             Odśwież plan
           </Button>
         </div>
         <h2 className="break-words text-3xl">{plan.content.name || 'Plan terapii'}</h2>
+        <JournalPlanHistory planId={plan.id} />
         <p className="text-sm text-muted-foreground">
           {therapyDate(plan.content.startDate)} – {therapyDate(plan.content.endDate)}
         </p>
@@ -270,6 +273,28 @@ function PlanDetails({ id, therapistName }: { id: string; therapistName: (id: st
                   <p className="whitespace-pre-wrap break-words text-sm leading-7">{item.notes}</p>
                 </div>
               )}
+              <div className="border-t pt-4">
+                <JournalAction
+                  onEditingChange={setJournalOpen}
+                  target={{
+                    therapyPlanId: plan.id,
+                    planVersionNumber: plan.versionNumber,
+                    planItemId: item.id,
+                    publishedAt: plan.publishedAt,
+                    planName: plan.content.name,
+                    exercise: {
+                      name: item.name,
+                      instructions: item.instructions,
+                      order: item.order,
+                      sets: item.sets,
+                      repetitions: item.repetitions,
+                      durationSeconds: item.durationSeconds,
+                      frequency: item.frequency,
+                      notes: item.notes,
+                    },
+                  }}
+                />
+              </div>
               {item.video && (
                 <ExerciseVideoPlayer
                   video={{ id: item.id, ...item.video, contentType: null, sizeBytes: null }}
