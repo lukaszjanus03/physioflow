@@ -59,6 +59,7 @@ npm run dev
 
 ## Dokumentacja
 
+- [Sprint 7, etap 2 — podgląd dziennika przez terapeutę i podsumowanie (kontrakt backendu)](docs/sprint-7-stage-2-therapist-exercise-journal-api.md)
 - [Sprint 7, etap 1 — dziennik realizacji ćwiczeń (kontrakt backendu)](docs/sprint-7-stage-1-exercise-journal-api.md)
 - [Sprint 6 — wideo w ćwiczeniach i wersjonowanych planach, konfiguracja R2](docs/sprint-6-exercise-videos-api.md)
 - [Terapia — biblioteka ćwiczeń i wersjonowane plany pacjentów (kontrakt backendu)](docs/stage-2-therapy-api.md)

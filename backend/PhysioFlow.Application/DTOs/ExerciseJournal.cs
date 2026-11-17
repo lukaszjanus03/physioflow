@@ -38,3 +38,6 @@ public record ExerciseJournalEntryDto(Guid Id, Guid PatientId, Guid TherapyPlanI
     int? ActualDurationSeconds, int? PainLevel, string? Comment, DateTime CreatedAt, DateTime? UpdatedAt, Guid Version);
 
 public record CreateExerciseJournalResult(ExerciseJournalEntryDto Entry, bool Replayed);
+
+public record ExerciseJournalSummaryDto(int CompletedCount, int PartialCount, int SkippedCount,
+    DateOnly? LastPerformedOn);

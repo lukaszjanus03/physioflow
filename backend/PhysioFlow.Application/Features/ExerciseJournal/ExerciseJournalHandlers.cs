@@ -181,7 +181,7 @@ public class ExerciseJournalHandlers(IApplicationDbContext db, ICurrentUserServi
         return new(entries.Select(ToDto).ToList(), count, request.PageNumber, request.PageSize);
     }
 
-    private static ExerciseJournalEntryDto ToDto(ExerciseJournalEntry e) => new(e.Id, e.PatientId, e.TherapyPlanId,
+    internal static ExerciseJournalEntryDto ToDto(ExerciseJournalEntry e) => new(e.Id, e.PatientId, e.TherapyPlanId,
         e.TherapyPlanVersionId, e.PlanVersionNumber, e.PlanItemId, e.PublishedAt, e.PlanName,
         JsonSerializer.Deserialize<JournalExerciseSnapshot>(e.ExerciseSnapshotJson)!, e.PerformedOn, e.Status,
         e.ActualSets, e.ActualRepetitions, e.ActualDurationSeconds, e.PainLevel, e.Comment, e.CreatedAt, e.UpdatedAt, e.Version);
