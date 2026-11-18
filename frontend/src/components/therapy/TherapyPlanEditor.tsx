@@ -390,6 +390,9 @@ function Editor({
         <Button asChild variant="ghost">
           <Link href={`/patients/${base.patientId}`}>Karta pacjenta</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href={`/patients/${base.patientId}/exercise-journal?therapyPlanId=${encodeURIComponent(base.id)}`}>Dziennik tego planu</Link>
+        </Button>
       </div>
 
       <header className="space-y-4 rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-7">
