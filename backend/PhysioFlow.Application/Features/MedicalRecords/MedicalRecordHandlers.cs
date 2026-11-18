@@ -21,7 +21,7 @@ public record ListMedicalRecordsQuery(Guid PatientId, int PageNumber = 1, int Pa
     : IRequest<PaginatedList<MedicalRecordListItemDto>>;
 public record GetMedicalRecordHistoryQuery(Guid Id) : IRequest<IReadOnlyList<MedicalRecordVersionDto>>;
 
-public class MedicalRecordHandlers(IApplicationDbContext db, ICurrentUserService user, IDateTimeProvider clock) :
+public partial class MedicalRecordHandlers(IApplicationDbContext db, ICurrentUserService user, IDateTimeProvider clock) :
     IRequestHandler<CreateMedicalRecordCommand, MedicalRecordDto>,
     IRequestHandler<SaveMedicalRecordCommand, MedicalRecordDto>,
     IRequestHandler<ApproveMedicalRecordCommand, MedicalRecordDto>,

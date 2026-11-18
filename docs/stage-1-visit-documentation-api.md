@@ -123,6 +123,8 @@ Każdy element zawiera `id`, `appointmentId`, `appointmentStartsAt`, `status`, `
 
 ### Historia zatwierdzonych wersji
 
+Dane do eksportu PDF (ostatnie zatwierdzone wersje z treścią, datą wizyty i filtrem dat) udostępnia dodatkowy odczyt opisany w [kontrakcie Sprintu 8, etapu 1](sprint-8-stage-1-medical-record-export-api.md). Poniższy endpoint historii pozostaje bez zmian.
+
 `GET /api/medical-records/{id}/versions` → `200 OK`
 
 Tablica `MedicalRecordVersionDto`, rosnąco według numeru wersji:

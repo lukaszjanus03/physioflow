@@ -28,6 +28,13 @@ public class MedicalRecordsController : ApiControllerBase
         [FromQuery] int pageSize = 20, CancellationToken ct = default) =>
         Ok(await Mediator.Send(new ListMedicalRecordsQuery(patientId, pageNumber, pageSize), ct));
 
+    [HttpGet("/api/patients/{patientId:guid}/medical-records/export")]
+    [ProducesResponseType(typeof(PaginatedList<MedicalRecordExportItemDto>), 200)]
+    public async Task<IActionResult> Export(Guid patientId, [FromQuery] DateOnly? from = null,
+        [FromQuery] DateOnly? to = null, [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20, CancellationToken ct = default) =>
+        Ok(await Mediator.Send(new ExportMedicalRecordsQuery(patientId, from, to, pageNumber, pageSize), ct));
+
     [HttpPost("/api/patients/{patientId:guid}/medical-records")]
     [ProducesResponseType(typeof(MedicalRecordDto), 201)]
     public async Task<IActionResult> Create(Guid patientId, [FromBody] CreateMedicalRecordRequest body, CancellationToken ct)

@@ -42,3 +42,7 @@ public record MedicalRecordListItemDto(
 public record MedicalRecordVersionDto(
     int VersionNumber, Guid AuthorUserId, DateTime RecordedAt,
     string? CorrectionReason, MedicalRecordContent Content);
+
+public record MedicalRecordExportItemDto(
+    Guid Id, Guid? AppointmentId, DateTime? AppointmentStartsAt,
+    int VersionNumber, DateTime ApprovedAt, MedicalRecordContent Content);

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using PhysioFlow.Api.Middleware;
 using PhysioFlow.Application.Common.Behaviors;
+using PhysioFlow.Application.Common.Models;
 using PhysioFlow.Application.DTOs;
 using PhysioFlow.Application.Features.MedicalRecords;
 using Xunit;
@@ -19,6 +20,25 @@ public class MedicalRecordLoggingTests
         public bool IsEnabled(LogLevel logLevel) => true;
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
             Func<TState, Exception?, string> formatter) => Messages.Add(formatter(state, exception));
+    }
+
+    [Fact]
+    public async Task Export_pipeline_should_not_log_approved_response_content()
+    {
+        var logger = new CapturingLogger<LoggingBehavior<ExportMedicalRecordsQuery, PaginatedList<MedicalRecordExportItemDto>>>();
+        var behavior = new LoggingBehavior<ExportMedicalRecordsQuery, PaginatedList<MedicalRecordExportItemDto>>(logger);
+        var secret = "SENSITIVE_APPROVED_CONTENT";
+        var content = new MedicalRecordContent
+        {
+            Interview = secret, FunctionalAssessment = secret, PerformedActions = secret,
+            Recommendations = secret, PatientSummary = secret
+        };
+        var page = new PaginatedList<MedicalRecordExportItemDto>(
+            [new(Guid.NewGuid(), null, null, 1, DateTime.UtcNow, content)], 1, 1, 20);
+        var result = await behavior.Handle(new ExportMedicalRecordsQuery(Guid.NewGuid()),
+            () => Task.FromResult(page), CancellationToken.None);
+        result.Should().BeSameAs(page);
+        logger.Messages.Should().HaveCount(2).And.OnlyContain(m => m.Contains(nameof(ExportMedicalRecordsQuery)) && !m.Contains(secret));
     }
 
     [Fact]
