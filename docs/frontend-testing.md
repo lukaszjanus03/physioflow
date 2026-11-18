@@ -3,7 +3,8 @@
 ## Obecny zakres
 
 Zestaw obejmuje udostepnianie planow i podsumowan wizyt ze Sprintu 6 oraz
-dziennik realizacji cwiczen pacjenta ze Sprintu 7, etapu 1.
+dziennik realizacji cwiczen pacjenta ze Sprintu 7, etapu 1, i podglad terapeuty
+z podsumowaniem ze Sprintu 7, etapu 2.
 Nie jest to jeszcze pokrycie calego frontendu ani test backendowej
 autoryzacji. Zwykle testy nie wymagaja backendu, bazy, kont, Resend ani R2.
 
@@ -86,6 +87,9 @@ npx playwright show-report
 - Jawne porownanie wpisu przy konflikcie edycji i ponowne potwierdzenie usuwania.
 - Filtrowanie historycznych wpisow bez wymagania dostepu do aktualnego planu.
 - Wstrzymanie odswiezania w tle na czas wypelniania formularza dziennika.
+- Tylko odczyt dziennika przez terapeute, podsumowanie calego zakresu i filtry pozycji.
+- Usuwanie calego podgladu po odmowie dostepu z dowolnego endpointu, takze szczegolow.
+- Brak przywracania dostepu sama zmiana filtrow oraz izolacja pacjentow i kont.
 - Testy przegladarkowe na desktopie i telefonie.
 
 ## Bezpieczenstwo i ograniczenia

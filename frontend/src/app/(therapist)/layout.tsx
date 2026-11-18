@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -38,20 +38,31 @@ const navItems = [
 
 const LOGOUT_MIN_DURATION_MS = 2000;
 
+function subscribeToClientReady() {
+  return () => {};
+}
+function getClientSnapshot() {
+  return true;
+}
+function getServerSnapshot() {
+  return false;
+}
+
 export default function TherapistLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { isAuthenticated, roles, email, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const ready = useSyncExternalStore(subscribeToClientReady, getClientSnapshot, getServerSnapshot);
 
   const initials = useMemo(() => (email ? email.slice(0, 2).toUpperCase() : 'PF'), [email]);
 
   const allowed = isAuthenticated && roles.includes('Therapist');
 
   useEffect(() => {
-    if (!allowed && !isLoggingOut) router.replace('/');
-  }, [allowed, isLoggingOut, router]);
+    if (ready && !allowed && !isLoggingOut) router.replace('/');
+  }, [ready, allowed, isLoggingOut, router]);
 
   async function handleLogout() {
     if (isLoggingOut) return;
@@ -74,7 +85,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
     router.replace('/');
   }
 
-  if (!allowed) return null;
+  if (!ready || !allowed) return null;
 
   return (
     <div className="min-h-screen bg-muted/30 text-foreground">

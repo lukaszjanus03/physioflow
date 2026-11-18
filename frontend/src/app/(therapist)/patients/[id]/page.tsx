@@ -573,6 +573,12 @@ export default function PatientDetailPage() {
                 description="Ćwiczenia, parametry i historia wersji"
                 icon={Dumbbell}
               />
+              <ModuleLink
+                href={`/patients/${id}/exercise-journal`}
+                label="Dziennik ćwiczeń"
+                description="Zgłoszenia pacjenta i podsumowanie realizacji"
+                icon={NotebookText}
+              />
               <Placeholder
                 label="Wizyty"
                 description="Historia i nadchodzące spotkania"
