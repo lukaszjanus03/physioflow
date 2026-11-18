@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  HubConnection,
-  HubConnectionBuilder,
-  HubConnectionState,
-  LogLevel,
-} from '@microsoft/signalr';
+import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
 import {
   createContext,
   useCallback,
@@ -22,17 +17,9 @@ type HubName = 'chat' | 'notifications';
 type ConnectionStatus = Record<HubName, boolean>;
 
 interface SignalRContextValue {
-  on: <T = unknown>(
-    hub: HubName,
-    event: string,
-    handler: (payload: T) => void
-  ) => () => void;
+  on: <T = unknown>(hub: HubName, event: string, handler: (payload: T) => void) => () => void;
 
-  invoke: <T = void>(
-    hub: HubName,
-    method: string,
-    ...args: unknown[]
-  ) => Promise<T>;
+  invoke: <T = void>(hub: HubName, method: string, ...args: unknown[]) => Promise<T>;
 
   isConnected: ConnectionStatus;
 }
@@ -46,6 +33,7 @@ const HUBS: HubName[] = ['chat', 'notifications'];
 
 function createConnectionStore() {
   const connections: Partial<Record<HubName, HubConnection>> = {};
+  const handlers = new Map<HubName, Map<string, Set<(payload: unknown) => void>>>();
   const listeners = new Set<() => void>();
 
   let snapshot: ConnectionStatus = DISCONNECTED;
@@ -74,14 +62,28 @@ function createConnectionStore() {
 
     register(hub: HubName, connection: HubConnection) {
       connections[hub] = connection;
+      for (const [event, listeners] of handlers.get(hub) ?? []) {
+        for (const listener of listeners) connection.on(event, listener);
+      }
       setConnected(hub, false);
     },
 
-    updateStatus(
-      hub: HubName,
-      connection: HubConnection,
-      connected: boolean
-    ) {
+    on<T>(hub: HubName, event: string, handler: (payload: T) => void) {
+      const listener = (payload: unknown) => handler(payload as T);
+      const events = handlers.get(hub) ?? new Map<string, Set<(payload: unknown) => void>>();
+      const group = events.get(event) ?? new Set<(payload: unknown) => void>();
+      group.add(listener);
+      events.set(event, group);
+      handlers.set(hub, events);
+      connections[hub]?.on(event, listener);
+      return () => {
+        connections[hub]?.off(event, listener);
+        group.delete(listener);
+        if (!group.size) events.delete(event);
+      };
+    },
+
+    updateStatus(hub: HubName, connection: HubConnection, connected: boolean) {
       if (connections[hub] !== connection) return;
 
       setConnected(hub, connected);
@@ -99,21 +101,15 @@ function createConnectionStore() {
 const SignalRContext = createContext<SignalRContextValue | null>(null);
 
 export function SignalRProvider({ children }: { children: ReactNode }) {
+  const userId = useAuthStore((state) => state.userId);
   const accessToken = useAuthStore((state) => state.accessToken);
-  const isAuthenticated = useAuthStore(
-    (state) => state.isAuthenticated
-  );
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const [store] = useState(createConnectionStore);
 
-  const connectionStatus = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getServerSnapshot
-  );
+  const connectionStatus = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
@@ -123,26 +119,38 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
     const createdConnections: Array<{
       hub: HubName;
       connection: HubConnection;
+      cancelRetry: () => void;
     }> = [];
 
     for (const hub of HUBS) {
       const connection = new HubConnectionBuilder()
         .withUrl(`${apiUrl}/hubs/${hub}`, {
-          accessTokenFactory: () =>
-            useAuthStore.getState().accessToken ?? '',
+          accessTokenFactory: () => useAuthStore.getState().accessToken ?? '',
         })
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (context) =>
-            context.previousRetryCount < 3
-              ? 2000
-              : context.previousRetryCount < 6
-                ? 5000
-                : 30_000,
+            context.previousRetryCount < 3 ? 2000 : context.previousRetryCount < 6 ? 5000 : 30_000,
         })
-        .configureLogging(LogLevel.Warning)
+        .configureLogging(LogLevel.None)
         .build();
 
-      createdConnections.push({ hub, connection });
+      let retry: ReturnType<typeof setTimeout> | undefined;
+      let attempts = 0;
+      const start = () => {
+        if (disposed) return;
+        void connection
+          .start()
+          .then(() => {
+            attempts = 0;
+            if (!disposed) store.updateStatus(hub, connection, true);
+          })
+          .catch(() => {
+            if (disposed) return;
+            store.updateStatus(hub, connection, false);
+            retry = setTimeout(start, Math.min(30000, 2000 * 2 ** Math.min(attempts++, 4)));
+          });
+      };
+      createdConnections.push({ hub, connection, cancelRetry: () => clearTimeout(retry) });
       store.register(hub, connection);
 
       connection.onreconnected(() => {
@@ -163,114 +171,60 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      void connection
-        .start()
-        .then(() => {
-          if (!disposed) {
-            store.updateStatus(hub, connection, true);
-          }
-        })
-        .catch((error: unknown) => {
-          if (!disposed) {
-            store.updateStatus(hub, connection, false);
-            console.error(
-              `[SignalR] ${hub} failed to connect:`,
-              error
-            );
-          }
-        });
+      start();
     }
 
     return () => {
       disposed = true;
 
-      for (const { hub, connection } of createdConnections) {
+      for (const { hub, connection, cancelRetry } of createdConnections) {
+        cancelRetry();
         store.remove(hub, connection);
 
-        void connection.stop().catch((error: unknown) => {
-          console.error(
-            `[SignalR] ${hub} failed to stop:`,
-            error
-          );
-        });
+        void connection.stop().catch(() => {});
       }
     };
-  }, [accessToken, isAuthenticated, apiUrl, store]);
+  }, [accessToken, isAuthenticated, userId, apiUrl, store]);
 
   const on = useCallback(
-    <T,>(
-      hub: HubName,
-      event: string,
-      handler: (payload: T) => void
-    ): (() => void) => {
-      const connection = store.getConnection(hub);
-
-      if (!connection) return () => {};
-
-      connection.on(event, handler);
-
-      return () => {
-        connection.off(event, handler);
-      };
+    <T,>(hub: HubName, event: string, handler: (payload: T) => void): (() => void) => {
+      return store.on(hub, event, handler);
     },
-    [store]
+    [store],
   );
 
   const invoke = useCallback(
-    async <T = void,>(
-      hub: HubName,
-      method: string,
-      ...args: unknown[]
-    ): Promise<T> => {
+    async <T = void,>(hub: HubName, method: string, ...args: unknown[]): Promise<T> => {
       const connection = store.getConnection(hub);
 
-      if (
-        !connection ||
-        connection.state !== HubConnectionState.Connected
-      ) {
+      if (!connection || connection.state !== HubConnectionState.Connected) {
         throw new Error(`Hub "${hub}" is not connected`);
       }
 
       return connection.invoke<T>(method, ...args);
     },
-    [store]
+    [store],
   );
 
-  const isConnected =
-    isAuthenticated && accessToken
-      ? connectionStatus
-      : DISCONNECTED;
+  const isConnected = isAuthenticated && accessToken ? connectionStatus : DISCONNECTED;
 
-  return (
-    <SignalRContext.Provider value={{ on, invoke, isConnected }}>
-      {children}
-    </SignalRContext.Provider>
-  );
+  return <SignalRContext.Provider value={{ on, invoke, isConnected }}>{children}</SignalRContext.Provider>;
 }
 
 export function useSignalR() {
   const context = useContext(SignalRContext);
 
   if (!context) {
-    throw new Error(
-      'useSignalR must be used within SignalRProvider'
-    );
+    throw new Error('useSignalR must be used within SignalRProvider');
   }
 
   return context;
 }
 
-export function useSignalREvent<T = unknown>(
-  hub: HubName,
-  event: string,
-  handler: (payload: T) => void
-) {
-  const { on, isConnected } = useSignalR();
-  const connected = isConnected[hub];
+export function useSignalREvent<T = unknown>(hub: HubName, event: string, handler: (payload: T) => void) {
+  const { on } = useSignalR();
 
   useEffect(() => {
-    if (!connected) return;
-
     return on<T>(hub, event, handler);
-  }, [on, hub, event, handler, connected]);
+  }, [on, hub, event, handler]);
 }

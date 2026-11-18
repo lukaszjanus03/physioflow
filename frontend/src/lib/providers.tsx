@@ -2,9 +2,11 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState, type ReactNode } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { SignalRProvider } from './signalr-context';
+import { ChatProvider } from '@/components/chat/ChatProvider';
+import FloatingChat from '@/components/chat/FloatingChat';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -28,8 +30,13 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SignalRProvider>
-        {children}
-        <Toaster position="top-right" richColors />
+        <ChatProvider>
+          {children}
+          <Suspense fallback={null}>
+            <FloatingChat />
+          </Suspense>
+          <Toaster position="top-right" richColors />
+        </ChatProvider>
       </SignalRProvider>
       {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>

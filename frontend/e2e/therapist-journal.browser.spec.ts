@@ -39,6 +39,7 @@ async function mockTherapistJournal(page: Page) {
     const json = (data: unknown, status = 200) =>
       route.fulfill({ status, headers: cors, contentType: 'application/json', body: JSON.stringify(data) });
     if (path === '/api/notifications/unread-count') return json({ count: 0 });
+    if (path === '/api/chat/conversations') return json(pageOf([]));
     const root = `/api/patients/${ids.patient}/exercise-journal`;
     if (path === root || path.startsWith(`${root}/`)) {
       state.methods.push(method);

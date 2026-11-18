@@ -11,6 +11,7 @@ import {
   Settings,
   UserPlus,
   Users,
+  MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -22,6 +23,7 @@ import { portalApi } from '@/lib/portal-api';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import { ChatUnreadBadge, useChat } from '@/components/chat/ChatProvider';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,6 +35,7 @@ const navItems = [
   },
   { href: '/calendar', label: 'Kalendarz', icon: Calendar },
   { href: '/exercises', label: 'Ćwiczenia', icon: Dumbbell },
+  { href: '/messages', label: 'Wiadomości', icon: MessageCircle },
   { href: '/settings', label: 'Ustawienia', icon: Settings },
 ];
 
@@ -52,6 +55,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const chat = useChat();
   const { isAuthenticated, roles, email, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const ready = useSyncExternalStore(subscribeToClientReady, getClientSnapshot, getServerSnapshot);
@@ -121,6 +125,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
               >
                 <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
                 <span className="truncate">{item.label}</span>
+                {item.href === '/messages' && <ChatUnreadBadge />}
               </Link>
             );
           })}
@@ -141,7 +146,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
             type="button"
             variant="ghost"
             className="h-10 w-full justify-start text-muted-foreground"
-            onClick={() => void handleLogout()}
+            onClick={() => chat.confirmLeave(() => void handleLogout())}
             disabled={isLoggingOut}
           >
             {isLoggingOut ? (
@@ -168,7 +173,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
         aria-label="Mobilny panel terapeuty"
         className="fixed inset-x-0 bottom-0 z-40 overflow-x-auto border-t bg-card/95 p-2 shadow-lg backdrop-blur md:hidden"
       >
-        <div className="grid min-w-[420px] grid-cols-6 gap-1">
+        <div className="grid min-w-[490px] grid-cols-7 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -185,6 +190,7 @@ export default function TherapistLayout({ children }: { children: React.ReactNod
               >
                 <Icon aria-hidden="true" className="mb-1 h-4 w-4" />
                 <span>{item.label}</span>
+                {item.href === '/messages' && <ChatUnreadBadge />}
               </Link>
             );
           })}

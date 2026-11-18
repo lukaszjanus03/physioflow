@@ -17,6 +17,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: [
+        'src/lib/chat-api.ts',
+        'src/lib/chat-messages.ts',
+        'src/lib/chat-thread.ts',
+        'src/lib/signalr-context.tsx',
+        'src/components/chat/**/*.{ts,tsx}',
         'src/lib/patient-sharing-api.ts',
         'src/hooks/use-patient-content.ts',
         'src/components/patient-sharing/PatientPublication.tsx',

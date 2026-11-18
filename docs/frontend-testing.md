@@ -4,7 +4,7 @@
 
 Zestaw obejmuje udostepnianie planow i podsumowan wizyt ze Sprintu 6 oraz
 dziennik realizacji cwiczen pacjenta ze Sprintu 7, etapu 1, i podglad terapeuty
-z podsumowaniem ze Sprintu 7, etapu 2.
+z podsumowaniem ze Sprintu 7, etapu 2, oraz prywatny czat z etapu 3.
 Nie jest to jeszcze pokrycie calego frontendu ani test backendowej
 autoryzacji. Zwykle testy nie wymagaja backendu, bazy, kont, Resend ani R2.
 
@@ -12,7 +12,8 @@ Narzedzia:
 
 - Vitest: funkcje i hooki.
 - React Testing Library i user-event: zachowanie rzeczywistych komponentow.
-- MSW: odpowiedzi HTTP na granicy sieci; nie zastepujemy funkcji API atrapami.
+- MSW: odpowiedzi HTTP na granicy sieci. Testy silnika czatu, formularza i cyklu
+  polaczenia dodatkowo izoluja klienta API lub SignalR, aby sterowac kolejnoscia odpowiedzi.
 - Playwright: rzeczywista przegladarka, aplikacja Next i symulowane odpowiedzi API.
 
 ## Uruchamianie
@@ -28,7 +29,7 @@ npm run test:coverage
 Pierwsza komenda wykonuje wszystkie testy jednostkowe, hookow i komponentow.
 Druga pozostaje aktywna i ponawia testy po zmianie plikow.
 Raport HTML pokrycia jest w `frontend/coverage/index.html`.
-Pokrycie jest mierzone tylko dla plikow udostepniania i dziennika wymienionych
+Pokrycie jest mierzone tylko dla plikow udostepniania, dziennika i czatu wymienionych
 w `vitest.config.mts`, nie dla calej aplikacji. Rozszerzaj te liste wraz z nowymi
 obszarami. Nie interpretuj tego wyniku jako procentu pokrycia calego produktu.
 
@@ -88,6 +89,14 @@ npx playwright show-report
 - Filtrowanie historycznych wpisow bez wymagania dostepu do aktualnego planu.
 - Wstrzymanie odswiezania w tle na czas wypelniania formularza dziennika.
 - Tylko odczyt dziennika przez terapeute, podsumowanie calego zakresu i filtry pozycji.
+- Czat: limity UTF-16, allowlisty payloadow, ponowienie tego samego requestId i tresci.
+- Synchronizacja historii bez pomijania luk, stronicowanie i monotoniczne potwierdzenia odczytu.
+- Liczniki z serwera zamiast sumowania zdublowanych zdarzen SignalR.
+- Rejestracja handlerow przed startem huba, ponowienie poczatkowego polaczenia i zmiana konta.
+- Czat w obu panelach na desktopie i telefonie: REST fallback, zwykly tekst,
+  odczyt widocznej wiadomosci, ochrona szkicu, readonly i usuwanie niedostepnej historii.
+- Testy przegladarkowe czatu nie lacza sie z prawdziwym hubem; realny SignalR
+  i autoryzacje nalezy sprawdzic recznie na dwoch kontach oraz testami backendu.
 - Usuwanie calego podgladu po odmowie dostepu z dowolnego endpointu, takze szczegolow.
 - Brak przywracania dostepu sama zmiana filtrow oraz izolacja pacjentow i kont.
 - Testy przegladarkowe na desktopie i telefonie.
