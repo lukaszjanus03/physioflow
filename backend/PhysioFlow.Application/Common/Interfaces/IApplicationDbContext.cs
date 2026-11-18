@@ -32,9 +32,13 @@ public interface IApplicationDbContext
     DbSet<PatientDiaryEntry> PatientDiaryEntries { get; }
     DbSet<ExerciseJournalEntry> ExerciseJournalEntries { get; }
     DbSet<ChatMessage> ChatMessages { get; }
+    DbSet<ChatConversation> ChatConversations { get; }
+    DbSet<PrivateChatMessage> PrivateChatMessages { get; }
+    DbSet<ChatSendQuota> ChatSendQuotas { get; }
     DbSet<CooperationRequest> CooperationRequests { get; }
 
     DatabaseFacade Database { get; }
+    Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
@@ -47,6 +51,7 @@ public interface IUserAccountService
     /// <summary>Id aktywnych kont, do składania z zapytaniami EF (katalog, wysyłka prośby).</summary>
     IQueryable<Guid> ActiveUserIds();
     Task<bool> IsConfirmedPatientAsync(Guid userId, CancellationToken ct);
+    Task<bool> IsActiveTherapistAsync(Guid userId, CancellationToken ct);
     Task<bool> IsReviewModeratorAsync(Guid userId, CancellationToken ct);
     IQueryable<ReviewAuthorName> ReviewAuthorNames();
 }

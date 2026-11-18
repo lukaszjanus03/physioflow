@@ -99,12 +99,16 @@ public class ExceptionHandlingMiddleware
             })
         };
 
-        if (status == HttpStatusCode.InternalServerError)
+        if (context.Request.Path.StartsWithSegments("/api/chat"))
+            _logger.LogWarning("Chat request failed: {Type}, status {Status}", ex.GetType().Name, (int)status);
+        else if (status == HttpStatusCode.InternalServerError)
             _logger.LogError(ex, "Unhandled exception");
         else
             _logger.LogWarning("Handled exception: {Type} - {Message}", ex.GetType().Name, ex.Message);
 
         context.Response.StatusCode = (int)status;
+        if (ex is TooManyRequestsException { Code: "chat_rate_limit" })
+            context.Response.Headers.RetryAfter = "60";
         context.Response.ContentType = "application/problem+json";
         await context.Response.WriteAsync(JsonSerializer.Serialize(body,
             new JsonSerializerOptions

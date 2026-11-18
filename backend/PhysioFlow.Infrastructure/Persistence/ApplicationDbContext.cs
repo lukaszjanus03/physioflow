@@ -49,6 +49,9 @@ public class ApplicationDbContext
     public DbSet<PatientDiaryEntry> PatientDiaryEntries => Set<PatientDiaryEntry>();
     public DbSet<ExerciseJournalEntry> ExerciseJournalEntries => Set<ExerciseJournalEntry>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<ChatConversation> ChatConversations => Set<ChatConversation>();
+    public DbSet<PrivateChatMessage> PrivateChatMessages => Set<PrivateChatMessage>();
+    public DbSet<ChatSendQuota> ChatSendQuotas => Set<ChatSendQuota>();
     public DbSet<CooperationRequest> CooperationRequests => Set<CooperationRequest>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -93,6 +96,12 @@ public class ApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        foreach (var entry in ChangeTracker.Entries<PrivateChatMessage>())
+        {
+            if (entry.State == EntityState.Deleted || (entry.State == EntityState.Modified
+                && entry.Properties.Any(p => p.IsModified && p.Metadata.Name != nameof(PrivateChatMessage.ReadAt))))
+                throw new InvalidOperationException("Sent chat messages are immutable.");
+        }
         foreach (var entry in ChangeTracker.Entries<Patient>().Where(e => e.State == EntityState.Modified
             && e.Property(p => p.UserId).IsModified))
         {
@@ -139,6 +148,13 @@ public class ApplicationDbContext
         try
         {
             return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation } pg && pg.ConstraintName is
+                PrivateChatMessageConfiguration.RequestIndex or PrivateChatMessageConfiguration.SequenceIndex
+                or ChatConversationConfiguration.ContextIndex or "pk_chat_send_quotas")
+        {
+            throw new ConflictException("chat_write_race", "Chat changed. Retry the operation with the same request ID.");
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
             { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: ExerciseJournalConfiguration.RequestIndex })

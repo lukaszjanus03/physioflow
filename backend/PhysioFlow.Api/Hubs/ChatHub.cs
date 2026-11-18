@@ -1,61 +1,54 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using PhysioFlow.Application.Common.Exceptions;
 using PhysioFlow.Application.Common.Interfaces;
+using PhysioFlow.Application.DTOs;
+using PhysioFlow.Application.Features.Chat;
 
 namespace PhysioFlow.Api.Hubs;
 
-/// <summary>
-/// SignalR hub - kanały per-user (grupa o nazwie = userId).
-/// Klient front-endu łączy się po JWT i dostaje prywatne wiadomości.
-/// </summary>
-[Authorize]
-public class ChatHub : Hub
+[Authorize(Roles = "Patient,Therapist")]
+public class ChatHub(ChatService chat, ChatAccess access, ICurrentUserService currentUser) : Hub
 {
-    private readonly ICurrentUserService _currentUser;
-
-    public ChatHub(ICurrentUserService currentUser) => _currentUser = currentUser;
+    public static string UserGroup(Guid id) => $"chat:user:{id:D}";
 
     public override async Task OnConnectedAsync()
     {
-        var userId = _currentUser.UserId;
-        if (userId.HasValue)
-            await Groups.AddToGroupAsync(Context.ConnectionId, userId.Value.ToString());
+        var id = currentUser.UserId ?? throw new HubException("unauthorized");
+        await Safe(async () => { await access.RequireCaller(id, Context.ConnectionAborted); return true; });
+        await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(id));
         await base.OnConnectedAsync();
     }
 
-    /// <summary>Klient wysyła wiadomość -> serwer zapisuje w DB (TODO) i forwarduje do odbiorcy.</summary>
-    public async Task SendMessage(Guid recipientId, string content)
-    {
-        var senderId = _currentUser.UserId
-            ?? throw new HubException("Unauthorized");
+    public Task<SendChatResult> SendMessage(Guid conversationId, SendChatRequest body) =>
+        Safe(() => chat.Send(conversationId, body, Context.ConnectionAborted));
 
-        // TODO: zapis do DB przez command MediatR (SendChatMessageCommand)
-        await Clients.Group(recipientId.ToString()).SendAsync("ReceiveMessage", new
-        {
-            SenderId = senderId,
-            Content = content,
-            SentAt = DateTime.UtcNow
-        });
-    }
+    public Task<ChatReadDto> MarkRead(Guid conversationId, ReadChatRequest body) =>
+        Safe(() => chat.Read(conversationId, body.ThroughMessageId, Context.ConnectionAborted));
 
-    /// <summary>Powiadomienie "X pisze..."</summary>
-    public async Task SendTypingIndicator(Guid recipientId)
+    public Task<ChatHistoryDto> GetHistory(Guid conversationId, long? before = null, long? after = null, int limit = 50) =>
+        Safe(() => chat.History(conversationId, before, after, limit, Context.ConnectionAborted));
+
+    private static async Task<T> Safe<T>(Func<Task<T>> action)
     {
-        var senderId = _currentUser.UserId;
-        if (senderId.HasValue)
-            await Clients.Group(recipientId.ToString())
-                .SendAsync("UserTyping", senderId.Value);
+        try { return await action(); }
+        catch (ValidationException) { throw new HubException("validation_failed"); }
+        catch (NotFoundException) { throw new HubException("not_found"); }
+        catch (ForbiddenAccessException) { throw new HubException("forbidden"); }
+        catch (UnauthorizedAccessException) { throw new HubException("unauthorized"); }
+        catch (ConflictException e) { throw new HubException(e.Code ?? "conflict"); }
+        catch (TooManyRequestsException e) { throw new HubException(e.Code); }
+        catch (OperationCanceledException) { throw new HubException("operation_cancelled"); }
+        catch { throw new HubException("internal_error"); }
     }
 }
 
-/// <summary>Hub do powiadomień ogólnych (nowa wizyta, zmiana planu etc.)</summary>
 [Authorize]
 public class NotificationHub : Hub
 {
     private readonly ICurrentUserService _currentUser;
-
     public NotificationHub(ICurrentUserService currentUser) => _currentUser = currentUser;
-
     public override async Task OnConnectedAsync()
     {
         var userId = _currentUser.UserId;

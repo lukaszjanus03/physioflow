@@ -21,6 +21,8 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly);
         services.AddScoped<Features.Notifications.AppointmentNotifications>();
+        services.AddScoped<Features.Chat.ChatAccess>();
+        services.AddScoped<Features.Chat.ChatService>();
         services.AddScoped<Features.Therapists.TherapistReviewAccess>();
         services.AddScoped<Features.Therapists.ReviewModeratorAccess>();
         services.AddScoped<Features.Therapists.ReviewStatusHistory>();

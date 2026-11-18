@@ -26,6 +26,12 @@ public class UserAccountService : IUserAccountService
             && await _userManager.IsInRoleAsync(account, "Patient");
     }
 
+    public async Task<bool> IsActiveTherapistAsync(Guid userId, CancellationToken ct)
+    {
+        var account = await _userManager.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        return account is { IsActive: true } && await _userManager.IsInRoleAsync(account, "Therapist");
+    }
+
     public async Task<bool> IsReviewModeratorAsync(Guid userId, CancellationToken ct)
     {
         var account = await _userManager.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);

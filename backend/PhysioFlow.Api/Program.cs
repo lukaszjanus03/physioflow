@@ -24,6 +24,10 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<PhysioFlow.Application.Common.Interfaces.INotificationPublisher, SignalRNotificationPublisher>();
+builder.Services.AddScoped<PhysioFlow.Application.Common.Interfaces.IChatPublisher, SignalRChatPublisher>();
+builder.Services.AddOptions<PhysioFlow.Application.Features.Chat.ChatOptions>()
+    .BindConfiguration("Chat").Validate(o => o.MessagesPerMinute is >= 1 and <= 1000)
+    .ValidateOnStart();
 builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 // --- Controllers & Swagger
@@ -289,7 +293,7 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
-app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<ChatHub>("/hubs/chat", options => options.CloseOnAuthenticationExpiration = true);
 app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

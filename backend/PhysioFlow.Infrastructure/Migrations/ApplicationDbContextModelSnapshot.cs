@@ -1107,6 +1107,85 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("body_maps", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ChatConversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountLinkVersion")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_link_version");
+
+                    b.Property<Guid>("CooperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cooperation_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<long>("LastSequence")
+                        .HasColumnType("bigint")
+                        .HasColumnName("last_sequence");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_id");
+
+                    b.Property<long>("PatientReadThrough")
+                        .HasColumnType("bigint")
+                        .HasColumnName("patient_read_through");
+
+                    b.Property<Guid>("PatientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_user_id");
+
+                    b.Property<long>("TherapistReadThrough")
+                        .HasColumnType("bigint")
+                        .HasColumnName("therapist_read_through");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("therapist_user_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chat_conversations");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("ix_chat_conversations_patient_id");
+
+                    b.HasIndex("PatientUserId")
+                        .HasDatabaseName("ix_chat_conversations_patient_user_id");
+
+                    b.HasIndex("TherapistUserId")
+                        .HasDatabaseName("ix_chat_conversations_therapist_user_id");
+
+                    b.HasIndex("CooperationId", "AccountLinkVersion")
+                        .IsUnique()
+                        .HasDatabaseName("ix_chat_conversations_context");
+
+                    b.ToTable("chat_conversations", (string)null);
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.ChatMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1155,6 +1234,32 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasName("pk_chat_messages");
 
                     b.ToTable("chat_messages", (string)null);
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ChatSendQuota", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer")
+                        .HasColumnName("count");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.Property<DateTime>("WindowStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("window_started_at");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_chat_send_quotas");
+
+                    b.ToTable("chat_send_quotas", (string)null);
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.CooperationRequest", b =>
@@ -2140,6 +2245,88 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.ToTable("patient_diary_entries", (string)null);
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.PrivateChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("content");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("conversation_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_at");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_id");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("request_id");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sender_id");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sequence");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_private_chat_messages");
+
+                    b.HasIndex("ConversationId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ix_private_chat_messages_conversation_sequence");
+
+                    b.HasIndex("SenderId", "RequestId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_private_chat_messages_sender_request");
+
+                    b.HasIndex("ConversationId", "RecipientId", "Sequence")
+                        .HasDatabaseName("ix_private_chat_messages_conversation_id_recipient_id_sequence")
+                        .HasFilter("read_at IS NULL");
+
+                    b.ToTable("private_chat_messages", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_private_chat_content", "length(btrim(content)) BETWEEN 1 AND 4000");
+
+                            t.HasCheckConstraint("ck_private_chat_participants", "sender_id <> recipient_id");
+
+                            t.HasCheckConstraint("ck_private_chat_sequence", "sequence > 0");
+                        });
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.ReviewStatusChange", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2975,6 +3162,27 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.ChatConversation", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.CooperationRequest", "Cooperation")
+                        .WithMany()
+                        .HasForeignKey("CooperationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_chat_conversations_cooperation_requests_cooperation_id");
+
+                    b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_chat_conversations_patients_patient_id");
+
+                    b.Navigation("Cooperation");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("PhysioFlow.Domain.Entities.CooperationRequest", b =>
                 {
                     b.HasOne("PhysioFlow.Domain.Entities.Patient", "Patient")
@@ -3173,6 +3381,18 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasConstraintName("fk_patient_diary_entries_patients_patient_id");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("PhysioFlow.Domain.Entities.PrivateChatMessage", b =>
+                {
+                    b.HasOne("PhysioFlow.Domain.Entities.ChatConversation", "Conversation")
+                        .WithMany()
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_private_chat_messages_chat_conversations_conversation_id");
+
+                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("PhysioFlow.Domain.Entities.TherapistCalendarSettings", b =>
