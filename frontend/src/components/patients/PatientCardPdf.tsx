@@ -1,16 +1,9 @@
 'use client';
 
-import {
-  Document,
-  Font,
-  Page,
-  StyleSheet,
-  Text,
-  View,
-  pdf,
-} from '@react-pdf/renderer';
+import { Document, Font, Page, StyleSheet, Text, View, pdf } from '@react-pdf/renderer';
 
 import type { PatientDetail } from '@/types/api';
+import type { PdfDocumentation } from '@/lib/patient-export-api';
 
 Font.register({
   family: 'PhysioFlowPdf',
@@ -217,6 +210,7 @@ const styles = StyleSheet.create({
 interface PatientCardPdfProps {
   patient: PatientDetail;
   generatedAt: Date;
+  documentation?: PdfDocumentation;
 }
 
 function displayText(value: string | null | undefined): string {
@@ -229,12 +223,11 @@ function displayText(value: string | null | undefined): string {
       .reduce<string[]>((chunks, character, index) => {
         const chunkIndex = Math.floor(index / 24);
 
-        chunks[chunkIndex] =
-          (chunks[chunkIndex] ?? '') + character;
+        chunks[chunkIndex] = (chunks[chunkIndex] ?? '') + character;
 
         return chunks;
       }, [])
-      .join('\u200b')
+      .join('\u200b'),
   );
 }
 
@@ -273,14 +266,11 @@ function formatTimestamp(value: string | Date | null): string {
 function shortenHeaderName(value: string): string {
   const normalized = value.replace(/\s+/gu, ' ').trim();
 
-  return normalized.length > 58
-    ? `${normalized.slice(0, 55)}...`
-    : normalized;
+  return normalized.length > 58 ? `${normalized.slice(0, 55)}...` : normalized;
 }
 
 function splitMedicalText(value: string | null) {
-  const text =
-    value?.replace(/\r\n?/gu, '\n').trim() || 'Brak informacji';
+  const text = value?.replace(/\r\n?/gu, '\n').trim() || 'Brak informacji';
 
   const paragraphs = text
     .split(/\n[ \t]*\n+/gu)
@@ -288,7 +278,8 @@ function splitMedicalText(value: string | null) {
     .filter(Boolean);
 
   const firstParagraph = paragraphs[0];
-  const maxIntroLength = 180;
+  const fourthLine = [...firstParagraph.matchAll(/\n/gu)][2]?.index;
+  const maxIntroLength = Math.min(180, fourthLine ?? 180);
 
   if (firstParagraph.length <= maxIntroLength) {
     return {
@@ -306,23 +297,14 @@ function splitMedicalText(value: string | null) {
 
   return {
     intro: firstParagraph.slice(0, splitAt).trimEnd(),
-    remaining: [
-      firstParagraph.slice(splitAt).trimStart(),
-      ...paragraphs.slice(1),
-    ]
+    remaining: [firstParagraph.slice(splitAt).trimStart(), ...paragraphs.slice(1)]
       .filter(Boolean)
       .join('\n\n'),
     continuesParagraph: true,
   };
 }
 
-function Field({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
+function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -331,15 +313,8 @@ function Field({
   );
 }
 
-function MedicalSection({
-  title,
-  value,
-}: {
-  title: string;
-  value: string | null;
-}) {
-  const { intro, remaining, continuesParagraph } =
-    splitMedicalText(value);
+function MedicalSection({ title, value }: { title: string; value: string | null }) {
+  const { intro, remaining, continuesParagraph } = splitMedicalText(value);
 
   return (
     <View style={styles.medicalSection}>
@@ -347,18 +322,12 @@ function MedicalSection({
       <View wrap={false}>
         <Text style={styles.medicalTitle}>{title}</Text>
 
-        <Text style={styles.medicalText}>
-          {displayText(intro)}
-        </Text>
+        <Text style={styles.medicalText}>{displayText(intro)}</Text>
       </View>
 
       {remaining && (
         <Text
-          style={
-            continuesParagraph
-              ? styles.medicalText
-              : [styles.medicalText, styles.nextParagraph]
-          }
+          style={continuesParagraph ? styles.medicalText : [styles.medicalText, styles.nextParagraph]}
           orphans={3}
           widows={3}
         >
@@ -369,16 +338,10 @@ function MedicalSection({
   );
 }
 
-export function PatientCardPdf({
-  patient,
-  generatedAt,
-}: PatientCardPdfProps) {
-  const fullName =
-    `${patient.firstName} ${patient.lastName}`.trim();
+export function PatientCardPdf({ patient, generatedAt, documentation }: PatientCardPdfProps) {
+  const fullName = `${patient.firstName} ${patient.lastName}`.trim();
 
-  const documentReference = patient.id
-    .slice(0, 8)
-    .toUpperCase();
+  const documentReference = patient.id.slice(0, 8).toUpperCase();
 
   return (
     <Document
@@ -394,19 +357,13 @@ export function PatientCardPdf({
           <View style={styles.headerLeft}>
             <Text style={styles.brand}>PhysioFlow</Text>
 
-            <Text style={styles.headerPatient}>
-              {shortenHeaderName(fullName)}
-            </Text>
+            <Text style={styles.headerPatient}>{shortenHeaderName(fullName)}</Text>
           </View>
 
           <View style={styles.headerRight}>
-            <Text style={styles.documentLabel}>
-              KARTA PACJENTA
-            </Text>
+            <Text style={styles.documentLabel}>KARTA PACJENTA</Text>
 
-            <Text style={styles.generatedAt}>
-              {formatTimestamp(generatedAt)}
-            </Text>
+            <Text style={styles.generatedAt}>{formatTimestamp(generatedAt)}</Text>
           </View>
         </View>
 
@@ -419,21 +376,15 @@ export function PatientCardPdf({
         <Text
           style={styles.footerPageNumber}
           fixed
-          render={({ pageNumber, totalPages }) =>
-            `Strona ${pageNumber} z ${totalPages ?? ''}`
-          }
+          render={({ pageNumber, totalPages }) => `Strona ${pageNumber} z ${totalPages ?? ''}`}
         />
 
         <View style={styles.hero} wrap={false}>
           <Text style={styles.eyebrow}>DANE PACJENTA</Text>
 
-          <Text style={styles.patientName}>
-            {displayText(fullName)}
-          </Text>
+          <Text style={styles.patientName}>{displayText(fullName)}</Text>
 
-          <Text style={styles.status}>
-            Status: {patient.isArchived ? 'Archiwalny' : 'Aktywny'}
-          </Text>
+          <Text style={styles.status}>Status: {patient.isArchived ? 'Archiwalny' : 'Aktywny'}</Text>
         </View>
 
         <View style={styles.columns}>
@@ -442,10 +393,7 @@ export function PatientCardPdf({
 
             <Field label="PESEL" value={patient.pesel} />
 
-            <Field
-              label="Data urodzenia"
-              value={formatBirthDate(patient.dateOfBirth)}
-            />
+            <Field label="Data urodzenia" value={formatBirthDate(patient.dateOfBirth)} />
           </View>
 
           <View style={[styles.card, styles.rightCard]}>
@@ -463,43 +411,81 @@ export function PatientCardPdf({
           Aktualizacja: {formatTimestamp(patient.updatedAt)}
         </Text>
 
-        <Text
-          style={styles.sectionTitle}
-          minPresenceAhead={110}
-        >
+        <Text style={styles.sectionTitle} minPresenceAhead={110}>
           Informacje medyczne
         </Text>
 
-        <MedicalSection
-          title="Historia medyczna"
-          value={patient.medicalHistory}
-        />
+        <MedicalSection title="Historia medyczna" value={patient.medicalHistory} />
 
-        <MedicalSection
-          title="Aktualne leki"
-          value={patient.medications}
-        />
+        <MedicalSection title="Aktualne leki" value={patient.medications} />
 
-        <MedicalSection
-          title="Notatki ogólne"
-          value={patient.generalNotes}
-        />
+        <MedicalSection title="Notatki ogólne" value={patient.generalNotes} />
+        {documentation && (
+          <>
+            <View break>
+              <Text style={styles.sectionTitle}>Zatwierdzona dokumentacja wizyt</Text>
+              <Text style={styles.recordMetadata}>
+                Zakres dat wizyt: {documentation.from || 'bez dolnej granicy'} -{' '}
+                {documentation.to || 'bez górnej granicy'} | Wpisy: {documentation.entries.length}
+                {'\n'}Daty wizyt i zatwierdzenia: Europe/Warsaw. Dokumentacja wewnętrzna terapeuty.
+                {'\n'}Wybrane ostatnie zatwierdzone wersje. Dane pobierano kolejno, bez wspólnej migawki
+                stron.
+              </Text>
+            </View>
+            {!documentation.entries.length && (
+              <Text style={styles.medicalText}>Brak zatwierdzonych wpisów w wybranym zakresie.</Text>
+            )}
+            {documentation.entries.map((entry, index) => (
+              <View key={entry.id} break={index > 0}>
+                <View style={styles.hero} wrap={false}>
+                  <Text style={styles.eyebrow}>
+                    WPIS {index + 1} | WERSJA {entry.versionNumber}
+                  </Text>
+                  <Text style={styles.cardTitle}>
+                    {entry.appointmentStartsAt
+                      ? `Wizyta: ${formatTimestamp(entry.appointmentStartsAt)}`
+                      : 'Wpis bez przypisanej wizyty'}
+                  </Text>
+                  <Text style={styles.recordMetadata}>
+                    Zatwierdzono: {formatTimestamp(entry.approvedAt)}
+                    {'\n'}Identyfikator wpisu: {entry.id}
+                  </Text>
+                </View>
+                <MedicalSection title="Wywiad" value={entry.content.interview} />
+                <MedicalSection
+                  title="Obserwacje i ocena funkcjonalna"
+                  value={entry.content.functionalAssessment}
+                />
+                <MedicalSection title="Wykonane działania" value={entry.content.performedActions} />
+                <MedicalSection title="Zalecenia" value={entry.content.recommendations} />
+                {entry.content.patientSummary?.trim() && (
+                  <MedicalSection
+                    title="Podsumowanie dla pacjenta (osobna treść)"
+                    value={entry.content.patientSummary}
+                  />
+                )}
+              </View>
+            ))}
+          </>
+        )}
       </Page>
     </Document>
   );
 }
 
 export async function downloadPatientCardPdf(
-  patient: PatientDetail
+  patient: PatientDetail,
+  options: { documentation?: PdfDocumentation; signal?: AbortSignal; canDownload?: () => boolean } = {},
 ): Promise<void> {
+  options.signal?.throwIfAborted();
   const generatedAt = new Date();
 
   const blob = await pdf(
-    <PatientCardPdf
-      patient={patient}
-      generatedAt={generatedAt}
-    />
+    <PatientCardPdf patient={patient} generatedAt={generatedAt} documentation={options.documentation} />,
   ).toBlob();
+
+  options.signal?.throwIfAborted();
+  if (options.canDownload && !options.canDownload()) throw new Error('export-access-changed');
 
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
