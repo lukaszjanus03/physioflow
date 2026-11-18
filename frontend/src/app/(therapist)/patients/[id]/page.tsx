@@ -24,7 +24,6 @@ import {
   ClipboardList,
   Clock,
   Dumbbell,
-  FileDown,
   FileText,
   HeartPulse,
   IdCard,
@@ -42,6 +41,7 @@ import type {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import PatientExportDialog from '@/components/patients/PatientExportDialog';
 import {
   Dialog,
   DialogContent,
@@ -118,31 +118,6 @@ export default function PatientDetailPage() {
       ),
   });
 
-  const pdf = useMutation({
-    mutationFn: async () => {
-      if (!patient) {
-        throw new Error('missing-patient');
-      }
-
-      const { downloadPatientCardPdf } =
-        await import(
-          '@/components/patients/PatientCardPdf'
-        );
-
-      await downloadPatientCardPdf(
-        patient,
-      );
-    },
-    onSuccess: () =>
-      toast.success(
-        'Przygotowano plik PDF do pobrania',
-      ),
-    onError: () =>
-      toast.error(
-        'Nie udało się wygenerować PDF. Sprawdź dostępność czcionek i spróbuj ponownie.',
-      ),
-  });
-
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -162,20 +137,7 @@ export default function PatientDetailPage() {
 
         {patient && (
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pdf.isPending}
-              onClick={() => pdf.mutate()}
-            >
-              <FileDown
-                aria-hidden="true"
-                className="mr-2 h-4 w-4"
-              />
-              {pdf.isPending
-                ? 'Eksportowanie…'
-                : 'Eksport PDF'}
-            </Button>
+            <PatientExportDialog patientId={id} />
 
             <Button asChild>
               <Link

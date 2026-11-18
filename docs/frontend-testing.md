@@ -4,7 +4,8 @@
 
 Zestaw obejmuje udostepnianie planow i podsumowan wizyt ze Sprintu 6 oraz
 dziennik realizacji cwiczen pacjenta ze Sprintu 7, etapu 1, i podglad terapeuty
-z podsumowaniem ze Sprintu 7, etapu 2, oraz prywatny czat z etapu 3.
+z podsumowaniem ze Sprintu 7, etapu 2, prywatny czat z etapu 3 oraz
+rozszerzenie eksportu PDF karty pacjenta ze Sprintu 8, etapu 1.
 Nie jest to jeszcze pokrycie calego frontendu ani test backendowej
 autoryzacji. Zwykle testy nie wymagaja backendu, bazy, kont, Resend ani R2.
 
@@ -29,7 +30,7 @@ npm run test:coverage
 Pierwsza komenda wykonuje wszystkie testy jednostkowe, hookow i komponentow.
 Druga pozostaje aktywna i ponawia testy po zmianie plikow.
 Raport HTML pokrycia jest w `frontend/coverage/index.html`.
-Pokrycie jest mierzone tylko dla plikow udostepniania, dziennika i czatu wymienionych
+Pokrycie jest mierzone tylko dla plikow udostepniania, dziennika, czatu i eksportu wymienionych
 w `vitest.config.mts`, nie dla calej aplikacji. Rozszerzaj te liste wraz z nowymi
 obszarami. Nie interpretuj tego wyniku jako procentu pokrycia calego produktu.
 
@@ -71,6 +72,10 @@ npx playwright show-report
 - `frontend/e2e/*.browser.spec.ts`: integracja przegladarki z symulowanym API.
 
 ## Co sprawdzamy
+
+- Eksport PDF: walidacja dat, wszystkie strony, zachowanie kolejnosci i wykrywalne zmiany zbioru.
+- Przerwanie eksportu po bledzie, anulowanie, ponowna kontrola dostepu i brak niepelnego pliku.
+- Rzeczywiste pobranie PDF w przegladarce, osobne sekcje kliniczne i dlugie tresci.
 
 - Wybor zapisanej wersji, podglad i jawne potwierdzenie publikacji.
 - Blokowanie publikacji bez spelnienia warunkow i podczas zapisu.
