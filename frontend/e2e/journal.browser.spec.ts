@@ -58,6 +58,7 @@ test('patient records, edits and deletes an exercise journal entry', async ({ pa
       });
     if (path === '/api/patient-accounts/me/cooperations') return json([]);
     if (path === '/api/notifications/unread-count') return json({ count: 0 });
+    if (path === '/api/chat/conversations') return json(pageOf([]));
     if (path === `/api/patient-portal/therapy-plans/${ids.plan}`) return json(publishedPlan);
     const root = '/api/patient-portal/exercise-journal';
     if (path === root && method === 'POST') {

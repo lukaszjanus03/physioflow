@@ -3,6 +3,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -502,6 +503,9 @@ export function MyTherapists({ accountId }: { accountId: string }) {
               <p className="mt-4 text-xs text-muted-foreground">
                 Współpraca od: {formatDate(cooperation.since)}
               </p>
+              <Button asChild className="mr-2 mt-4" variant="outline">
+                <Link href={`/portal?view=messages&cooperation=${encodeURIComponent(cooperation.requestId)}`}>Napisz wiadomość</Link>
+              </Button>
 
               <Button
                 type="button"

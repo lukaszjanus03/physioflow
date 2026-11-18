@@ -579,6 +579,12 @@ export default function PatientDetailPage() {
                 description="Zgłoszenia pacjenta i podsumowanie realizacji"
                 icon={NotebookText}
               />
+              <ModuleLink
+                href={`/messages?patient=${encodeURIComponent(id)}`}
+                label="Wiadomości"
+                description="Rozmowy w ramach współpracy z pacjentem"
+                icon={Mail}
+              />
               <Placeholder
                 label="Wizyty"
                 description="Historia i nadchodzące spotkania"

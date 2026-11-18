@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ClipboardList,
   BookCheck,
+  MessageCircle,
   FileText,
   ChevronRight,
   Heart,
@@ -23,6 +24,8 @@ import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'rea
 
 import NotificationBell from '@/components/notifications/NotificationBell';
 import PatientJournal from '@/components/patient-journal/PatientJournal';
+import ChatScreen from '@/components/chat/ChatScreen';
+import { ChatUnreadBadge, useChat } from '@/components/chat/ChatProvider';
 import {
   JournalNavigationProvider,
   useJournalNavigation,
@@ -62,7 +65,8 @@ type PortalView =
   | 'therapists'
   | 'plans'
   | 'summaries'
-  | 'journal';
+  | 'journal'
+  | 'messages';
 
 const navigation: {
   id: PortalView;
@@ -72,6 +76,7 @@ const navigation: {
   { id: 'appointments', label: 'Moje wizyty' },
   { id: 'plans', label: 'Moje plany' },
   { id: 'journal', label: 'Mój dziennik' },
+  { id: 'messages', label: 'Wiadomości' },
   { id: 'summaries', label: 'Podsumowania wizyt' },
   { id: 'catalog', label: 'Znajdź terapeutę' },
   { id: 'favorites', label: 'Ulubieni' },
@@ -84,6 +89,7 @@ const navigationIcons = {
   appointments: CalendarDays,
   plans: ClipboardList,
   journal: BookCheck,
+  messages: MessageCircle,
   summaries: FileText,
   catalog: Search,
   favorites: Heart,
@@ -121,6 +127,7 @@ function PortalNavigation({
           >
             <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
             <span className="truncate">{item.label}</span>
+            {item.id === 'messages' && <ChatUnreadBadge />}
           </Button>
         );
       })}
@@ -226,6 +233,7 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
   const router = useRouter();
   const params = useSearchParams();
   const { confirmLeave } = useJournalNavigation();
+  const chat = useChat();
 
   const view: PortalView = navigation.find((item) => item.id === params.get('view'))?.id ?? 'account';
 
@@ -254,18 +262,20 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
   const activeLabel = navigation.find((item) => item.id === view)?.label ?? 'Moje konto';
 
   function navigate(next: PortalView) {
-    confirmLeave(() => {
-      router.push(next === 'account' ? '/portal' : '/portal?view=' + next, { scroll: false });
+    confirmLeave(() =>
+      chat.confirmLeave(() => {
+        router.push(next === 'account' ? '/portal' : '/portal?view=' + next, { scroll: false });
 
-      setMobileMenuOpen(false);
+        setMobileMenuOpen(false);
 
-      window.requestAnimationFrame(() => {
-        mainRef.current?.focus();
-      });
-    });
+        window.requestAnimationFrame(() => {
+          mainRef.current?.focus();
+        });
+      }),
+    );
   }
   async function guardedLogout() {
-    confirmLeave(() => void onLogout());
+    confirmLeave(() => chat.confirmLeave(() => void onLogout()));
   }
 
   return (
@@ -424,6 +434,7 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
             )}
 
             {view === 'journal' && <PatientJournal accountId={accountId} />}
+            {view === 'messages' && <ChatScreen role="Patient" />}
             {view === 'favorites' && <MarketplaceFavorites />}
 
             {view === 'catalog' && <TherapistCatalog accountId={accountId} />}

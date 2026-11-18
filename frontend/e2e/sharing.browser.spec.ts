@@ -53,6 +53,7 @@ test.beforeEach(async ({ page }) => {
     }
     if (path === '/api/patient-accounts/me/cooperations') return json([]);
     if (path === '/api/notifications/unread-count') return json({ count: 0 });
+    if (path === '/api/chat/conversations') return json(pageOf([]));
     if (path === '/api/patient-portal/therapy-plans') {
       return json(pageOf([{ ...patientPlan, name: patientPlan.content.name }]));
     }
