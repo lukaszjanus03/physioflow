@@ -17,6 +17,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: [
+        'src/lib/two-factor-api.ts',
         'src/lib/analytics-api.ts',
         'src/components/analytics/AnalyticsPanels.tsx',
         'src/lib/patient-export-api.ts',

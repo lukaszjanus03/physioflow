@@ -8,15 +8,12 @@ import type {
   PaginatedList,
   PatientDetail,
   PatientListItem,
-  TokenResponse,
   UpdateBodyMapPayload,
   UpdatePatientPayload,
 } from '@/types/api';
 
 // --- Auth
 export const authApi = {
-  login: (email: string, password: string) =>
-    apiClient.post<TokenResponse>('/api/auth/login', { email, password }).then((r) => r.data),
 
   register: (payload: { email: string; password: string; firstName: string; lastName: string }) =>
     apiClient.post<{ userId: string }>('/api/auth/register', payload).then((r) => r.data),
