@@ -2932,6 +2932,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("access_failed_count");
 
+                    b.Property<int>("AuthVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("auth_version");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text")
@@ -2994,6 +2998,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("phone_number_confirmed");
 
+                    b.Property<string>("ProtectedTwoFactorState")
+                        .HasColumnType("text")
+                        .HasColumnName("protected_two_factor_state");
+
                     b.Property<string>("RefreshToken")
                         .HasColumnType("text")
                         .HasColumnName("refresh_token");
@@ -3009,6 +3017,10 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("two_factor_enabled");
+
+                    b.Property<bool>("TwoFactorPromptHandled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("two_factor_prompt_handled");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)

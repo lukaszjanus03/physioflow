@@ -1,35 +1,45 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using PhysioFlow.Api.Options;
 using PhysioFlow.Application.Common.Interfaces;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Infrastructure.Identity;
-using PhysioFlow.Infrastructure.Services;
 
 namespace PhysioFlow.Api.Controllers;
 
 public record RegisterRequest(string Email, string Password, string FirstName, string LastName);
-public record LoginRequest(string Email, string Password);
-public record RefreshTokenRequest(string RefreshToken);
-public record TokenResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt);
+public record LoginRequest(string Email, string Password)
+{
+    public override string ToString() => "LoginRequest [REDACTED]";
+}
+public record RefreshTokenRequest(string RefreshToken)
+{
+    public override string ToString() => "RefreshTokenRequest [REDACTED]";
+}
+public record TokenResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt, bool ShouldPromptTwoFactor = false)
+{
+    public override string ToString() => "TokenResponse [REDACTED]";
+}
 
 [Authorize]
 public class AuthController : ApiControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly IJwtTokenService _jwt;
+    private readonly TwoFactorService _twoFactor;
     private readonly IApplicationDbContext _db;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        IJwtTokenService jwt,
+        TwoFactorService twoFactor,
         IApplicationDbContext db)
     {
         _userManager = userManager;
         _signInManager = signInManager;
-        _jwt = jwt;
+        _twoFactor = twoFactor;
         _db = db;
     }
 
@@ -65,10 +75,12 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Authentication)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
         var user = await _userManager.FindByEmailAsync(req.Email);
-        if (user is null)
+        if (user is null || !user.IsActive)
             return Unauthorized(new { error = "Nieprawidłowy email lub hasło" });
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, req.Password, lockoutOnFailure: true);
@@ -79,22 +91,21 @@ public class AuthController : ApiControllerBase
         if (PatientAccountRules.RequiresEmailConfirmation(user, roles))
             return EmailConfirmationRequired();
 
-        var accessToken = _jwt.GenerateAccessToken(user, roles);
-        var refreshToken = _jwt.GenerateRefreshToken();
+        if (user.TwoFactorEnabled)
+            return Ok(await _twoFactor.BeginChallenge(user));
 
-        user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
-
-        return Ok(new TokenResponse(accessToken, refreshToken, DateTime.UtcNow.AddHours(1)));
+        return Ok(await _twoFactor.IssueSession(user, roles));
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Authentication)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest req)
     {
+        if (string.IsNullOrWhiteSpace(req.RefreshToken)) return Unauthorized();
         var user = _userManager.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
-        if (user is null || user.RefreshTokenExpiresAt < DateTime.UtcNow)
+        if (user is null || !user.IsActive || user.RefreshTokenExpiresAt is null || user.RefreshTokenExpiresAt <= DateTime.UtcNow)
             return Unauthorized(new { error = "Nieprawidłowy refresh token" });
 
         var roles = await _userManager.GetRolesAsync(user);
@@ -106,14 +117,7 @@ public class AuthController : ApiControllerBase
             return EmailConfirmationRequired();
         }
 
-        var accessToken = _jwt.GenerateAccessToken(user, roles);
-        var newRefresh = _jwt.GenerateRefreshToken();
-
-        user.RefreshToken = newRefresh;
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
-
-        return Ok(new TokenResponse(accessToken, newRefresh, DateTime.UtcNow.AddHours(1)));
+        return Ok(await _twoFactor.IssueSession(user, roles));
     }
 
     [HttpPost("logout")]

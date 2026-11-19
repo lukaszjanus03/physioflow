@@ -10,6 +10,8 @@ public class FixedWindowRateLimitOptions
 
 public static class RateLimitPolicies
 {
+    public const string Authentication = "authentication";
+    public const string TwoFactor = "two-factor";
     public const string PatientRegistration = "patient-registration";
     public const string EmailConfirmation = "email-confirmation";
     public const string ConfirmationResend = "confirmation-resend";
@@ -20,6 +22,8 @@ public static class RateLimitPolicies
     /// <summary>Nazwa polityki -> sekcja konfiguracji z jej limitami.</summary>
     public static readonly IReadOnlyDictionary<string, string> ConfigSections = new Dictionary<string, string>
     {
+        [Authentication] = "RateLimiting:Authentication",
+        [TwoFactor] = "RateLimiting:TwoFactor",
         [PatientRegistration] = "RateLimiting:PatientRegistration",
         [EmailConfirmation] = "RateLimiting:EmailConfirmation",
         [ConfirmationResend] = "RateLimiting:ConfirmationResend",

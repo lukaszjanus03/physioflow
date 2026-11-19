@@ -15,6 +15,10 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool IsActive { get; set; } = true;
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiresAt { get; set; }
+    public string? ProtectedTwoFactorState { get; set; }
+    public bool TwoFactorPromptHandled { get; set; }
+    // Incremented when security settings change; also revokes already issued JWTs.
+    public int AuthVersion { get; set; }
 }
 
 public class ApplicationRole : IdentityRole<Guid> { }

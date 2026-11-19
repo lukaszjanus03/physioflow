@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using PhysioFlow.Application.Common.Exceptions;
+using PhysioFlow.Infrastructure.Identity;
 
 namespace PhysioFlow.Api.Middleware;
 
@@ -28,6 +29,10 @@ public class ExceptionHandlingMiddleware
     {
         (HttpStatusCode status, object body) = ex switch
         {
+            TwoFactorException t => ((HttpStatusCode)t.Status, new
+            {
+                title = "Two-factor authentication failed", status = t.Status, code = t.Code
+            } as object),
             ValidationException v => (HttpStatusCode.BadRequest, new
             {
                 title = "Validation failed",
@@ -99,14 +104,16 @@ public class ExceptionHandlingMiddleware
             })
         };
 
-        if (context.Request.Path.StartsWithSegments("/api/chat"))
-            _logger.LogWarning("Chat request failed: {Type}, status {Status}", ex.GetType().Name, (int)status);
+        if (context.Request.Path.StartsWithSegments("/api/auth") || context.Request.Path.StartsWithSegments("/api/chat"))
+            _logger.LogWarning("Private request failed: {Type}, status {Status}", ex.GetType().Name, (int)status);
         else if (status == HttpStatusCode.InternalServerError)
             _logger.LogError(ex, "Unhandled exception");
         else
             _logger.LogWarning("Handled exception: {Type} - {Message}", ex.GetType().Name, ex.Message);
 
         context.Response.StatusCode = (int)status;
+        if (context.Request.Path.StartsWithSegments("/api/auth"))
+            context.Response.Headers.CacheControl = "no-store";
         if (ex is TooManyRequestsException { Code: "chat_rate_limit" })
             context.Response.Headers.RetryAfter = "60";
         context.Response.ContentType = "application/problem+json";

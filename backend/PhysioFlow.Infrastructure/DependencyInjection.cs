@@ -1,6 +1,7 @@
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -62,6 +63,20 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddSingleton(TimeProvider.System);
+        var dataProtection = services.AddDataProtection();
+        var keyRingPath = config["DataProtection:KeyRingPath"];
+        if (!string.IsNullOrWhiteSpace(keyRingPath))
+            dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyRingPath));
+        services.AddOptions<TwoFactorOptions>().Bind(config.GetSection("TwoFactor"))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Issuer) && o.Issuer.Length <= 100
+                && o.ChallengeLifetimeSeconds is >= 30 and <= 600
+                && o.SetupLifetimeSeconds is >= 60 and <= 1800
+                && o.MaxFailedAttempts is >= 1 and <= 10
+                && o.LockoutSeconds is >= 30 and <= 3600
+                && o.RecoveryCodeCount is >= 5 and <= 20, "Invalid TwoFactor configuration.")
+            .ValidateOnStart();
+        services.AddScoped<TwoFactorService>();
         services.AddScoped<IUserAccountService, UserAccountService>();
         services.AddSingleton<IProfilePhotoProcessor, ProfilePhotoProcessor>();
 

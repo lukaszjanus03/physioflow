@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.DataProtection.Repositories;
+using System.Collections.Concurrent;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -16,6 +20,12 @@ namespace PhysioFlow.Tests.Integration;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private sealed class TestKeyRepository : IXmlRepository
+    {
+        private readonly ConcurrentBag<XElement> _elements = [];
+        public IReadOnlyCollection<XElement> GetAllElements() => _elements.Select(e => new XElement(e)).ToArray();
+        public void StoreElement(XElement element, string friendlyName) => _elements.Add(new XElement(element));
+    }
     public const string FrontendBaseUrl = "https://app.physioflow.test";
 
     private readonly string _databaseName = Guid.NewGuid().ToString();
@@ -29,6 +39,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     protected virtual int TherapistReviewWritePermitLimit => 10_000;
     protected virtual int ConfirmationResendPermitLimit => 10_000;
     protected virtual int ConfirmationEmailCooldownSeconds => 0;
+    protected virtual int AuthenticationPermitLimit => 10_000;
+    protected virtual int TwoFactorPermitLimit => 10_000;
 
     protected virtual void ConfigureTestServices(IServiceCollection services) { }
 
@@ -52,6 +64,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
                     ["Frontend:BaseUrl"] = FrontendBaseUrl + "/",
                     ["AppointmentReminders:Enabled"] = "false",
+                    ["RateLimiting:Authentication:PermitLimit"] = AuthenticationPermitLimit.ToString(),
+                    ["RateLimiting:TwoFactor:PermitLimit"] = TwoFactorPermitLimit.ToString(),
 
                     ["RateLimiting:PatientRegistration:PermitLimit"] =
                         PatientRegistrationPermitLimit.ToString(),
@@ -95,6 +109,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         {
             // Klucze testowe żyją w hoście; testy nie zapisują nic w profilu systemowym.
             services.AddDataProtection().UseEphemeralDataProtectionProvider();
+            // The key-ring warmup hosted service also needs a memory-only repository.
+            services.Configure<KeyManagementOptions>(o => o.XmlRepository = new TestKeyRepository());
             // Usuwamy również konfigurację dostawcy PostgreSQL,
             // aby nie została połączona z dostawcą InMemory.
             services.RemoveAll<

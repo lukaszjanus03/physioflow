@@ -138,6 +138,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         ctx.Fail("User inactive");
                         return;
                     }
+                    var versionClaim = ctx.Principal!.FindFirst("auth_version")?.Value ?? "0";
+                    if (!int.TryParse(versionClaim, out var version) || version != user.AuthVersion)
+                    {
+                        ctx.Fail("Session revoked");
+                        return;
+                    }
                     // Tokeny wydane przed wprowadzeniem blokady nie mogą jej omijać.
                     var roles = ctx.Principal!.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
                     if (PhysioFlow.Infrastructure.Identity.PatientAccountRules.RequiresEmailConfirmation(user, roles))
@@ -150,8 +156,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 }
                 catch (Exception ex)
                 {
-                    // Nie chcemy aby jakikolwiek błąd w lookupie wywalał całe auth.
-                    logger.LogError(ex, "OnTokenValidated: unexpected error, allowing request through");
+                    // A failed lookup must not bypass account/session validation.
+                    logger.LogError("OnTokenValidated: user lookup failed ({Type})", ex.GetType().Name);
+                    ctx.Fail("User validation failed");
                 }
             }
         };

@@ -29,6 +29,7 @@ appsettings.Local.json
 
 # Logs
 .local-emails/
+.local-data-protection-keys/
 logs/
 *.log
 
