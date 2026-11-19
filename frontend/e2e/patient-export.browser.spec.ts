@@ -43,6 +43,8 @@ async function mockExport(page: Page) {
     if (path === '/api/notifications/unread-count') return json({ count: 0 });
     if (path === '/api/chat/conversations') return json(pageOf([]));
     if (path === `/api/patients/${ids.patient}`) return json(exportPatient);
+    if (path === `/api/analytics/patients/${ids.patient}/pain-trend`)
+      return json({ from: '2026-11-16', to: '2026-11-22', timeZone: 'Europe/Warsaw', points: [] });
     if (path === `/api/patients/${ids.patient}/medical-records/export`) {
       const number = Number(url.searchParams.get('pageNumber'));
       state.pages.push(number);

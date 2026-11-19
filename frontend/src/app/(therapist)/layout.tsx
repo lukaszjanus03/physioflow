@@ -26,7 +26,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import { ChatUnreadBadge, useChat } from '@/components/chat/ChatProvider';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Mój gabinet', icon: LayoutDashboard },
   { href: '/patients', label: 'Pacjenci', icon: Users },
   {
     href: '/cooperation-requests',
