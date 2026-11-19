@@ -29,11 +29,17 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status !== 401 || original?._retry) {
+    const code = (error.response?.data as { code?: string } | undefined)?.code;
+    // An invalid proof is not an expired session.
+    const invalidProof = original?.url?.startsWith('/api/auth/2fa/') &&
+      (code === 'two_factor_invalid_code' || code === 'two_factor_invalid_credentials');
+    if (error.response?.status !== 401 || original?._retry || invalidProof || original?.signal?.aborted) {
       return Promise.reject(error);
     }
 
-    const { refreshToken, setTokens, logout } = useAuthStore.getState();
+    const { accessToken, refreshToken, setTokens, logout } = useAuthStore.getState();
+    const sentToken = error.config?.headers.get('Authorization');
+    if (sentToken && sentToken !== `Bearer ${accessToken}`) return Promise.reject(error);
     if (!refreshToken) {
       logout();
       if (typeof window !== 'undefined') window.location.href = '/login';
@@ -58,6 +64,10 @@ apiClient.interceptors.response.use(
         `${apiClient.defaults.baseURL}/api/auth/refresh`,
         { refreshToken },
       );
+      if (useAuthStore.getState().refreshToken !== refreshToken) {
+        notify(null);
+        return Promise.reject(error);
+      }
       setTokens(data.accessToken, data.refreshToken);
       notify(data.accessToken);
 
@@ -66,8 +76,10 @@ apiClient.interceptors.response.use(
       return apiClient(original);
     } catch (e) {
       notify(null);
-      logout();
-      if (typeof window !== 'undefined') window.location.href = '/';
+      if (useAuthStore.getState().refreshToken === refreshToken) {
+        logout();
+        if (typeof window !== 'undefined') window.location.href = '/';
+      }
       return Promise.reject(e);
     } finally {
       isRefreshing = false;

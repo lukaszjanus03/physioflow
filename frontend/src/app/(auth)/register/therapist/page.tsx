@@ -21,7 +21,8 @@ import {
   Label,
 } from '@/components/ui/primitives';
 import { authApi } from '@/lib/api';
-import { useAuthStore } from '@/stores/auth-store';
+import { twoFactorApi } from '@/lib/two-factor-api';
+import { useLoginFlow } from '@/components/two-factor/useLoginFlow';
 
 const schema = z.object({
   firstName: z.string().min(1, 'Imię jest wymagane').max(100, 'Maksymalnie 100 znaków'),
@@ -34,7 +35,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setTokens = useAuthStore((s) => s.setTokens);
+  const flow = useLoginFlow(() => router.push('/'));
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -47,12 +48,12 @@ export default function RegisterPage() {
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       await authApi.register(values);
-      return authApi.login(values.email, values.password);
-    },
-    onSuccess: (tokens) => {
-      setTokens(tokens.accessToken, tokens.refreshToken);
       toast.success('Konto utworzone');
-      router.push('/');
+      try {
+        flow.accept(await twoFactorApi.login(values.email, values.password));
+      } catch {
+        router.push('/login');
+      }
     },
     onError: (error: AxiosError<{ errors?: string[]; error?: string }>) => {
       const data = error.response?.data;

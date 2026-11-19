@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 
 import TherapistProfileForm from '@/components/therapists/TherapistProfileForm';
+import { TwoFactorSettings } from '@/components/two-factor/TwoFactorSettings';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { withMinimumLoading } from '@/lib/minimum-loading';
@@ -90,6 +91,7 @@ export default function SettingsPage() {
           profile={query.data}
         />
       )}
+      {enabled && <TwoFactorSettings />}
     </div>
   );
 }

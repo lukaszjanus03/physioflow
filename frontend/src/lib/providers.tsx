@@ -7,6 +7,7 @@ import { Toaster } from 'sonner';
 import { SignalRProvider } from './signalr-context';
 import { ChatProvider } from '@/components/chat/ChatProvider';
 import FloatingChat from '@/components/chat/FloatingChat';
+import { SessionResetProvider } from '@/components/two-factor/SessionResetProvider';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -29,15 +30,17 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SignalRProvider>
-        <ChatProvider>
-          {children}
-          <Suspense fallback={null}>
-            <FloatingChat />
-          </Suspense>
-          <Toaster position="top-right" richColors />
-        </ChatProvider>
-      </SignalRProvider>
+      <SessionResetProvider>
+        <SignalRProvider>
+          <ChatProvider>
+            {children}
+            <Suspense fallback={null}>
+              <FloatingChat />
+            </Suspense>
+            <Toaster position="top-right" richColors />
+          </ChatProvider>
+        </SignalRProvider>
+      </SessionResetProvider>
       {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );

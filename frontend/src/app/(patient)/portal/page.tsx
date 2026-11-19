@@ -39,6 +39,7 @@ import { MyCooperationRequests, MyTherapists } from '@/components/patient-portal
 import PatientSharedContent from '@/components/patient-portal/PatientSharedContent';
 import TherapistCatalog from '@/components/patient-portal/TherapistCatalog';
 import { Button } from '@/components/ui/button';
+import { TwoFactorSettings } from '@/components/two-factor/TwoFactorSettings';
 import { LoadingState } from '@/components/ui/loading-state';
 import { withMinimumLoading } from '@/lib/minimum-loading';
 import { getApiMessage, portalApi } from '@/lib/portal-api';
@@ -496,6 +497,8 @@ function PatientPortal({ accountId, onLogout }: { accountId: string; onLogout: (
                     ))}
                   </dl>
                 </section>
+
+                <TwoFactorSettings />
 
                 <aside className="rounded-xl border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
                   Rezerwacje i współpraca nie udostępniają automatycznie wewnętrznych notatek ani dokumentacji
