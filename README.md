@@ -59,6 +59,7 @@ npm run dev
 
 ## Dokumentacja
 
+- [Sprint 8, etap 2 — statystyki gabinetu i wykres zgłoszonego bólu (kontrakt backendu)](docs/sprint-8-stage-2-analytics-api.md)
 - [Sprint 8, etap 1 — zatwierdzona dokumentacja wizyt do eksportu PDF (kontrakt backendu)](docs/sprint-8-stage-1-medical-record-export-api.md)
 - [Sprint 7, etap 2 — podgląd dziennika przez terapeutę i podsumowanie (kontrakt backendu)](docs/sprint-7-stage-2-therapist-exercise-journal-api.md)
 - [Sprint 7, etap 1 — dziennik realizacji ćwiczeń (kontrakt backendu)](docs/sprint-7-stage-1-exercise-journal-api.md)
