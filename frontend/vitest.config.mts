@@ -17,6 +17,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: [
+        'src/lib/analytics-api.ts',
+        'src/components/analytics/AnalyticsPanels.tsx',
         'src/lib/patient-export-api.ts',
         'src/components/patients/PatientExportDialog.tsx',
         'src/components/patients/PatientCardPdf.tsx',

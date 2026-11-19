@@ -42,6 +42,8 @@ import type {
 
 import { Button } from '@/components/ui/button';
 import PatientExportDialog from '@/components/patients/PatientExportDialog';
+import { PatientPainAnalytics } from '@/components/analytics/AnalyticsPanels';
+import { useAuthStore } from '@/stores/auth-store';
 import {
   Dialog,
   DialogContent,
@@ -69,15 +71,16 @@ export default function PatientDetailPage() {
   }>();
 
   const router = useRouter();
+  const accountId = useAuthStore((state) => state.isAuthenticated && state.roles.includes('Therapist') ? state.userId : null);
   const client = useQueryClient();
   const [confirmArchive, setConfirmArchive] =
     useState(false);
 
   const query = useQuery({
-    queryKey: ['patient', id],
+    queryKey: ['patient', id, accountId],
     queryFn: () =>
       patientsApi.getById(id),
-    enabled: Boolean(id),
+    enabled: Boolean(id && accountId),
   });
 
   const patient = query.data;
@@ -559,6 +562,10 @@ export default function PatientDetailPage() {
               />
             </CardContent>
           </Card>
+
+          {accountId && !patient.isArchived && patient.isLinkedToAccount && (
+            <PatientPainAnalytics key={`${accountId}:${id}`} patientId={id} />
+          )}
 
           <Dialog
             open={confirmArchive}
